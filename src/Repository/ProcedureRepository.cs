@@ -19,8 +19,8 @@ namespace api_slim.src.Repository
             List<BsonDocument> pipeline = new()
             {
                 new("$sort", pagination.PipelineSort),
-                new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit),
+                // new("$skip", pagination.Skip),
+                // new("$limit", pagination.Limit),
                 new BsonDocument("$lookup", new BsonDocument
                 {
                     { "from", "service_modules" },
