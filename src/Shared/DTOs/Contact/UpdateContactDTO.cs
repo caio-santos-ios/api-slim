@@ -1,6 +1,6 @@
 namespace api_slim.src.Shared.DTOs
 {
-public class UpdateContactDTO
+public class UpdateContactDTO : Request
 {
 public string Id { get; set; } = string.Empty;
 

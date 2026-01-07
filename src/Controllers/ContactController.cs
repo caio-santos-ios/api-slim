@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -32,7 +33,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> Create([FromBody] CreateContactDTO contact)
         {
             if (contact == null) return BadRequest("Dados inválidos.");
-
+            contact.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Contact?> response = await contactService.CreateAsync(contact);
 
             return StatusCode(response.StatusCode, new { response.Message });
@@ -43,7 +44,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> Update([FromBody] UpdateContactDTO contact)
         {
             if (contact == null) return BadRequest("Dados inválidos.");
-
+            contact.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Contact?> response = await contactService.UpdateAsync(contact);
 
             return StatusCode(response.StatusCode, new { response.Message });
@@ -53,7 +54,8 @@ namespace api_slim.src.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            ResponseApi<Contact> response = await contactService.DeleteAsync(id);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Contact> response = await contactService.DeleteAsync(id, userId);
 
             return StatusCode(response.StatusCode, new { response.Message });
         }

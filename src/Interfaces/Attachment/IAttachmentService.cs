@@ -10,6 +10,6 @@ namespace api_slim.src.Interfaces
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
     Task<ResponseApi<Attachment?>> CreateAsync(CreateAttachmentDTO request);
     Task<ResponseApi<Attachment?>> UpdateAsync(UpdateAttachmentDTO request);
-    Task<ResponseApi<Attachment>> DeleteAsync(string id);
+    Task<ResponseApi<Attachment>> DeleteAsync(string id, string userId);
 }
 }

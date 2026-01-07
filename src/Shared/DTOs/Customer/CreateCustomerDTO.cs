@@ -2,7 +2,7 @@ using api_slim.src.Models;
 
 namespace api_slim.src.Shared.DTOs
 {
-        public class CreateCustomerDTO
+        public class CreateCustomerDTO : Request
         {
                 public string Type { get; set; } = string.Empty;
                 public string CorporateName { get; set; } = string.Empty;         

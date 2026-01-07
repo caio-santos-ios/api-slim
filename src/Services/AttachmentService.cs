@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class AttachmentService(IAttachmentRepository attachmentRepository, IMapper _mapper, IWebHostEnvironment env) : IAttachmentService
+    public class AttachmentService(IAttachmentRepository attachmentRepository, IMapper _mapper, IWebHostEnvironment env, ILogRepository logRepository) : IAttachmentService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -73,6 +73,17 @@ namespace api_slim.src.Services
             await attachmentRepository.UpdateAsync(attachment);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Anexo.");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Criação",
+                Collection = "attachment",
+                Description = $"Criação Anexo {response.Data.Description} - Aba: {response.Data.Type}",
+                CreatedBy = request.CreatedBy,
+                Parent = response.Data.Parent,
+                ParentId = response.Data.ParentId                 
+            });
+
             return new(response.Data, 201, "Anexo criado com sucesso.");
         }
         catch
@@ -94,7 +105,7 @@ namespace api_slim.src.Services
             attachment.UpdatedAt = DateTime.UtcNow;
 
             ResponseApi<Attachment?> response = await attachmentRepository.UpdateAsync(attachment);
-            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
             if(request.File is not null) {
                 string webRoot = env.WebRootPath;
@@ -120,6 +131,16 @@ namespace api_slim.src.Services
                 await attachmentRepository.UpdateAsync(attachment);
             };
 
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "attachment",
+                Description = $"Atualização Anexo {response.Data.Description} - Aba: {response.Data.Type}",
+                CreatedBy = request.CreatedBy,
+                Parent = response.Data.Parent,
+                ParentId = response.Data.ParentId                 
+            });
+
             return new(response.Data, 200, "Atualizado com sucesso");
         }
         catch
@@ -130,12 +151,23 @@ namespace api_slim.src.Services
     #endregion
     
     #region DELETE
-    public async Task<ResponseApi<Attachment>> DeleteAsync(string id)
+    public async Task<ResponseApi<Attachment>> DeleteAsync(string id, string userId)
     {
         try
         {
             ResponseApi<Attachment> attachment = await attachmentRepository.DeleteAsync(id);
-            if(!attachment.IsSuccess) return new(null, 400, attachment.Message);
+            if(!attachment.IsSuccess || attachment.Data is null) return new(null, 400, attachment.Message);
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Exclusão",
+                Collection = "attachment",
+                Description = $"Exclusão Anexo {attachment.Data.Description} - Aba: {attachment.Data.Type}",
+                CreatedBy = userId,
+                Parent = attachment.Data.Parent,
+                ParentId = attachment.Data.ParentId                 
+            });
+
             return new(null, 204, "Excluído com sucesso");
         }
         catch

@@ -11,6 +11,7 @@ namespace api_slim.src.Interfaces
     Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
     Task<ResponseApi<CustomerRecipient?>> CreateAsync(CreateCustomerRecipientDTO request);
     Task<ResponseApi<CustomerRecipient?>> UpdateAsync(UpdateCustomerRecipientDTO request);
-    Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id);
+    Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request);
+    Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId);
 }
 }

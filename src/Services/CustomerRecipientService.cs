@@ -5,12 +5,10 @@ using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
 using System.Text.Json;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace api_slim.src.Services
 {
-    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IMapper _mapper) : ICustomerRecipientService
+    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IMapper _mapper, ILogRepository logRepository) : ICustomerRecipientService
 {
     HttpClient client = new();
     private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -67,13 +65,13 @@ namespace api_slim.src.Services
     {
         try
         {
-            ResponseApi<CustomerRecipient?> existed = await customerRepository.GetByCPFAsync(request.Cpf);
+            ResponseApi<CustomerRecipient?> existed = await customerRepository.GetByCPFAsync(request.Cpf, request.ContractorId);
             if(existed.Data is not null) return new(null, 400, "CPF já utilizado");
 
             CustomerRecipient customer = _mapper.Map<CustomerRecipient>(request);
             ResponseApi<long?> code = await customerRepository.GetNextCodeAsync();
             customer.Code = code.Data.ToString()!.PadLeft(6, '0');
-            
+
             ResponseApi<CustomerRecipient?> response = await customerRepository.CreateAsync(customer);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Beneficiário.");
@@ -122,6 +120,16 @@ namespace api_slim.src.Services
             address.ParentId = response.Data!.Id;
             ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
             if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Criação",
+                Collection = "customer-recipient",
+                Description = $"Criação Beneficiário {request.Name}",
+                CreatedBy = request.CreatedBy,
+                Parent = "customer",
+                ParentId = response.Data.ContractorId                 
+            });
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
         }
@@ -196,6 +204,47 @@ namespace api_slim.src.Services
                 ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
                 if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
             };
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "customer-recipient",
+                Description = $"Atualizou Beneficiário {customerResponse.Data.Name}",
+                CreatedBy = request.UpdatedBy,
+                Parent = "customer",
+                ParentId = response.Data.ContractorId                 
+            });
+            
+            return new(response.Data, 201, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+            
+            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            customerResponse.Data.Justification = customerResponse.Data.Active ? request.Justification : "";
+            customerResponse.Data.Active = !customerResponse.Data.Active;
+
+            ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "customer-recipient",
+                Description = customerResponse.Data.Active ? $"Ativou Beneficiário {customerResponse.Data.Name}" : $"Inativou Beneficiário {customerResponse.Data.Name}",
+                CreatedBy = request.UpdatedBy,
+                Parent = "customer",
+                ParentId = response.Data.ContractorId                 
+            });
             
             return new(response.Data, 201, "Atualizado com sucesso");
         }
@@ -207,7 +256,7 @@ namespace api_slim.src.Services
     #endregion
     
     #region DELETE
-    public async Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id)
+    public async Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId)
     {
         try
         {
@@ -218,6 +267,16 @@ namespace api_slim.src.Services
             requestHeader.Headers.Add("Authorization", $"Bearer {token}");
             requestHeader.Headers.Add("clientId", $"{clientId}");
             var response = await client.SendAsync(requestHeader);
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Exclusão",
+                Collection = "customer-recipient",
+                Description = $"Exclusão Beneficiário {customer.Data.Name}",
+                CreatedBy = userId,
+                Parent = "customer",
+                ParentId = customer.Data.ContractorId                 
+            });
 
             return new(null, 204, "Excluído com sucesso");
         }

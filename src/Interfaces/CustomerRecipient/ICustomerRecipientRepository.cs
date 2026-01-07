@@ -11,7 +11,7 @@ public interface ICustomerRecipientRepository
     Task<ResponseApi<CustomerRecipient?>> GetByIdAsync(string id);
     Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination);
     Task<ResponseApi<long?>> GetNextCodeAsync();
-    Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf);
+    Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId);
     Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination);
     Task<ResponseApi<CustomerRecipient?>> CreateAsync(CustomerRecipient address);
     Task<ResponseApi<CustomerRecipient?>> UpdateAsync(CustomerRecipient address);

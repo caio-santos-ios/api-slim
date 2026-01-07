@@ -8,7 +8,7 @@ using MongoDB.Driver.Linq;
 
 namespace api_slim.src.Services
 {
-    public class CustomerContractService(ICustomerContractRepository customerContractRepository, IAccountsReceivableService accountsReceivableService, IMapper _mapper) : ICustomerContractService
+    public class CustomerContractService(ICustomerContractRepository customerContractRepository, IAccountsReceivableService accountsReceivableService, IMapper _mapper, ILogRepository logRepository) : ICustomerContractService
     {
         #region READ
         public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -131,6 +131,15 @@ namespace api_slim.src.Services
                     }
                 };
 
+                await logRepository.CreateAsync(new()
+                {   
+                    Action = "Criação",
+                    Collection = "customer-contract",
+                    Description = $"Criação Contrato Nº {response.Data.Code}",
+                    CreatedBy = request.CreatedBy,
+                    Parent = "customer",
+                    ParentId = response.Data.ContractorId                 
+                });
 
                 return new(response.Data, 201, "Contrato criado com sucesso.");
             }
@@ -154,7 +163,7 @@ namespace api_slim.src.Services
                 customerContract.Code = customerContractResponse.Data.Code;
 
                 ResponseApi<CustomerContract?> response = await customerContractRepository.UpdateAsync(customerContract);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+                if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
                 if(request.Type == "Avulsos") 
                 {
@@ -178,6 +187,16 @@ namespace api_slim.src.Services
                     }
                     
                 };
+
+                await logRepository.CreateAsync(new()
+                {   
+                    Action = "Atualização",
+                    Collection = "customer-contract",
+                    Description = $"Atualização Contrato Nº {response.Data.Code}",
+                    CreatedBy = request.CreatedBy,
+                    Parent = "customer",
+                    ParentId = response.Data.ContractorId                 
+                });
                 
                 return new(response.Data, 201, "Atualizado com sucesso");
             }
@@ -188,12 +207,23 @@ namespace api_slim.src.Services
         }
         #endregion
         #region DELETE
-        public async Task<ResponseApi<CustomerContract>> DeleteAsync(string id)
+        public async Task<ResponseApi<CustomerContract>> DeleteAsync(string id, string userId)
         {
             try
             {
                 ResponseApi<CustomerContract> customerContract = await customerContractRepository.DeleteAsync(id);
-                if(!customerContract.IsSuccess) return new(null, 400, customerContract.Message);
+                if(!customerContract.IsSuccess || customerContract.Data is null) return new(null, 400, customerContract.Message);
+
+                await logRepository.CreateAsync(new()
+                {   
+                    Action = "Exclusão",
+                    Collection = "customer-contract",
+                    Description = $"Exclusão Contrato Nº {customerContract.Data.Code}",
+                    CreatedBy = userId,
+                    Parent = "customer",
+                    ParentId = customerContract.Data.ContractorId                 
+                });
+
                 return new(null, 204, "Excluído com sucesso");
             }
             catch

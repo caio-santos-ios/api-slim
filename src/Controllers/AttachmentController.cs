@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -33,7 +34,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> Create([FromForm] CreateAttachmentDTO request)
         {
             if (request == null) return BadRequest("Dados inválidos.");
-
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Attachment?> response = await attachmentService.CreateAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Message });
@@ -45,7 +46,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> Update([FromForm] UpdateAttachmentDTO request)
         {
             if (request == null) return BadRequest("Dados inválidos.");
-
+            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Attachment?> response = await attachmentService.UpdateAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Message });
@@ -55,7 +56,8 @@ namespace api_slim.src.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            ResponseApi<Attachment> response = await attachmentService.DeleteAsync(id);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Attachment> response = await attachmentService.DeleteAsync(id, userId);
 
             return StatusCode(response.StatusCode, new { response.Message });
         }

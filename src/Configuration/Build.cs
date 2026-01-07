@@ -121,6 +121,10 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<IDashboardService, DashboardService>();
             builder.Services.AddTransient<IDashboardRepository, DashboardRepository>();
 
+            // CONFIGURATION
+            builder.Services.AddTransient<ILogService, LogService>();
+            builder.Services.AddTransient<ILogRepository, LogRepository>();
+
             // Handlers
             builder.Services.AddTransient<SmsHandler>();
             builder.Services.AddTransient<MailHandler>();

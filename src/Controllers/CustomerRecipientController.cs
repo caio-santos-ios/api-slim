@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -40,6 +41,7 @@ public class CustomerRecipientController(ICustomerRecipientService service) : Co
     public async Task<IActionResult> Create([FromBody] CreateCustomerRecipientDTO customer)
     {
         if (customer == null) return BadRequest("Dados inválidos.");
+        customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
         ResponseApi<CustomerRecipient?> response = await service.CreateAsync(customer);
 
@@ -51,8 +53,22 @@ public class CustomerRecipientController(ICustomerRecipientService service) : Co
     public async Task<IActionResult> Update([FromBody] UpdateCustomerRecipientDTO customer)
     {
         if (customer == null) return BadRequest("Dados inválidos.");
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
         ResponseApi<CustomerRecipient?> response = await service.UpdateAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
+    [HttpPut("alter-status")]
+    public async Task<IActionResult> UpdateStatus([FromBody] UpdateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient?> response = await service.UpdateStatusAsync(customer);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }
@@ -61,7 +77,9 @@ public class CustomerRecipientController(ICustomerRecipientService service) : Co
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        ResponseApi<CustomerRecipient> response = await service.DeleteAsync(id);
+        string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient> response = await service.DeleteAsync(id, userId);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }

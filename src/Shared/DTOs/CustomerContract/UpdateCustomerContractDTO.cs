@@ -2,7 +2,7 @@ using api_slim.src.Models;
 
 namespace api_slim.src.Shared.DTOs
 {
-        public class UpdateCustomerContractDTO
+        public class UpdateCustomerContractDTO : Request
         {
                 public string Id { get; set; } = string.Empty;
                 public string ContractorId { get; set; } = string.Empty; 

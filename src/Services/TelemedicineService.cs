@@ -40,7 +40,7 @@ namespace api_slim.src.Services
                         foreach (dynamic item in result.beneficiaries)
                         {
                             string cpf = Regex.Replace(item.cpf.ToString(), @"(\d{3})(\d{3})(\d{3})(\d{2})", "$1.$2.$3-$4");
-                            ResponseApi<CustomerRecipient?> recipient = await customerRepository.GetByCPFAsync(cpf);
+                            // ResponseApi<CustomerRecipient?> recipient = await customerRepository.GetByCPFAsync(cpf);
                             
                             list.Add(new {
                                 id = item.uuid.ToString(),
@@ -48,7 +48,7 @@ namespace api_slim.src.Services
                                 cpf = item.cpf.ToString(),
                                 name = item.name.ToString(),
                                 status = item.isActive.ToString(),
-                                system = recipient.Data is not null
+                                // system = recipient.Data is not null
                             });                            
                         }
                     };

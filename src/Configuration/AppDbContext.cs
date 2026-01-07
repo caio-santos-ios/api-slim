@@ -132,5 +132,12 @@ namespace api_slim.src.Configuration
             get { return Database.GetCollection<Historic>("historics"); }
         }
         #endregion
+        
+        #region CONFIGURATION
+        public IMongoCollection<Log> Logs
+        {
+            get { return Database.GetCollection<Log>("logs"); }
+        }
+        #endregion
     }
 }

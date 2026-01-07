@@ -41,7 +41,6 @@ namespace api_slim.src.Repository
                 {
                     {"type", MongoUtil.First("_customer.type")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
-                    {"effectiveDate", MongoUtil.First("_customer.effectiveDate")},
                     {"genderDescription", MongoUtil.First("_gender.description")},
                     {"address", new BsonDocument
                         {
@@ -159,11 +158,11 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Items");
         }
     }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf)
+    public async Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId)
     {
         try
         {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && !x.Deleted).FirstOrDefaultAsync();
+            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId && !x.Deleted).FirstOrDefaultAsync();
             return new(customerRecipient);
         }
         catch

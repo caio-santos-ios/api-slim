@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class ContactService(IContactRepository contactRepository, IMapper _mapper) : IContactService
+    public class ContactService(IContactRepository contactRepository, IMapper _mapper, ILogRepository logRepository) : IContactService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -49,6 +49,17 @@ namespace api_slim.src.Services
             ResponseApi<Contact?> response = await contactRepository.CreateAsync(contact);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Contato.");
+            
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Criação",
+                Collection = "contact",
+                Description = $"Criação Contato {response.Data.Name} - {response.Data.Phone}",
+                CreatedBy = request.CreatedBy,
+                Parent = response.Data.Parent,
+                ParentId = response.Data.ParentId                 
+            });
+
             return new(response.Data, 201, "Contato criado com sucesso.");
         }
         catch
@@ -70,7 +81,18 @@ namespace api_slim.src.Services
             contact.UpdatedAt = DateTime.UtcNow;
 
             ResponseApi<Contact?> response = await contactRepository.UpdateAsync(contact);
-            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "contact",
+                Description = $"Atualização Contato {response.Data.Name} - {response.Data.Phone}",
+                CreatedBy = request.CreatedBy,
+                Parent = response.Data.Parent,
+                ParentId = response.Data.ParentId                 
+            });
+
             return new(response.Data, 201, "Atualizado com sucesso");
         }
         catch
@@ -81,12 +103,23 @@ namespace api_slim.src.Services
     #endregion
     
     #region DELETE
-    public async Task<ResponseApi<Contact>> DeleteAsync(string id)
+    public async Task<ResponseApi<Contact>> DeleteAsync(string id, string userId)
     {
         try
         {
             ResponseApi<Contact> contact = await contactRepository.DeleteAsync(id);
-            if(!contact.IsSuccess) return new(null, 400, contact.Message);
+            if(!contact.IsSuccess || contact.Data is null) return new(null, 400, contact.Message);
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Exclusão",
+                Collection = "contact",
+                Description = $"Exclusão Contato {contact.Data.Name} - {contact.Data.Phone}",
+                CreatedBy = userId,
+                Parent = contact.Data.Parent,
+                ParentId = contact.Data.ParentId                 
+            });
+
             return new(null, 204, "Excluído com sucesso");
         }
         catch

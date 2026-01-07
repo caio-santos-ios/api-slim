@@ -10,6 +10,6 @@ namespace api_slim.src.Interfaces
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
     Task<ResponseApi<Contact?>> CreateAsync(CreateContactDTO request);
     Task<ResponseApi<Contact?>> UpdateAsync(UpdateContactDTO request);
-    Task<ResponseApi<Contact>> DeleteAsync(string id);
+    Task<ResponseApi<Contact>> DeleteAsync(string id, string userId);
 }
 }

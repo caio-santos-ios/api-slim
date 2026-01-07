@@ -1,6 +1,6 @@
 namespace api_slim.src.Shared.DTOs
 {
-public class UpdateAttachmentDTO
+public class UpdateAttachmentDTO : Request
 {
      public string Id { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;

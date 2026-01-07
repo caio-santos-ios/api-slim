@@ -2,7 +2,7 @@ using api_slim.src.Models;
 
 namespace api_slim.src.Shared.DTOs
 {
-        public class CreateCustomerRecipientDTO
+        public class CreateCustomerRecipientDTO : Request
         {
                 public string DocumentContract { get; set; } = string.Empty; // Mapeado do campo "CPF"
                 public string Name { get; set; } = string.Empty; // Mapeado do campo "Nome"
@@ -22,5 +22,6 @@ namespace api_slim.src.Shared.DTOs
                 public decimal Total { get; set; }
                 public decimal Discount { get; set; }
                 public decimal DiscountPercentage { get; set; }
+                public DateTime? EffectiveDate { get; set; }
         }
 }

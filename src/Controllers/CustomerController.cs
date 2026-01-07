@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -32,7 +33,7 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     public async Task<IActionResult> Create([FromBody] CreateCustomerDTO customer)
     {
         if (customer == null) return BadRequest("Dados inválidos.");
-
+        customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
         ResponseApi<Customer?> response = await customerService.CreateAsync(customer);
 
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
@@ -43,7 +44,7 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     public async Task<IActionResult> Update([FromBody] UpdateCustomerDTO customer)
     {
         if (customer == null) return BadRequest("Dados inválidos.");
-
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
         ResponseApi<Customer?> response = await customerService.UpdateAsync(customer);
 
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
@@ -53,7 +54,8 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        ResponseApi<Customer> response = await customerService.DeleteAsync(id);
+        string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        ResponseApi<Customer> response = await customerService.DeleteAsync(id, userId);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }

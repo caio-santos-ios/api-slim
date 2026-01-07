@@ -1,6 +1,6 @@
 namespace api_slim.src.Shared.DTOs
 {
-public class CreateCustomerContractDTO
+public class CreateCustomerContractDTO : Request
 {
         public string Type { get; set; } = string.Empty;
         public string ContractorId { get; set; } = string.Empty; 

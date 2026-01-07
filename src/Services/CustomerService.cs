@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper) : ICustomerService
+    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper, ILogRepository logRepository) : ICustomerService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -88,6 +88,16 @@ namespace api_slim.src.Services
                 }
             }
 
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Criação",
+                Collection = "customer",
+                Description = $"Criação Cliente {response.Data.CorporateName}",
+                CreatedBy = request.CreatedBy,
+                Parent = "customer",
+                ParentId = response.Data.Id                 
+            });
+
             return new(response.Data, 201, "Cliente criado com sucesso.");
         }
         catch
@@ -110,7 +120,7 @@ namespace api_slim.src.Services
             customer.CreatedAt = customerResponse.Data.CreatedAt;
 
             ResponseApi<Customer?> response = await customerRepository.UpdateAsync(customer);
-            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
             if(!string.IsNullOrEmpty(request.Address.Id))
             {
@@ -145,6 +155,16 @@ namespace api_slim.src.Services
                 ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
                 if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
             };
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "customer",
+                Description = $"Atualização Cliente {response.Data.CorporateName}",
+                CreatedBy = request.CreatedBy,
+                Parent = "customer",
+                ParentId = response.Data.Id                 
+            });
             
             return new(response.Data, 201, "Atualizado com sucesso");
         }
@@ -156,12 +176,23 @@ namespace api_slim.src.Services
     #endregion
     
     #region DELETE
-    public async Task<ResponseApi<Customer>> DeleteAsync(string id)
+    public async Task<ResponseApi<Customer>> DeleteAsync(string id, string userId)
     {
         try
         {
             ResponseApi<Customer> customer = await customerRepository.DeleteAsync(id);
-            if(!customer.IsSuccess) return new(null, 400, customer.Message);
+            if(!customer.IsSuccess || customer.Data is null) return new(null, 400, customer.Message);
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Exclusão",
+                Collection = "customer",
+                Description = $"Exclusão Cliente {customer.Data.CorporateName}",
+                CreatedBy = userId,
+                Parent = "customer",
+                ParentId = customer.Data.Id                 
+            });
+
             return new(null, 204, "Excluído com sucesso");
         }
         catch
