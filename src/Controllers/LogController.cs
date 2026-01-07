@@ -21,11 +21,11 @@ namespace api_slim.src.Controllers
                 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateLogDTO user)
+        public async Task<IActionResult> Create([FromBody] CreateLogDTO request)
         {
-            if (user == null) return BadRequest("Dados inválidos.");
+            if (request == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<Log?> response = await service.CreateAsync(user);
+            ResponseApi<Log?> response = await service.CreateAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Result });
         }
