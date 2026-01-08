@@ -2,7 +2,7 @@ using api_slim.src.Models;
 
 namespace api_slim.src.Shared.DTOs
 {
-    public class UpdateAccreditedNetworkDTO
+    public class UpdateAccreditedNetworkDTO : Request
     {
         public string Id { get; set; } = string.Empty;            
         public string CNPJ { get; set; } = string.Empty;        
@@ -19,5 +19,6 @@ namespace api_slim.src.Shared.DTOs
         public Address Address { get; set; } = new Address();
         public string BillingId { get; set; } = string.Empty;
         public CreateAccreditedNetworkResponsibleDTO Responsible { get; set; } = new();
+        public string Justification { get; set; } = string.Empty;
     }
 }

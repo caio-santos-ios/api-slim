@@ -48,6 +48,9 @@ namespace api_slim.src.Models
         
         [BsonElement("responsible")]
         public AccreditedNetworkResponsible Responsible { get; set; } = new();
+        
+        [BsonElement("justification")]
+        public string Justification { get; set; } = string.Empty;
     }
     
     public class AccreditedNetworkResponsible

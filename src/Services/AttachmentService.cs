@@ -136,7 +136,7 @@ namespace api_slim.src.Services
                 Action = "Atualização",
                 Collection = "attachment",
                 Description = $"Atualização Anexo {response.Data.Description} - Aba: {response.Data.Type}",
-                CreatedBy = request.CreatedBy,
+                CreatedBy = request.UpdatedBy,
                 Parent = response.Data.Parent,
                 ParentId = response.Data.ParentId                 
             });

@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class AccreditedNetworkService(IAccreditedNetworkRepository accreditedNetwork, IAddressRepository addressRepository, IMapper _mapper) : IAccreditedNetworkService
+    public class AccreditedNetworkService(IAccreditedNetworkRepository accreditedNetwork, IAddressRepository addressRepository, IMapper _mapper, ILogRepository logRepository) : IAccreditedNetworkService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -82,6 +82,16 @@ namespace api_slim.src.Services
                 if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Rede Credenciada.");
             };
 
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Criação",
+                Collection = "accredited-network",
+                Description = $"Criação Rede Credenciada {response.Data.CorporateName}",
+                CreatedBy = request.CreatedBy,
+                Parent = "accredited-network",
+                ParentId = response.Data.Id                 
+            });
+
             return new(response.Data, 201, "Rede Credenciada criado com sucesso.");
         }
         catch
@@ -104,7 +114,7 @@ namespace api_slim.src.Services
             accredited.CreatedAt = accreditedResponse.Data.CreatedAt;
 
             ResponseApi<AccreditedNetwork?> response = await accreditedNetwork.UpdateAsync(accredited);
-            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
             if(!string.IsNullOrEmpty(request.Address.Id))
             {
@@ -140,6 +150,47 @@ namespace api_slim.src.Services
                 if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Rede Credenciada.");
             };
 
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "accredited-network",
+                Description = $"Atualização Rede Credenciada {response.Data.CorporateName}",
+                CreatedBy = request.UpdatedBy,
+                Parent = "accredited-network",
+                ParentId = response.Data.Id                 
+            });
+
+            return new(response.Data, 201, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<AccreditedNetwork?>> UpdateStatusAsync(UpdateAccreditedNetworkDTO request)
+    {
+        try
+        {
+            ResponseApi<AccreditedNetwork?> accreaditedNetwork = await accreditedNetwork.GetByIdAsync(request.Id);
+            if(accreaditedNetwork.Data is null) return new(null, 404, "Falha ao atualizar");
+            
+            accreaditedNetwork.Data.UpdatedAt = DateTime.UtcNow;
+            accreaditedNetwork.Data.Justification = accreaditedNetwork.Data.Active ? request.Justification : "";
+            accreaditedNetwork.Data.Active = !accreaditedNetwork.Data.Active;
+
+            ResponseApi<AccreditedNetwork?> response = await accreditedNetwork.UpdateAsync(accreaditedNetwork.Data);
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "accredited-network",
+                Description = accreaditedNetwork.Data.Active ? $"Ativou Rede Credenciada {response.Data.CorporateName}" : $"Inativou Rede Credenciada {response.Data.CorporateName}",
+                CreatedBy = request.UpdatedBy,
+                Parent = "accredited-network",
+                ParentId = response.Data.Id                 
+            });
+            
             return new(response.Data, 201, "Atualizado com sucesso");
         }
         catch
@@ -150,12 +201,23 @@ namespace api_slim.src.Services
     #endregion
     
     #region DELETE
-    public async Task<ResponseApi<AccreditedNetwork>> DeleteAsync(string id)
+    public async Task<ResponseApi<AccreditedNetwork>> DeleteAsync(string id, string userId)
     {
         try
         {
             ResponseApi<AccreditedNetwork> accredited = await accreditedNetwork.DeleteAsync(id);
-            if(!accredited.IsSuccess) return new(null, 400, accredited.Message);
+            if(!accredited.IsSuccess || accredited.Data is null) return new(null, 400, accredited.Message);
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Exclusão",
+                Collection = "accredited-network",
+                Description = $"Exclusão Rede Credenciada {accredited.Data.CorporateName}",
+                CreatedBy = userId,
+                Parent = "accredited-network",
+                ParentId = accredited.Data.Id                 
+            });
+
             return new(null, 204, "Excluído com sucesso");
         }
         catch

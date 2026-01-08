@@ -88,7 +88,7 @@ namespace api_slim.src.Services
                 Action = "Atualização",
                 Collection = "contact",
                 Description = $"Atualização Contato {response.Data.Name} - {response.Data.Phone}",
-                CreatedBy = request.CreatedBy,
+                CreatedBy = request.UpdatedBy,
                 Parent = response.Data.Parent,
                 ParentId = response.Data.ParentId                 
             });

@@ -2,7 +2,7 @@ using api_slim.src.Models;
 
 namespace api_slim.src.Shared.DTOs
 {
-    public class CreateAccreditedNetworkDTO
+    public class CreateAccreditedNetworkDTO : Request
     {        
         public string CNPJ { get; set; } = string.Empty;        
         public string TradeName { get; set; } = string.Empty;

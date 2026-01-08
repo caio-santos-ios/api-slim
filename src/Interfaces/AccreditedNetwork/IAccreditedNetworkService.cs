@@ -11,6 +11,7 @@ namespace api_slim.src.Interfaces
     Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
     Task<ResponseApi<AccreditedNetwork?>> CreateAsync(CreateAccreditedNetworkDTO request);
     Task<ResponseApi<AccreditedNetwork?>> UpdateAsync(UpdateAccreditedNetworkDTO request);
-    Task<ResponseApi<AccreditedNetwork>> DeleteAsync(string id);
+    Task<ResponseApi<AccreditedNetwork?>> UpdateStatusAsync(UpdateAccreditedNetworkDTO request);
+    Task<ResponseApi<AccreditedNetwork>> DeleteAsync(string id, string userId);
 }
 }

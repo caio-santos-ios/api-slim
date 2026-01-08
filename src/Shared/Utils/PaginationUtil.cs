@@ -117,7 +117,14 @@ namespace api_slim.src.Shared.Utils
 
                             if (logic == "and")
                             {
-                                pipelineFilter.Add(field, valueDt);
+                                if (pipelineFilter.Contains(field))
+                                {
+                                    pipelineFilter[field].AsBsonDocument.Add(valueDt);
+                                }
+                                else
+                                {
+                                    pipelineFilter.Add(field, valueDt);
+                                }
                             };
 
                             if (logic == "or")
