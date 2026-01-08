@@ -9,6 +9,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Plan> pagination);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<Plan?>> GetByIdAsync(string id);
+        Task<ResponseApi<long?>> GetNextCodeAsync();
         Task<int> GetCountDocumentsAsync(PaginationUtil<Plan> pagination);
         Task<ResponseApi<Plan?>> CreateAsync(Plan plan);
         Task<ResponseApi<Plan?>> UpdateAsync(Plan plan);

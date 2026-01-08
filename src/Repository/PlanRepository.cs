@@ -127,6 +127,18 @@ namespace api_slim.src.Repository
         }
     }
     
+    public async Task<ResponseApi<long?>> GetNextCodeAsync()
+    {
+        try
+        {
+            long code = await context.Plans.Find(x => true).CountDocumentsAsync() + 1;
+            return new(code);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Items");
+        }
+    }
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<Plan> pagination)
     {
         List<BsonDocument> pipeline = new()

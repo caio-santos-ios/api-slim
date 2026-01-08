@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
@@ -6,7 +5,6 @@ using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
-using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
@@ -55,6 +53,9 @@ namespace api_slim.src.Services
                     plan.ServiceModuleIds = request.ListServiceModuleIds.Split(",").Select(x => x).ToList();
                 }
 
+                ResponseApi<long?> code = await planRepository.GetNextCodeAsync();
+                plan.Code = code.Data.ToString()!.PadLeft(6, '0');
+
                 ResponseApi<Plan?> response = await planRepository.CreateAsync(plan);
 
                 if(request.Image is not null && response.Data is not null)
@@ -62,22 +63,6 @@ namespace api_slim.src.Services
                     response.Data.Image = await cloudinaryHandler.UploadAttachment("plan", request.Image);
                     await planRepository.UpdateAsync(response.Data);
                 }
-
-                // if(!string.IsNullOrEmpty(request.ServiceModuleIds))
-                // {
-                //     List<string> listId = request.ServiceModuleIds.Split(",").Select(x => x).ToList();
-                //     foreach (string serviceModuleId in listId)
-                //     {
-                //         ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(serviceModuleId);
-                //         if(serviceModule.Data is not null)
-                //         {
-                //             serviceModule.Data.PlanId = plan.Id;
-                //             serviceModule.Data.UpdatedAt = DateTime.UtcNow;
-                            
-                //             await serviceModuleRepository.UpdateAsync(serviceModule.Data);
-                //         }
-                //     };
-                // };
 
                 if(response.Data is null) return new(null, 400, "Falha ao criar plano.");
                 return new(response.Data, 201, "Plano criado com sucesso.");
@@ -101,6 +86,8 @@ namespace api_slim.src.Services
                 plan.UpdatedAt = DateTime.UtcNow;
                 plan.CreatedAt = planResponse.Data.CreatedAt;
                 plan.Image = planResponse.Data.Image;
+                plan.Code = planResponse.Data.Code;
+                
                 if(!string.IsNullOrEmpty(request.ListServiceModuleIds))
                 {
                     plan.ServiceModuleIds = request.ListServiceModuleIds.Split(",").Select(x => x).ToList();

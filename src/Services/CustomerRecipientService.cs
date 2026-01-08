@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace api_slim.src.Services
 {
-    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IMapper _mapper, ILogRepository logRepository) : ICustomerRecipientService
+    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository) : ICustomerRecipientService
 {
     HttpClient client = new();
     private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -82,6 +82,54 @@ namespace api_slim.src.Services
             requestRapidoc.Headers.Add("clientId", clientId);
             requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
+            string typePlan = "G";
+            bool psicologia = false;
+            bool especialista = false;
+
+            ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
+            if(plan.Data is not null)
+            {
+                ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
+                if(serviceModule.Data is not null) 
+                {
+                    foreach (ServiceModule module in serviceModule.Data!)
+                    {
+                        if(module.Name.Equals("Bem + Cuidado"))
+                        {
+                            especialista = true;
+                        }
+
+                        if(module.Name.Equals("Bem + Papo"))
+                        {
+                            psicologia = true;
+                        }
+                    }
+                }
+            }
+
+            if(psicologia || especialista) 
+            {
+                if(psicologia && especialista)
+                {
+                    typePlan = "GSP";
+                }
+                else 
+                {
+                    if(psicologia)
+                    {
+                        typePlan = "GP";
+                    }
+                    else 
+                    {
+                        typePlan = "GS";
+                    }
+                }
+            }
+            else
+            {
+                typePlan = "G";
+            };
+
             var beneficiarios = new[]
             {
                 new {
@@ -93,7 +141,7 @@ namespace api_slim.src.Services
                     address = $"{request.Address.Street}, {request.Address.Number}",
                     city = request.Address.City,
                     state = "",
-                    serviceType = "GSP"
+                    serviceType = typePlan
                 }
             };
 
@@ -156,12 +204,60 @@ namespace api_slim.src.Services
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customer);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
-
+            System.Console.WriteLine(response.Data!.RapidocId);
             var requestRapidoc = new HttpRequestMessage(HttpMethod.Put, $"{uri}/beneficiaries/{response.Data!.RapidocId}");
 
             requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
             requestRapidoc.Headers.Add("clientId", clientId);
             requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            string typePlan = "G";
+            bool psicologia = false;
+            bool especialista = false;
+
+            ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
+            if(plan.Data is not null)
+            {
+                ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
+                if(serviceModule.Data is not null) 
+                {
+                    foreach (ServiceModule module in serviceModule.Data!)
+                    {
+                        if(module.Name.Equals("Bem + Cuidado"))
+                        {
+                            especialista = true;
+                        }
+
+                        if(module.Name.Equals("Bem + Papo"))
+                        {
+                            psicologia = true;
+                        }
+                    }
+                }
+            }
+
+            if(psicologia || especialista) 
+            {
+                if(psicologia && especialista)
+                {
+                    typePlan = "GSP";
+                }
+                else 
+                {
+                    if(psicologia)
+                    {
+                        typePlan = "GP";
+                    }
+                    else 
+                    {
+                        typePlan = "GS";
+                    }
+                }
+            }
+            else
+            {
+                typePlan = "G";
+            };
 
             var beneficiarios = new 
             {
@@ -174,7 +270,7 @@ namespace api_slim.src.Services
                 city = request.Address.City,
                 state = "",
                 paymentType = "S",
-                serviceType = "GSP"
+                serviceType = typePlan
             };
 
             string jsonPayload = JsonSerializer.Serialize(beneficiarios);
@@ -186,11 +282,9 @@ namespace api_slim.src.Services
             requestRapidoc.Content = content;
 
             var responseRapidoc = await client.SendAsync(requestRapidoc);
-            
-            responseRapidoc.EnsureSuccessStatusCode();
-            string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
-            dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
 
+            await responseRapidoc.Content.ReadAsStringAsync();
+            
             if(!string.IsNullOrEmpty(request.Address.Id))
             {            
                 ResponseApi<Address?> addressResponse = await addressRepository.UpdateAsync(request.Address);

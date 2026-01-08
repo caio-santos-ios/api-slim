@@ -101,6 +101,10 @@ namespace api_slim.src.Services
         try
         {
             ServiceModule serviceModule = _mapper.Map<ServiceModule>(request);
+
+            ResponseApi<long?> code = await serviceModuleRepository.GetNextCodeAsync();
+            serviceModule.Code = code.Data.ToString()!.PadLeft(6, '0');
+
             ResponseApi<ServiceModule?> response = await serviceModuleRepository.CreateAsync(serviceModule);
             if(response.Data is null) return new(null, 400, "Falha ao criar Módulo de Serviço.");
             
@@ -131,6 +135,7 @@ namespace api_slim.src.Services
             serviceModule.UpdatedAt = DateTime.UtcNow;
             serviceModule.CreatedAt = serviceModuleResponse.Data.CreatedAt;
             serviceModule.Image = serviceModuleResponse.Data.Image;
+            serviceModule.Code = serviceModuleResponse.Data.Code;
 
             ResponseApi<ServiceModule?> response = await serviceModuleRepository.UpdateAsync(serviceModule);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
