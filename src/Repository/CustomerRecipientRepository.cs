@@ -28,6 +28,7 @@ namespace api_slim.src.Repository
 
                 MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
                 MongoUtil.Lookup("customers", ["$contractorId"], ["$_id"], "_customer", [["deleted", false]], 1),
+                MongoUtil.Lookup("plans", ["$planId"], ["$_id"], "_plan", [["deleted", false]], 1),
                 
                 new("$match", pagination.PipelineFilter),
                 
@@ -37,11 +38,13 @@ namespace api_slim.src.Repository
                 {
                     {"addressId", MongoUtil.First("_address._id")}
                 }),
+
                 new("$addFields", new BsonDocument
                 {
                     {"type", MongoUtil.First("_customer.type")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
                     {"genderDescription", MongoUtil.First("_gender.description")},
+                    {"planName", MongoUtil.First("_plan.name")},
                     {"address", new BsonDocument
                         {
                             {"id", MongoUtil.ToString("$addressId")},
@@ -62,6 +65,7 @@ namespace api_slim.src.Repository
                     {"_id", 0}, 
                     {"_address", 0}, 
                     {"_gender", 0}, 
+                    {"_plan", 0}, 
                 }),
                 new("$sort", pagination.PipelineSort),
                 new("$skip", pagination.Skip),
