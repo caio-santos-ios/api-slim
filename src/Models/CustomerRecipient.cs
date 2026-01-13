@@ -72,5 +72,8 @@ namespace api_slim.src.Models
 
         [BsonElement("justification")]
         public string Justification { get; set; } = string.Empty;
+        
+        [BsonElement("rason")]
+        public string Rason { get; set; } = string.Empty;
     } 
 }

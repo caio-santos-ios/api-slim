@@ -44,6 +44,19 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
+    public async Task<ResponseApi<dynamic?>> GetByRapidocIdAsync(string rapidocId)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customer = await customerRepository.GetByRapidocIdAsync(rapidocId);
+            if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
+            return new(customer.Data);
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
 
     public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
     {
@@ -325,6 +338,7 @@ namespace api_slim.src.Services
             
             customerResponse.Data.UpdatedAt = DateTime.UtcNow;
             customerResponse.Data.Justification = customerResponse.Data.Active ? request.Justification : "";
+            customerResponse.Data.Rason = customerResponse.Data.Active ? request.Rason : "";
             customerResponse.Data.Active = !customerResponse.Data.Active;
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);

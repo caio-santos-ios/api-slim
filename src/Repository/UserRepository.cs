@@ -45,6 +45,7 @@ namespace api_slim.src.Repository
                         {"email", 1},
                         {"admin", 1},
                         {"blocked", 1},
+                        {"createdAt", 1},
                         {"photo", 1}
                     }),
                     new("$sort", pagination.PipelineSort),

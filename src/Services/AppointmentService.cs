@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Utils;
+using MongoDB.Bson;
 using Newtonsoft.Json;
 
 namespace api_slim.src.Services
@@ -14,11 +16,15 @@ namespace api_slim.src.Services
         private readonly string token = Environment.GetEnvironmentVariable("TOKEN_RAPIDOC") ?? "";
 
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
         {
             try
             {
-                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments");
+                string query = "";
+                
+                request.QueryParams.TryGetValue("status", out string? status);
+                System.Console.WriteLine(status);
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
                 
@@ -26,13 +32,15 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                response.EnsureSuccessStatusCode();
+                // response.EnsureSuccessStatusCode();
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
-                {                    
+                {          
+                    BsonDocument bson = BsonDocument.Parse(item.ToString());
+   
                     list.Add(new {
                         id = item.uuid.ToString(),                
                         recipientDescription = item.beneficiary.name.ToString(),
@@ -42,13 +50,15 @@ namespace api_slim.src.Services
                         endTime = item.detail.to.ToString(),
                         specialty = item.specialty.name.ToString(),
                         professional = item.professional.name.ToString(),
-                        status = item.status.ToString()
+                        status = item.status.ToString(),
+                        beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
                     });                            
                 }
                 return new(list);
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }

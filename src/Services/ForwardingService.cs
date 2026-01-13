@@ -3,6 +3,7 @@ using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
+using MongoDB.Bson;
 using Newtonsoft.Json;
 
 namespace api_slim.src.Services
@@ -15,11 +16,17 @@ namespace api_slim.src.Services
         private readonly string token = Environment.GetEnvironmentVariable("TOKEN_RAPIDOC") ?? "";
 
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
         {
             try
             {
-                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments");
+                string query = "";
+                
+                request.QueryParams.TryGetValue("status", out string? status);
+                
+                if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
+
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
                 
@@ -33,18 +40,19 @@ namespace api_slim.src.Services
 
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
-                {                    
+                {    
+                    BsonDocument bson = BsonDocument.Parse(item.ToString());
+
                     list.Add(new {
                         id = item.uuid.ToString(),                
                         recipientDescription = item.beneficiary.name.ToString(),
+                        recipienId = item.beneficiary.uuid.ToString(),
                         cpf = item.beneficiary.cpf.ToString(),
-                        date = item.detail.date.ToString(),
-                        startTime = item.detail.from.ToString(),
-                        endTime = item.detail.to.ToString(),
-                        specialty = item.specialty.name.ToString(),
-                        professional = item.professional.name.ToString(),
-                        status = item.status.ToString()
-                    });                            
+                        status = item.status.ToString(),
+                        createdAt = bson.Contains("createdAt") ? bson["createdAt"].ToString() : "",
+                        urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
+                        specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
+                    });                 
                 }
                 return new(list);
             }
@@ -89,9 +97,8 @@ namespace api_slim.src.Services
             try
             {
                 DateTime date = DateTime.UtcNow;
-                DateTime endDate = date.AddMonths(2);
-
-                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/specialty-availability?specialtyUuid={specialtyUuid}&dateInitial=30/12/2025&dateFinal=30/12/2025&beneficiaryUuid={beneficiaryUuid}");
+                DateTime endDate = date.AddMonths(12);
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/specialty-availability?specialtyUuid={specialtyUuid}&dateInitial={date.ToString("dd/MM/yyyy")}&dateFinal={endDate.ToString("dd/MM/yyyy")}&beneficiaryUuid={beneficiaryUuid}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
                 

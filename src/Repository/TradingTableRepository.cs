@@ -126,6 +126,7 @@ namespace api_slim.src.Repository
                     {"_id", 0}, 
                     {"id", new BsonDocument("$toString", "$_id")},
                     {"name", 1},
+                    {"accreditedNetworkId", 1},
                     {"createdAt", 1},
                     {"items", 1}
                 }),

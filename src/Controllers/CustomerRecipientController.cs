@@ -27,6 +27,14 @@ public class CustomerRecipientController(ICustomerRecipientService service) : Co
         ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
+    
+    [Authorize]
+    [HttpGet("rapidoc/{id}")]
+    public async Task<IActionResult> GetByRapidocIdAsync(string id)
+    {
+        ResponseApi<dynamic?> response = await service.GetByRapidocIdAsync(id);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
 
     [Authorize]
     [HttpGet("select")]

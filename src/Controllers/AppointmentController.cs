@@ -14,7 +14,7 @@ namespace api_slim.src.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            ResponseApi<List<dynamic>> response = await service.GetAllAsync();
+            ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 

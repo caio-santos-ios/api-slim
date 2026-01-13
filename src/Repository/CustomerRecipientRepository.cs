@@ -122,6 +122,18 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
+    public async Task<ResponseApi<CustomerRecipient?>> GetByRapidocIdAsync(string rapidoc)
+    {
+        try
+        {
+            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.RapidocId == rapidoc && !x.Deleted).FirstOrDefaultAsync();
+            return new(customerRecipient);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
     public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination)
     {
         try
