@@ -36,9 +36,11 @@ namespace api_slim.src.Repository
                         {"responsiblePayment", 1},
                         {"status", 1},
                         {"value", 1},
+                        {"hour", 1},
                         {"accreditedNetworkDescription", MongoUtil.First("_accredited_network.corporateName")},
                         {"serviceModuleDescription", MongoUtil.First("_service_module.name")},
-                        {"recipientDescription", MongoUtil.First("_recipient.name")}
+                        {"recipientDescription", MongoUtil.First("_recipient.name")},
+                        {"recipientCpf", MongoUtil.First("_recipient.cpf")},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
