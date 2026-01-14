@@ -23,7 +23,11 @@ namespace api_slim.src.Services
                 string query = "";
                 
                 request.QueryParams.TryGetValue("status", out string? status);
-                System.Console.WriteLine(status);
+                request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
+                
+                if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
+                if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
+
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
@@ -56,9 +60,8 @@ namespace api_slim.src.Services
                 }
                 return new(list);
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -98,7 +101,7 @@ namespace api_slim.src.Services
             try
             {
                 DateTime date = DateTime.UtcNow;
-                DateTime endDate = date.AddMonths(2);
+                DateTime endDate = date.AddMonths(12);
                 
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/specialty-availability?specialtyUuid={specialtyUuid}&dateInitial={date.ToString("dd/MM/yyyy")}&dateFinal={endDate.ToString("dd/MM/yyyy")}&beneficiaryUuid={beneficiaryUuid}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");

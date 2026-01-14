@@ -186,6 +186,18 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
+    public async Task<ResponseApi<CustomerRecipient?>> GetByCPFImportAsync(string cpf, string contractorId)
+    {
+        try
+        {
+            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId).FirstOrDefaultAsync();
+            return new(customerRecipient);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination)
     {
         List<BsonDocument> pipeline = new()

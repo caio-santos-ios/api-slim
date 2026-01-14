@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
-using api_slim.src.Shared.Utils;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -15,7 +14,7 @@ namespace api_slim.src.Services
         private readonly string clientId = Environment.GetEnvironmentVariable("CLIENT_ID_RAPIDOC") ?? "";
         private readonly string token = Environment.GetEnvironmentVariable("TOKEN_RAPIDOC") ?? "";
 
-        #region READ
+        #region  READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
         {
             try
@@ -23,8 +22,10 @@ namespace api_slim.src.Services
                 string query = "";
                 
                 request.QueryParams.TryGetValue("status", out string? status);
+                request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
                 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
+                if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
 
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
@@ -34,7 +35,7 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                response.EnsureSuccessStatusCode();
+                // response.EnsureSuccessStatusCode();
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 

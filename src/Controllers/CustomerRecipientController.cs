@@ -5,12 +5,14 @@ using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ClosedXML.Excel;
+using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Controllers
 {
 [Route("api/customer-recipients")]
 [ApiController]
-public class CustomerRecipientController(ICustomerRecipientService service) : ControllerBase
+public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository) : ControllerBase
 {
     [Authorize]
     [HttpGet]
@@ -79,6 +81,97 @@ public class CustomerRecipientController(ICustomerRecipientService service) : Co
         ResponseApi<CustomerRecipient?> response = await service.UpdateStatusAsync(customer);
 
         return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
+    [HttpPut("import")]
+    public async Task<IActionResult> Import([FromForm] ImportCustomerRecipientDTO request)
+    {
+        if (request.File == null || request.File.Length == 0) return BadRequest("Arquivo não selecionado.");
+
+        using (var stream = new MemoryStream())
+        {
+            await request.File.CopyToAsync(stream);
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var worksheet = workbook.Worksheet("NEXUS");
+                var rows = worksheet.RangeUsed()!.RowsUsed().Skip(1); 
+                string holderId = "";
+                foreach (var row in rows)
+                {
+                    string cpf = row.Cell(5).GetValue<string>();
+                    var exited = await repository.GetByCPFImportAsync(cpf, request.ContractorId);
+
+                    if(exited.Data is null) 
+                    {                        
+                        string createdAt = row.Cell(2).GetValue<string>(); 
+                        DateTime dateCreatedAt = createdAt.Length == 19 ? DateTime.Parse(createdAt) : DateTime.UtcNow;
+                        
+                        string deletedAt = row.Cell(2).GetValue<string>(); 
+                        DateTime? dateDeletedAt = !string.IsNullOrEmpty(deletedAt) && deletedAt.Length == 19 ? DateTime.Parse(deletedAt) : null;
+                        
+                        string strDateOfBirth = row.Cell(7).GetValue<string>(); 
+                        DateTime? dateOfBirth = !string.IsNullOrEmpty(strDateOfBirth) && strDateOfBirth.Length == 19 ? DateTime.Parse(strDateOfBirth) : null;
+
+                        if(row.Cell(14).GetValue<string>() == "Titular")
+                        {
+                            var code = await repository.GetNextCodeAsync();
+
+                            CustomerRecipient customer = new ()
+                            {
+                                Code = code.Data.ToString()!.PadLeft(6, '0'),
+                                Active = row.Cell(1).GetValue<string>() == "ATIVO",
+                                CreatedAt = dateCreatedAt,
+                                DeletedAt = dateDeletedAt,
+                                Deleted = row.Cell(1).GetValue<string>() == "INATIVO",
+                                Name = row.Cell(4).GetValue<string>(),
+                                Cpf = row.Cell(5).GetValue<string>(),
+                                Rg = row.Cell(6).GetValue<string>(),
+                                DateOfBirth = dateOfBirth,
+                                Phone = row.Cell(8).GetValue<string>(),
+                                Email = row.Cell(9).GetValue<string>(),
+                                Bond = row.Cell(14).GetValue<string>(),
+                                EffectiveDate = dateCreatedAt,
+                                ContractorId = request.ContractorId
+                            };
+
+                            await repository.CreateAsync(customer);
+                            holderId = customer.Id;
+                        };
+
+                        if(row.Cell(14).GetValue<string>() == "Dependente")
+                        {
+                            string strDateOfBirthRece = row.Cell(18).GetValue<string>(); 
+                            DateTime? dateOfBirthRece = !string.IsNullOrEmpty(strDateOfBirthRece) ? DateTime.Parse(strDateOfBirthRece) : null;
+                            var newCode = await repository.GetNextCodeAsync();
+
+                            CustomerRecipient customerRecipient = new ()
+                            {
+                                Code = newCode.Data.ToString()!.PadLeft(6, '0'),
+                                Active = row.Cell(1).GetValue<string>() == "ATIVO",
+                                CreatedAt = dateCreatedAt,
+                                DeletedAt = dateDeletedAt,
+                                Deleted = row.Cell(1).GetValue<string>() == "INATIVO",
+                                Name = row.Cell(15).GetValue<string>(),
+                                Cpf = row.Cell(16).GetValue<string>(),
+                                Rg = row.Cell(17).GetValue<string>(),
+                                DateOfBirth = dateOfBirthRece,
+                                Phone = row.Cell(19).GetValue<string>(),
+                                Email = row.Cell(9).GetValue<string>(),
+                                Bond = row.Cell(14).GetValue<string>(),
+                                EffectiveDate = dateCreatedAt,
+                                HolderId = holderId,
+                                ContractorId = request.ContractorId
+                            };
+
+                            await repository.CreateAsync(customerRecipient);
+                        }
+                    }
+                }
+            }
+        }
+
+        return StatusCode(200, new { Message = "Importação feita com sucesso!" });
     }
     
     [Authorize]

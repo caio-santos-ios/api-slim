@@ -16,6 +16,9 @@ namespace api_slim.src.Models
         [BsonElement("contractorId")]
         public string ContractorId { get; set; } = string.Empty; 
 
+        [BsonElement("holderId")]
+        public string HolderId { get; set; } = string.Empty; 
+
         [BsonElement("documentContract")]
         public string DocumentContract { get; set; } = string.Empty; // Mapeado do campo "CPF"
 
@@ -48,7 +51,7 @@ namespace api_slim.src.Models
 
         [BsonElement("notes")]
         public string Notes { get; set; } = string.Empty;
-       
+
         [BsonElement("bond")]
         public string Bond { get; set; } = string.Empty;
         
@@ -75,5 +78,8 @@ namespace api_slim.src.Models
         
         [BsonElement("rason")]
         public string Rason { get; set; } = string.Empty;
+        
+        [BsonElement("imported")]
+        public bool Imported { get; set; } = false;
     } 
 }
