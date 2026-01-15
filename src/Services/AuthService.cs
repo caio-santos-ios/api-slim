@@ -14,7 +14,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, MailHandler mailHandler) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, MailHandler mailHandler) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -32,6 +32,44 @@ namespace api_slim.src.Services
                 if(!isValid) return new(null, 400, "Dados incorretos");
 
                 return new(new() {Token = GenerateJwtToken(user), RefreshToken = GenerateJwtToken(user, true) , Name = user.Name, Id = user.Id, Admin = user.Admin, Modules = user.Modules, Photo = user.Photo});
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
+            }
+        }
+        public async Task<ResponseApi<AuthAppResponse>> LoginAppAsync(LoginAppDTO request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Cpf)) return new(null, 400, "Cpf é obrigatório");
+                if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
+                
+                ResponseApi<CustomerRecipient?> response = await customerRecipientRepository.GetByDocumentAsync(request.Cpf);
+                if(response.Data is null) return new(null, 400, "Dados incorretos");
+                CustomerRecipient customer = response.Data!;
+
+                if(customer is null) return new(null, 400, "Dados incorretos");
+
+                User user = new();
+
+                if(response.Data.FirstAccess)
+                {
+                    string document = customer.Cpf.Replace(".", "").Replace("-", "").Substring(0, 6);
+                    if(document != request.Password) return new(null, 400, "Dados incorretos");
+
+                    user.Id = customer.Id;
+                    user.Email = customer.Email;
+                    user.Name = customer.Name;
+                    user.Photo = customer.Photo;
+                } 
+                else
+                {
+                    bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+                    if(!isValid) return new(null, 400, "Dados incorretos");
+                }
+
+                return new(new() {Token = GenerateJwtToken(user), RefreshToken = GenerateJwtToken(user, true) , Name = user.Name, Photo = user.Photo});
             }
             catch
             {

@@ -81,5 +81,14 @@ namespace api_slim.src.Models
         
         [BsonElement("imported")]
         public bool Imported { get; set; } = false;
+        
+        [BsonElement("firstAccess")]
+        public bool FirstAccess { get; set; } = true;
+        
+        [BsonElement("password")]
+        public string Password { get; set; } = string.Empty;
+       
+        [BsonElement("photo")]
+        public string Photo { get; set; } = string.Empty;
     } 
 }

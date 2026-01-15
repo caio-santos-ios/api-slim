@@ -23,6 +23,16 @@ namespace api_slim.src.Controllers
         }
         
         [HttpPost]
+        [Route("app/login")]
+        public async Task<IActionResult> LoginAppAsync([FromBody] LoginAppDTO request)
+        {
+            if (request == null) return BadRequest("Dados inválidos");
+
+            ResponseApi<AuthAppResponse> response = await authService.LoginAppAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpPost]
         [Route("refresh-token")]
         public async Task<IActionResult> RefreshTokenAsync()
         {
