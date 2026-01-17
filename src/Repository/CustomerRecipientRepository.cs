@@ -68,8 +68,8 @@ namespace api_slim.src.Repository
                     {"_plan", 0}, 
                 }),
                 new("$sort", pagination.PipelineSort),
-                new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit)
+                // new("$skip", pagination.Skip),
+                // new("$limit", pagination.Limit)
             };
 
             List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();

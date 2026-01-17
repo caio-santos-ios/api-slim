@@ -44,8 +44,8 @@ namespace api_slim.src.Repository
                     {"_recipient", 0},                     
                 }),
                 new("$sort", pagination.PipelineSort),
-                new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit),
+                // new("$skip", pagination.Skip),
+                // new("$limit", pagination.Limit),
 
             };
 
