@@ -26,7 +26,38 @@ namespace api_slim.src.Repository
                     MongoUtil.Lookup("customer_recipients", ["$recipientId"], ["$_id"], "_recipient", [["deleted", false]], 1),
                     MongoUtil.Lookup("accredited_networks", ["$accreditedNetworkId"], ["$_id"], "_accredited_network", [["deleted", false]], 1),
                     MongoUtil.Lookup("service_modules", ["$serviceModuleId"], ["$_id"], "_service_module", [["deleted", false]], 1),
-
+                    MongoUtil.Lookup("professionals", ["$professionalId"], ["$_id"], "_professional", [["deleted", false]], 1),
+                    new("$addFields", new BsonDocument {
+                        {"accreditedNetworkId",  MongoUtil.First("_accredited_network._id")}
+                    }),
+                    new("$addFields", new BsonDocument {
+                        {"strAccreditedNetworkId",  MongoUtil.ToString("$accreditedNetworkId")}
+                    }),
+                    MongoUtil.Lookup("professionals", ["$professionalId"], ["$_id"], "_professional", [["deleted", false]], 1),
+                    MongoUtil.Lookup("trading_tables", ["$strAccreditedNetworkId"], ["$accreditedNetworkId"], "_tradingTables", [["deleted", false]], 1),
+                    new("$lookup", new BsonDocument
+                    {
+                        { "from", "procedures" },
+                        { "let", new BsonDocument("pIds", "$procedureIds") },
+                        { "pipeline", new BsonArray
+                            {
+                                // 1. Filtra os procedimentos comparando strings
+                                new BsonDocument("$match", new BsonDocument("$expr", 
+                                    new BsonDocument("$in", new BsonArray 
+                                    { 
+                                        new BsonDocument("$toString", "$_id"), // Converte ObjectId p/ String
+                                        "$$pIds"                               
+                                    })
+                                )),
+                                // 2. Opcional: Já deixa o 'id' pronto como string dentro de cada procedimento
+                                new BsonDocument("$addFields", new BsonDocument
+                                {
+                                    { "id", new BsonDocument("$toString", "$_id") }
+                                })
+                            }
+                        },
+                        { "as", "proceduresDetails" }
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0}, 
@@ -38,9 +69,14 @@ namespace api_slim.src.Repository
                         {"value", 1},
                         {"hour", 1},
                         {"accreditedNetworkDescription", MongoUtil.First("_accredited_network.corporateName")},
+                        {"strAccreditedNetworkId", 1},
+                        {"proceduresItem", MongoUtil.First("_accredited_network.items")},
                         {"serviceModuleDescription", MongoUtil.First("_service_module.name")},
                         {"recipientDescription", MongoUtil.First("_recipient.name")},
                         {"recipientCpf", MongoUtil.First("_recipient.cpf")},
+                        {"professionalName", MongoUtil.First("_professional.name")},
+                        {"procedures", "$proceduresDetails"},
+                        {"tradingTables", MongoUtil.First("_tradingTables.items")}
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -89,7 +125,6 @@ namespace api_slim.src.Repository
                         },
                         { "as", "_procedures" }
                     }),
-    
                     new("$addFields", new BsonDocument {
                         {"id", new BsonDocument("$toString", "$_id")},    
                         {"procedureIds", "$_procedures"}

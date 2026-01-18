@@ -10,6 +10,7 @@ public interface IAccreditedNetworkRepository
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
     Task<ResponseApi<AccreditedNetwork?>> GetByIdAsync(string id);
     Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<AccreditedNetwork> pagination);
+    Task<ResponseApi<long?>> GetNextCodeAsync();
     Task<int> GetCountDocumentsAsync(PaginationUtil<AccreditedNetwork> pagination);
     Task<ResponseApi<AccreditedNetwork?>> CreateAsync(AccreditedNetwork billing);
     Task<ResponseApi<AccreditedNetwork?>> UpdateAsync(AccreditedNetwork billing);

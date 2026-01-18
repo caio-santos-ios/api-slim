@@ -18,16 +18,19 @@ namespace api_slim.src.Models
         
         [BsonElement("serviceModuleId")]
         public string ServiceModuleId {get;set;} = string.Empty; 
+        
+        [BsonElement("professionalId")]
+        public string ProfessionalId {get;set;} = string.Empty; 
 
         [BsonElement("procedureIds")]
         public List<string> ProcedureIds {get;set;} = [];
 
         [BsonElement("date")]
         public DateTime? Date { get; set; }
-       
+
         [BsonElement("hour")]
         public string Hour { get; set; } = string.Empty;
-      
+
         [BsonElement("responsiblePayment")]
         public string ResponsiblePayment { get; set; } = string.Empty;
 

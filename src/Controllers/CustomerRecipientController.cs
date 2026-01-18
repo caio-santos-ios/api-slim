@@ -6,7 +6,6 @@ using api_slim.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ClosedXML.Excel;
-using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Controllers
 {

@@ -23,7 +23,7 @@ namespace api_slim.src.Repository
                 new("$skip", pagination.Skip),
                 new("$limit", pagination.Limit),               
                 
-                 new BsonDocument("$lookup", new BsonDocument
+                new BsonDocument("$lookup", new BsonDocument
                 {
                     { "from", "generic_tables" }, 
                     { "let", new BsonDocument("type", "$type") },
@@ -57,7 +57,7 @@ namespace api_slim.src.Repository
                     },
                     { "as", "_specialty" } 
                 }),
-               
+
                 new BsonDocument("$lookup", new BsonDocument
                 {
                     { "from", "generic_tables" }, 
@@ -72,7 +72,7 @@ namespace api_slim.src.Repository
                     },
                     { "as", "_registration" } 
                 }),
-
+                
                 new BsonDocument("$lookup", new BsonDocument
                 {
                     { "from", "addresses" },
@@ -134,6 +134,35 @@ namespace api_slim.src.Repository
                     {"_address", 0}, 
                     {"_type", 0}, 
                     {"_registration", 0},
+                }),
+                new("$sort", pagination.PipelineSort),
+            };
+
+            List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+            return new(list);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Profissionais");
+        }
+    }
+    
+    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Professional> pagination)
+    {
+        try
+        {
+            List<BsonDocument> pipeline = new()
+            {
+                new("$match", pagination.PipelineFilter),
+                new("$sort", pagination.PipelineSort),
+
+                new("$project", new BsonDocument
+                {
+                    {"_id", 0}, 
+                    {"id", MongoUtil.ToString("$_id")},
+                    {"name", 1}
+
                 }),
                 new("$sort", pagination.PipelineSort),
             };

@@ -9,13 +9,13 @@ namespace api_slim.src.Controllers
 {
     [Route("api/professionals")]
 [ApiController]
-public class ProfessionalController(IProfessionalService professionalService) : ControllerBase
+public class ProfessionalController(IProfessionalService service) : ControllerBase
 {
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        PaginationApi<List<dynamic>> response = await professionalService.GetAllAsync(new(Request.Query));
+        PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
     
@@ -23,7 +23,15 @@ public class ProfessionalController(IProfessionalService professionalService) : 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetByIdAsync(string id)
     {
-        ResponseApi<dynamic?> response = await professionalService.GetByIdAggregateAsync(id);
+        ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
+    [HttpGet("select")]
+    public async Task<IActionResult> GetSelect()
+    {
+        ResponseApi<List<dynamic>> response = await service.GetSelectAsync(new(Request.Query));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
     
@@ -33,7 +41,7 @@ public class ProfessionalController(IProfessionalService professionalService) : 
     {
         if (professional == null) return BadRequest("Dados inválidos.");
 
-        ResponseApi<Professional?> response = await professionalService.CreateAsync(professional);
+        ResponseApi<Professional?> response = await service.CreateAsync(professional);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }
@@ -44,7 +52,7 @@ public class ProfessionalController(IProfessionalService professionalService) : 
     {
         if (professional == null) return BadRequest("Dados inválidos.");
 
-        ResponseApi<Professional?> response = await professionalService.UpdateAsync(professional);
+        ResponseApi<Professional?> response = await service.UpdateAsync(professional);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }
@@ -53,7 +61,7 @@ public class ProfessionalController(IProfessionalService professionalService) : 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        ResponseApi<Professional> response = await professionalService.DeleteAsync(id);
+        ResponseApi<Professional> response = await service.DeleteAsync(id);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }

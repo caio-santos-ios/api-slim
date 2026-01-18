@@ -113,33 +113,36 @@ namespace api_slim.src.Shared.Utils
                             break;
 
                         case "date":
-                            BsonDocument valueDt = new(comparison, Convert.ToDateTime(value));
-
-                            if (logic == "and")
+                            if(key.Contains("gte") || key.Contains("gt") || key.Contains("lte") || key.Contains("lt"))
                             {
-                                if (pipelineFilter.Contains(field))
-                                {
-                                    pipelineFilter[field].AsBsonDocument.Add(valueDt);
-                                }
-                                else
-                                {
-                                    pipelineFilter.Add(field, valueDt);
-                                }
-                            };
+                                BsonDocument valueDt = new(comparison, Convert.ToDateTime(value));
 
-                            if (logic == "or")
-                            {
-                                bool isOrExisted = pipelineFilter.Contains("$or");
-
-                                if (isOrExisted)
+                                if (logic == "and")
                                 {
-                                    pipelineFilter["$or"].AsBsonArray.Add(new BsonDocument(field, valueDt));
-                                }
-                                else
-                                {
-                                    pipelineFilter.Add("$or", new BsonArray { new BsonDocument(field, valueDt) });
+                                    if (pipelineFilter.Contains(field))
+                                    {
+                                        pipelineFilter[field].AsBsonDocument.Add(valueDt);
+                                    }
+                                    else
+                                    {
+                                        pipelineFilter.Add(field, valueDt);
+                                    }
                                 };
-                            };
+
+                                if (logic == "or")
+                                {
+                                    bool isOrExisted = pipelineFilter.Contains("$or");
+
+                                    if (isOrExisted)
+                                    {
+                                        pipelineFilter["$or"].AsBsonArray.Add(new BsonDocument(field, valueDt));
+                                    }
+                                    else
+                                    {
+                                        pipelineFilter.Add("$or", new BsonArray { new BsonDocument(field, valueDt) });
+                                    };
+                                };
+                            }
                             break;
 
                         default:

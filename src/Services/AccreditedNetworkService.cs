@@ -60,6 +60,9 @@ namespace api_slim.src.Services
         try
         {
             AccreditedNetwork accredited = _mapper.Map<AccreditedNetwork>(request);
+            ResponseApi<long?> code = await accreditedNetwork.GetNextCodeAsync();
+            accredited.Code = code.Data.ToString()!.PadLeft(6, '0');
+
             ResponseApi<AccreditedNetwork?> response = await accreditedNetwork.CreateAsync(accredited);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Rede Credenciada.");
@@ -112,6 +115,7 @@ namespace api_slim.src.Services
             AccreditedNetwork accredited = _mapper.Map<AccreditedNetwork>(request);
             accredited.UpdatedAt = DateTime.UtcNow;
             accredited.CreatedAt = accreditedResponse.Data.CreatedAt;
+            accredited.Code = accreditedResponse.Data.Code;
 
             ResponseApi<AccreditedNetwork?> response = await accreditedNetwork.UpdateAsync(accredited);
             if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
