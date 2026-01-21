@@ -8,6 +8,7 @@ public interface ICustomerRecipientRepository
 {
     Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<CustomerRecipient> pagination);
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
+    Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf);
     Task<ResponseApi<CustomerRecipient?>> GetByIdAsync(string id);
     Task<ResponseApi<CustomerRecipient?>> GetByRapidocIdAsync(string rapidoc);
     Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination);

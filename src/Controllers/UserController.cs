@@ -18,7 +18,7 @@ namespace api_slim.src.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             PaginationApi<List<dynamic>> response = await userService.GetAllAsync(new(Request.Query), userId);
-             return StatusCode(response.StatusCode, new { response.Message, response.Result });
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
         
         [Authorize]

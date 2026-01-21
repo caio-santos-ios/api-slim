@@ -4,6 +4,7 @@ using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace api_slim.src.Services
@@ -44,6 +45,148 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
+    public async Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf)
+    {
+        try
+        {
+            ResponseApi<dynamic?> customer = await customerRepository.GetByCPFAggregateAsync(cpf);
+
+            if(customer.Data is not null)
+            {
+                string rapidocId = customer.Data.rapidocId;
+                if(string.IsNullOrEmpty(rapidocId))
+                {
+                    var requestRapidoc = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{cpf.Replace(".", "").Replace("-", "")}");
+
+                    requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
+                    requestRapidoc.Headers.Add("clientId", clientId);
+
+                    var content = new StringContent(string.Empty);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+                    requestRapidoc.Content = content;
+                    var response = await client.SendAsync(requestRapidoc);
+                    response.EnsureSuccessStatusCode();
+
+                    string jsonResponse = await response.Content.ReadAsStringAsync();
+                    dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+
+                    if(result is not null)
+                    {
+                        ResponseApi<CustomerRecipient?> res = await customerRepository.GetByIdAsync(customer.Data.id);
+                        
+                        if(result.success == "true")
+                        {
+                            if(res.Data is not null)
+                            {
+                                res.Data.RapidocId = result.beneficiary.uuid.ToString();
+                                customer.Data.rapidocId = result.beneficiary.uuid.ToString();
+                                await customerRepository.UpdateAsync(res.Data);
+                            }
+                        }
+                        else
+                        {
+                            if(res.Data is not null)
+                            {
+                                var requestRapidocPost = new HttpRequestMessage(HttpMethod.Post, $"{uri}/beneficiaries");
+
+                                requestRapidocPost.Headers.Add("Authorization", $"Bearer {token}");
+                                requestRapidocPost.Headers.Add("clientId", clientId);
+                                requestRapidocPost.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                                string typePlan = "G";
+                                bool psicologia = false;
+                                bool especialista = false;
+
+                                ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(res.Data.PlanId);
+                                if(plan.Data is not null)
+                                {
+                                    ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
+                                    if(serviceModule.Data is not null) 
+                                    {
+                                        foreach (ServiceModule module in serviceModule.Data!)
+                                        {
+                                            if(module.Name.Equals("Bem + Cuidado"))
+                                            {
+                                                especialista = true;
+                                            }
+
+                                            if(module.Name.Equals("Bem + Papo"))
+                                            {
+                                                psicologia = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if(psicologia || especialista) 
+                                {
+                                    if(psicologia && especialista)
+                                    {
+                                        typePlan = "GSP";
+                                    }
+                                    else 
+                                    {
+                                        if(psicologia)
+                                        {
+                                            typePlan = "GP";
+                                        }
+                                        else 
+                                        {
+                                            typePlan = "GS";
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    typePlan = "G";
+                                };
+
+                                ResponseApi<Address> address = await addressRepository.GetByParentIdAsync(customer.Data.id, "customer-recipient");
+                                var beneficiarios = new[]
+                                {
+                                    new {
+                                        name = res.Data.Name,
+                                        cpf = new string(res.Data.Cpf.Where(char.IsDigit).ToArray()),
+                                        birthday = res.Data.DateOfBirth, 
+                                        email = res.Data.Email,
+                                        zipCode = new string(address.Data is null ? "" : address.Data.ZipCode.Where(char.IsDigit).ToArray()),
+                                        address = address.Data is null ? "" : $"{address.Data.Street}, {address.Data.Number}",
+                                        city = address.Data is null ? "" :  address.Data.City,
+                                        state = "",
+                                        serviceType = typePlan
+                                    }
+                                };
+
+                                string jsonPayload = JsonSerializer.Serialize(beneficiarios);
+                                var contentPost = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/vnd.rapidoc.tema-v2+json");
+                                contentPost.Headers.ContentType!.CharSet = null; 
+                                requestRapidocPost.Content = contentPost;
+                                var responseRapidoc = await client.SendAsync(requestRapidocPost);
+                                string jsonResponsePost = await responseRapidoc.Content.ReadAsStringAsync();
+                                dynamic? resultPost = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponsePost);
+                                if(resultPost is not null)
+                                {
+                                    if(resultPost.success == "true")
+                                    {
+                                        customer.Data.rapidocId = resultPost.beneficiaries[0].uuid.ToString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
+            
+            return new(customer.Data);
+        }
+        catch(Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
     public async Task<ResponseApi<dynamic?>> GetByRapidocIdAsync(string rapidocId)
     {
         try
@@ -63,7 +206,8 @@ namespace api_slim.src.Services
         try
         {
             PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
-            ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetAllAsync(pagination);
+            ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetSelectAsync(pagination);
+
             return new(customerRecipient.Data);
         }
         catch
@@ -217,7 +361,7 @@ namespace api_slim.src.Services
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customer);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
-            System.Console.WriteLine(response.Data!.RapidocId);
+            
             var requestRapidoc = new HttpRequestMessage(HttpMethod.Put, $"{uri}/beneficiaries/{response.Data!.RapidocId}");
 
             requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
@@ -337,6 +481,7 @@ namespace api_slim.src.Services
             if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
             
             customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            customerResponse.Data.UpdatedBy = request.UpdatedBy;
             customerResponse.Data.Justification = customerResponse.Data.Active ? request.Justification : "";
             customerResponse.Data.Rason = customerResponse.Data.Active ? request.Rason : "";
             customerResponse.Data.Active = !customerResponse.Data.Active;

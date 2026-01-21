@@ -30,6 +30,14 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpGet("cpf/{cpf}")]
+    public async Task<IActionResult> GetByCPFAsync(string cpf)
+    {
+        ResponseApi<dynamic?> response = await service.GetByCPFAggregateAsync(cpf);
+        return StatusCode(response.StatusCode, new { response.Result });
+    }
+    
+    [Authorize]
     [HttpGet("rapidoc/{id}")]
     public async Task<IActionResult> GetByRapidocIdAsync(string id)
     {

@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Utils;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -35,7 +36,7 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                // response.EnsureSuccessStatusCode();
+
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 

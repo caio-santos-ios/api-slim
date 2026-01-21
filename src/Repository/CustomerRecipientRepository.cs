@@ -39,9 +39,12 @@ namespace api_slim.src.Repository
                     {"addressId", MongoUtil.First("_address._id")}
                 }),
 
+                MongoUtil.Lookup("users", ["$updatedBy"], ["$_id"], "_user", [["deleted", false]], 1),
+
                 new("$addFields", new BsonDocument
                 {
                     {"type", MongoUtil.First("_customer.type")},
+                    {"userName", MongoUtil.First("_user.name")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
                     {"genderDescription", MongoUtil.First("_gender.description")},
                     {"planName", MongoUtil.First("_plan.name")},
@@ -66,6 +69,7 @@ namespace api_slim.src.Repository
                     {"_address", 0}, 
                     {"_gender", 0}, 
                     {"_plan", 0}, 
+                    {"_user", 0}, 
                 }),
                 new("$sort", pagination.PipelineSort),
                 // new("$skip", pagination.Skip),
@@ -81,7 +85,6 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
-    
     public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
     {
         try
@@ -109,7 +112,34 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
-    
+    public async Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf)
+    {
+        try
+        {
+            BsonDocument[] pipeline = [
+                new("$match", new BsonDocument{
+                    {"cpf", cpf},
+                    {"deleted", false}
+                }),
+                new("$project", new BsonDocument
+                {
+                    {"_id", 0},
+                    {"id", new BsonDocument("$toString", "$_id")},
+                    {"name", 1},
+                    {"cpf", 1},
+                    {"rapidocId", 1},
+                }),
+            ];
+
+            BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+            dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+            return result is null ? new(null, 404, "Beneficiário não encontrado") : new(result);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
     public async Task<ResponseApi<CustomerRecipient?>> GetByIdAsync(string id)
     {
         try
@@ -148,7 +178,8 @@ namespace api_slim.src.Repository
                     {"id", new BsonDocument("$toString", "$_id")},
                     {"name", 1},
                     {"createdAt", 1},
-                    {"rapidocId", 1}
+                    {"rapidocId", 1},
+                    {"cpf", 1}
                 }),
                 new("$sort", pagination.PipelineSort),
             };
