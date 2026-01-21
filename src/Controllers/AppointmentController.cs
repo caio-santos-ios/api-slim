@@ -15,7 +15,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> GetAll()
         {
             ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
-            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
 
         [Authorize]
@@ -23,7 +23,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> GetSpecialtiesAll()
         {
             ResponseApi<List<dynamic>> response = await service.GetSpecialtiesAllAsync();
-            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
 
         [Authorize]
@@ -31,7 +31,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> GetSpecialtyAvailabilityAllAsync(string specialtyUuid, string beneficiaryUuid)
         {
             ResponseApi<List<dynamic>> response = await service.GetSpecialtyAvailabilityAllAsync(specialtyUuid, beneficiaryUuid);
-            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
 
         [Authorize]
@@ -42,7 +42,7 @@ namespace api_slim.src.Controllers
 
             ResponseApi<dynamic?> response = await service.CreateAsync(genericTable);
 
-            return StatusCode(response.StatusCode, new { response.Message });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
         
         [Authorize]
@@ -51,7 +51,7 @@ namespace api_slim.src.Controllers
         {
             ResponseApi<dynamic?> response = await service.CancelAsync(id);
 
-            return StatusCode(response.StatusCode, new { response.Message });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
     }
 }

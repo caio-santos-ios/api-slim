@@ -100,17 +100,17 @@ namespace api_slim.src.Services
                                 ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(res.Data.PlanId);
                                 if(plan.Data is not null)
                                 {
-                                    ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
-                                    if(serviceModule.Data is not null) 
+                                    foreach (string moduleId in plan.Data.ServiceModuleIds)
                                     {
-                                        foreach (ServiceModule module in serviceModule.Data!)
+                                        ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+                                        if(serviceModule.Data is not null) 
                                         {
-                                            if(module.Name.Equals("Bem + Cuidado"))
+                                            if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
                                             {
                                                 especialista = true;
                                             }
 
-                                            if(module.Name.Equals("Bem + Papo"))
+                                            if(serviceModule.Data.Name.Equals("Bem + Papo"))
                                             {
                                                 psicologia = true;
                                             }
@@ -181,9 +181,8 @@ namespace api_slim.src.Services
             
             return new(customer.Data);
         }
-        catch(Exception ex)
+        catch
         {
-            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
@@ -246,17 +245,17 @@ namespace api_slim.src.Services
             ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
             if(plan.Data is not null)
             {
-                ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
-                if(serviceModule.Data is not null) 
+                foreach (string moduleId in plan.Data.ServiceModuleIds)
                 {
-                    foreach (ServiceModule module in serviceModule.Data!)
+                    ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+                    if(serviceModule.Data is not null) 
                     {
-                        if(module.Name.Equals("Bem + Cuidado"))
+                        if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
                         {
                             especialista = true;
                         }
 
-                        if(module.Name.Equals("Bem + Papo"))
+                        if(serviceModule.Data.Name.Equals("Bem + Papo"))
                         {
                             psicologia = true;
                         }
@@ -375,17 +374,17 @@ namespace api_slim.src.Services
             ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
             if(plan.Data is not null)
             {
-                ResponseApi<List<ServiceModule>> serviceModule = await serviceModuleRepository.GetByPlanIdAsync(plan.Data.Id);
-                if(serviceModule.Data is not null) 
+                foreach (string moduleId in plan.Data.ServiceModuleIds)
                 {
-                    foreach (ServiceModule module in serviceModule.Data!)
+                    ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+                    if(serviceModule.Data is not null) 
                     {
-                        if(module.Name.Equals("Bem + Cuidado"))
+                        if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
                         {
                             especialista = true;
                         }
 
-                        if(module.Name.Equals("Bem + Papo"))
+                        if(serviceModule.Data.Name.Equals("Bem + Papo"))
                         {
                             psicologia = true;
                         }
@@ -488,6 +487,13 @@ namespace api_slim.src.Services
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
             if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+            string url = $"{uri}/beneficiaries/{customerResponse.Data.RapidocId}";
+
+            var requestHeader = new HttpRequestMessage(customerResponse.Data.Active ? HttpMethod.Put : HttpMethod.Delete, customerResponse.Data.Active ? $"{url}/reactivate" : url);
+            requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+            requestHeader.Headers.Add("clientId", $"{clientId}");
+            var responseRapidoc = await client.SendAsync(requestHeader);
 
             await logRepository.CreateAsync(new()
             {   

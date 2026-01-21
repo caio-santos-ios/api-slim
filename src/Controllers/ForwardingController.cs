@@ -50,7 +50,7 @@ namespace api_slim.src.Controllers
 
             ResponseApi<dynamic?> response = await service.CreateAsync(genericTable);
 
-            return StatusCode(response.StatusCode, new { response.Message });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
         
         [Authorize]
@@ -59,7 +59,7 @@ namespace api_slim.src.Controllers
         {
             ResponseApi<dynamic?> response = await service.CancelAsync(id);
 
-            return StatusCode(response.StatusCode, new { response.Message });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
     }
 }
