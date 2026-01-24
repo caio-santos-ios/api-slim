@@ -10,6 +10,6 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetSpecialtyAvailabilityAllAsync(string specialtyUuid, string beneficiaryUuid);
         Task<ResponseApi<List<dynamic>>> GetBeneficiaryMedicalReferralsAsync();
         Task<ResponseApi<dynamic?>> CreateAsync(CreateAppointmentDTO forwarding);
-        Task<ResponseApi<dynamic?>> CancelAsync(string id);
+        Task<ResponseApi<dynamic?>> CancelAsync(CancelForwardingDTO request);
     }
 }

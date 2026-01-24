@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class ForwardingService(IHistoricService historicService) : IForwardingService
+    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService) : IForwardingService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -212,16 +212,22 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                responseRapidoc.EnsureSuccessStatusCode();
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-                await historicService.CreateAsync(new ()
+
+                await telemedicineHistoricService.CreateAsync(new ()
                 {
-                    Collection = "forwarding",
-                    Description = "Encaminhamento Agendado"
+                    Status = "Agendado",
+                    Date = request.Date,
+                    Time = request.Time,
+                    RecipientId = request.BeneficiaryUuid,
+                    SpecialistId = request.SpecialtyUuid,
+                    RecipientName = request.BeneficiaryName,
+                    SpecialistName = request.SpecialtyName,
+                    CreatedBy = request.CreatedBy
                 });
 
-                return new(null, 201, "Agendamento feito com sucesso");
+                return new(null, 201, "Encaminhamento feito com sucesso");
             }
             catch
             {
@@ -230,11 +236,11 @@ namespace api_slim.src.Services
         }
         #endregion
         #region  UPDATE
-        public async Task<ResponseApi<dynamic?>> CancelAsync(string id)
+        public async Task<ResponseApi<dynamic?>> CancelAsync(CancelForwardingDTO request)
         {
             try
             {
-                var requestHeader = new HttpRequestMessage(HttpMethod.Delete, $"{uri}/appointments/{id}");
+                var requestHeader = new HttpRequestMessage(HttpMethod.Delete, $"{uri}/appointments/{request.Id}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", $"{clientId}");
                 var content = new StringContent(string.Empty);
@@ -249,12 +255,20 @@ namespace api_slim.src.Services
                     string msg = resultError!.message.ToString();
                     return new(null, 400, msg);
                 };
-                response.EnsureSuccessStatusCode();
 
-                await historicService.CreateAsync(new ()
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+
+                await telemedicineHistoricService.CreateAsync(new ()
                 {
-                    Collection = "forwarding",
-                    Description = "Encaminhamento Cancelado"
+                    Status = "Cancelado",
+                    Date = request.Date,
+                    Time = request.Time,
+                    RecipientId = request.BeneficiaryUuid,
+                    SpecialistId = request.SpecialtyUuid,
+                    RecipientName = request.BeneficiaryName,
+                    SpecialistName = request.SpecialtyName,
+                    CreatedBy = request.CreatedBy
                 });
 
                 return new(null, 204, "Cancelado com sucesso");

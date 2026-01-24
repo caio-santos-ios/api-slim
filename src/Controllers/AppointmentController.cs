@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
@@ -36,20 +37,22 @@ namespace api_slim.src.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateAppointmentDTO genericTable)
+        public async Task<IActionResult> Create([FromBody] CreateAppointmentDTO request)
         {
-            if (genericTable == null) return BadRequest("Dados inválidos.");
+            if (request == null) return BadRequest("Dados inválidos.");
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
-            ResponseApi<dynamic?> response = await service.CreateAsync(genericTable);
+            ResponseApi<dynamic?> response = await service.CreateAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
         [Authorize]
-        [HttpDelete("cancel/{id}")]
-        public async Task<IActionResult> CancelAsync(string id)
+        [HttpPut("cancel")]
+        public async Task<IActionResult> CancelAsync([FromBody] CancelForwardingDTO request)
         {
-            ResponseApi<dynamic?> response = await service.CancelAsync(id);
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<dynamic?> response = await service.CancelAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Result });
         }

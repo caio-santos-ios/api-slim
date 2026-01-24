@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(IHistoricService historicService) : IAppointmentService
+    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -36,23 +36,25 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                // response.EnsureSuccessStatusCode();
+
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
-                {          
+                {
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
-   
+
                     list.Add(new {
                         id = item.uuid.ToString(),                
                         recipientDescription = item.beneficiary.name.ToString(),
+                        beneficiaryUuid = item.beneficiary.uuid.ToString(),
                         cpf = item.beneficiary.cpf.ToString(),
                         date = item.detail.date.ToString(),
                         startTime = item.detail.from.ToString(),
                         endTime = item.detail.to.ToString(),
                         specialty = item.specialty.name.ToString(),
+                        specialtyUuid = item.specialty.uuid.ToString(),
                         professional = item.professional.name.ToString(),
                         status = item.status.ToString(),
                         beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
@@ -127,7 +129,7 @@ namespace api_slim.src.Services
 
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
-                {                    
+                {                  
                     list.Add(new {
                         id = item.uuid.ToString(),   
                         name = $"{item.date.ToString()} - {item.from.ToString()} Até {item.to.ToString()}",              
@@ -139,9 +141,8 @@ namespace api_slim.src.Services
 
                 return new(list);
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -210,12 +211,18 @@ namespace api_slim.src.Services
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
 
-                await historicService.CreateAsync(new ()
+                await telemedicineHistoricService.CreateAsync(new ()
                 {
-                    Collection = "appointment",
-                    Description = "Agendamento",
+                    Status = "Agendado",
+                    Date = request.Date,
+                    Time = request.Time,
+                    RecipientId = request.BeneficiaryUuid,
+                    SpecialistId = request.SpecialtyUuid,
+                    RecipientName = request.BeneficiaryName,
+                    SpecialistName = request.SpecialtyName,
+                    CreatedBy = request.CreatedBy
                 });
-
+                
                 return new(null, 201, "Agendamento feito com sucesso");
             }
             catch
@@ -225,11 +232,11 @@ namespace api_slim.src.Services
         }
         #endregion
         #region  UPDATE
-        public async Task<ResponseApi<dynamic?>> CancelAsync(string id)
+        public async Task<ResponseApi<dynamic?>> CancelAsync(CancelForwardingDTO request)
         {
             try
             {
-                var requestHeader = new HttpRequestMessage(HttpMethod.Delete, $"{uri}/appointments/{id}");
+                var requestHeader = new HttpRequestMessage(HttpMethod.Delete, $"{uri}/appointments/{request.Id}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", $"{clientId}");
                 var content = new StringContent(string.Empty);
@@ -245,10 +252,19 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                await historicService.CreateAsync(new ()
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+
+                await telemedicineHistoricService.CreateAsync(new ()
                 {
-                    Collection = "appointment",
-                    Description = "Agendamento Cancelado",
+                    Status = "Cancelado",
+                    Date = request.Date,
+                    Time = request.Time,
+                    RecipientId = request.BeneficiaryUuid,
+                    SpecialistId = request.SpecialtyUuid,
+                    RecipientName = request.BeneficiaryName,
+                    SpecialistName = request.SpecialtyName,
+                    CreatedBy = request.CreatedBy
                 });
 
                 return new(null, 204, "Cancelado com sucesso");

@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace api_slim.src.Controllers
 {
-    [Route("api/historics")]
+    [Route("api/telemedicine-historics")]
     [ApiController]
-    public class HistoricController(IHistoricService service) : ControllerBase
+    public class TelemedicineHistoricController(ITelemedicineHistoricService service) : ControllerBase
     {
         [Authorize]
         [HttpGet]
@@ -21,11 +21,11 @@ namespace api_slim.src.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateHistoricDTO contact)
+        public async Task<IActionResult> Create([FromBody] CreateTelemedicineHistoricDTO contact)
         {
             if (contact == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<Historic?> response = await service.CreateAsync(contact);
+            ResponseApi<TelemedicineHistoric?> response = await service.CreateAsync(contact);
 
             return StatusCode(response.StatusCode, new { response.Message });
         }

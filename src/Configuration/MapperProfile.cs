@@ -14,7 +14,7 @@ namespace api_slim.src.Configuration
             
             CreateMap<CreateAccreditedNetworkDTO, AccreditedNetwork>().ReverseMap();
             CreateMap<UpdateAccreditedNetworkDTO, AccreditedNetwork>().ReverseMap();
-           
+
             CreateMap<CreateAccreditedNetworkResponsibleDTO, AccreditedNetworkResponsible>().ReverseMap();
             CreateMap<CreateAccreditedNetworkResponsibleDTO, AccreditedNetworkResponsible>().ReverseMap();
             
@@ -61,15 +61,17 @@ namespace api_slim.src.Configuration
             
             CreateMap<CreateCustomerRecipientDTO, CustomerRecipient>().ReverseMap();
             CreateMap<UpdateCustomerRecipientDTO, CustomerRecipient>().ReverseMap();      
-           
+
             CreateMap<CreateCustomerContractDTO, CustomerContract>().ReverseMap();
             CreateMap<UpdateCustomerContractDTO, CustomerContract>().ReverseMap();      
-           
+            
             CreateMap<CreateSupplierDTO, Supplier>().ReverseMap();
             CreateMap<UpdateSupplierDTO, Supplier>().ReverseMap();      
 
             CreateMap<CreateTradingTableDTO, TradingTable>().ReverseMap();
-            CreateMap<UpdateTradingTableDTO, TradingTable>().ReverseMap();      
+            CreateMap<UpdateTradingTableDTO, TradingTable>().ReverseMap();
+            
+            CreateMap<CreateTelemedicineHistoricDTO, TelemedicineHistoric>().ReverseMap();
             #endregion
 
             #region FINANCIAL
