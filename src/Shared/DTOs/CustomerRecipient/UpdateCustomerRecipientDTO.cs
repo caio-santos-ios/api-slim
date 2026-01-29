@@ -26,5 +26,8 @@ namespace api_slim.src.Shared.DTOs
                 public DateTime? EffectiveDate { get; set; }
                 public string Justification { get; set; } = string.Empty;
                 public string Rason { get; set; } = string.Empty;
+                public string Device { get; set; } = string.Empty;
+                public decimal Height { get; set; }
+                public decimal Weight { get; set; }
         }
 }

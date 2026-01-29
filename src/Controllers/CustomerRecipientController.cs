@@ -52,6 +52,15 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         ResponseApi<List<dynamic>> response = await service.GetSelectAsync(new(Request.Query));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
+
+    [Authorize]
+    [HttpGet("logged")]
+    public async Task<IActionResult> GetLoggedAsync()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(userId!);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
     
     [Authorize]
     [HttpPost]
@@ -75,6 +84,18 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         ResponseApi<CustomerRecipient?> response = await service.UpdateAsync(customer);
 
         return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient?> response = await service.UpdateProfileAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Result });
     }
     
     [Authorize]

@@ -51,7 +51,13 @@ namespace api_slim.src.Services
 
                 if(customer is null) return new(null, 400, "Dados incorretos");
 
-                User user = new();
+                User user = new()
+                {
+                    Id = customer.Id,
+                    UserName = customer.Name,
+                    Email = customer.Email,
+                    Password = customer.Password
+                };
 
                 if(response.Data.FirstAccess)
                 {
@@ -69,7 +75,7 @@ namespace api_slim.src.Services
                     if(!isValid) return new(null, 400, "Dados incorretos");
                 }
 
-                return new(new() {Token = GenerateJwtToken(user), RefreshToken = GenerateJwtToken(user, true) , Name = user.Name, Photo = user.Photo});
+                return new(new() {Token = GenerateJwtToken(user, false, true), RefreshToken = GenerateJwtToken(user, true, true) , Name = customer.Name, Photo = user.Photo, RapidocId = customer.RapidocId});
             }
             catch
             {
@@ -153,35 +159,85 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
             }
         }
+        public async Task<ResponseApi<User>> ResetPasswordAppAsync(ResetPasswordDTO request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
+                if (request.Password != request.NewPassword) return new(null, 400, "As senhas precisam ser iguais");
+                if (string.IsNullOrEmpty(request.Id)) return new(null, 400, "Falha ao alterar senha");
+                
+                if(Validator.IsReliable(request.Password).Equals("Ruim")) return new(null, 400, $"Senha é muito fraca");
+
+                ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByIdAsync(request.Id);
+                if(!customerRecipient.IsSuccess || customerRecipient.Data is null) return new(null, 400, "Falha ao alterar senha");
+
+                customerRecipient.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                customerRecipient.Data.FirstAccess = false;
+                ResponseApi<CustomerRecipient?> response = await customerRecipientRepository.UpdateAsync(customerRecipient.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao alterar senha");
+
+                return new(null, 200, "Senha alterada com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
+            }
+        }
         public async Task<ResponseApi<User>> RequestForgotPasswordAsync(ForgotPasswordDTO request)
         {
             try
             {
-                ResponseApi<User?> user = await userRepository.GetByEmailAsync(request.Email);
-                if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
-
-                dynamic access = Util.GenerateCodeAccess();
-
-                user.Data.CodeAccess = access.CodeAccess;
-                user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
-                user.Data.ValidatedAccess = false;
-
-                string template = "";
-                if(request.Device.Equals("app"))
+                if(request.Device == "app")
                 {
-                    template = MailTemplate.ForgotPasswordApp(user.Data.CodeAccess);
+                    dynamic access = Util.GenerateCodeAccess();
+                    
+                    CustomerRecipient customerRecipient = new();
+                    if(request.Type == "email")
+                    {
+                        var customer = await customerRecipientRepository.GetByEmailAsync(request.Email);
+                        if(customer.Data is null) return new(null, 400, "E-mail inválido.");
+                        customerRecipient = customer.Data;
+                        // string template = MailTemplate.ForgotPasswordApp(access.CodeAccess);
+                        // await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
+                    }
+                    else
+                    {
+                        var customer = await customerRecipientRepository.GetByPhoneAsync(request.Phone);
+                        if(customer.Data is null) return new(null, 400, "Telefone inválido.");
+
+                        customerRecipient = customer.Data;
+                        // await smsHandler.SendMessageAsync(request.Phone, "Código de redefinição de senha: ");
+                    }
+
+                    customerRecipient.CodeAccess = access.CodeAccess;
+                    customerRecipient.CodeAccessExpiration = access.CodeAccessExpiration;
+                    customerRecipient.ValidatedAccess = false;
+
+                    await customerRecipientRepository.UpdateAsync(customerRecipient);
+
+                    return new(new User() {Id = customerRecipient.Id, CodeAccess = access.CodeAccess}, 200, "Código enviado");
                 }
-                else
+                else 
                 {
-                    template = MailTemplate.ForgotPasswordWeb(user.Data.CodeAccess);
-                };
+                    ResponseApi<User?> user = await userRepository.GetByEmailAsync(request.Email);
+                    if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
-                await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
+                    dynamic access = Util.GenerateCodeAccess();
 
-                ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                    user.Data.CodeAccess = access.CodeAccess;
+                    user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                    user.Data.ValidatedAccess = false;
 
-                return new(null, 200, "Foi enviado um e-mail para redefinir sua senha");
+                    string template = MailTemplate.ForgotPasswordWeb(user.Data.CodeAccess);
+                    await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
+
+
+                    ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                    if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+
+                    return new(null, 200, "Foi enviado um e-mail para redefinir sua senha");
+                }
             }
             catch
             {
@@ -235,7 +291,7 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
             }
         }
-        private static string GenerateJwtToken(User user, bool refresh = false)
+        private static string GenerateJwtToken(User user, bool refresh = false, bool app = false)
         {
             string? SecretKey = Environment.GetEnvironmentVariable("SECRET_KEY") ?? "";
             string? Issuer = Environment.GetEnvironmentVariable("ISSUER") ?? "";
@@ -259,7 +315,7 @@ namespace api_slim.src.Services
                 issuer: Issuer,
                 audience: Audience,
                 claims: claims,
-                expires: refresh ? DateTime.UtcNow.AddDays(7) : DateTime.UtcNow.AddHours(2),
+                expires: refresh || app ? DateTime.UtcNow.AddDays(7) : DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds
             );
 

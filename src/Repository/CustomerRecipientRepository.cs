@@ -94,12 +94,13 @@ namespace api_slim.src.Repository
                     {"_id", new ObjectId(id)},
                     {"deleted", false}
                 }),
+                new("$addFields", new BsonDocument
+                {
+                    {"id", new BsonDocument("$toString", "$_id")},
+                }),
                 new("$project", new BsonDocument
                 {
                     {"_id", 0},
-                    {"id", new BsonDocument("$toString", "$_id")},
-                    {"name", 1},
-                    {"description", 1}
                 }),
             ];
 
@@ -210,6 +211,30 @@ namespace api_slim.src.Repository
         try
         {
             CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId && !x.Deleted).FirstOrDefaultAsync();
+            return new(customerRecipient);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> GetByPhoneAsync(string phone)
+    {
+        try
+        {
+            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Phone == phone && x.Active && !x.Deleted).FirstOrDefaultAsync();
+            return new(customerRecipient);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> GetByEmailAsync(string email)
+    {
+        try
+        {
+            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Email == email && x.Active && !x.Deleted).FirstOrDefaultAsync();
             return new(customerRecipient);
         }
         catch

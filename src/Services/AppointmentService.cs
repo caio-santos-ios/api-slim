@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
+using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
@@ -8,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService) : IAppointmentService
+    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ICustomerRecipientRepository customerRecipientRepository) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -24,9 +26,9 @@ namespace api_slim.src.Services
                 
                 request.QueryParams.TryGetValue("status", out string? status);
                 request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
-                
+
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
-                if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
+                // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
 
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
@@ -44,26 +46,91 @@ namespace api_slim.src.Services
                 foreach (dynamic item in result!)
                 {
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
+                    if(!string.IsNullOrEmpty(beneficiaryUuid))
+                    {   
+                        if(beneficiaryUuid != item.beneficiary.uuid.ToString()) continue;
+                    }
 
                     list.Add(new {
                         id = item.uuid.ToString(),                
                         recipientDescription = item.beneficiary.name.ToString(),
+                        recipientName = item.beneficiary.name.ToString(),
                         beneficiaryUuid = item.beneficiary.uuid.ToString(),
                         cpf = item.beneficiary.cpf.ToString(),
                         date = item.detail.date.ToString(),
+                        data = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR")),
                         startTime = item.detail.from.ToString(),
                         endTime = item.detail.to.ToString(),
+                        time = $"{item.detail.from.ToString()} até {item.detail.to.ToString()}",
                         specialty = item.specialty.name.ToString(),
+                        specialistName = item.specialty.name.ToString(),
                         specialtyUuid = item.specialty.uuid.ToString(),
+                        specialistId = item.specialty.uuid.ToString(),
                         professional = item.professional.name.ToString(),
                         status = item.status.ToString(),
                         beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
                     });                            
                 }
+                list = list.OrderByDescending(x => x.data).ToList();
                 return new(list);
             }
             catch
             {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> GetByIdAsync(string id)
+        {
+            try
+            {
+                ResponseApi<CustomerRecipient?> recipient = await customerRecipientRepository.GetByIdAsync(id);
+
+                if(recipient.Data is null) return new(null, 404, "Beneficiario não encontrado");
+                if(string.IsNullOrEmpty(recipient.Data.RapidocId))
+                {
+                    System.Console.WriteLine("beneficiario nao tem id da rapidoc");
+                }
+                System.Console.WriteLine(recipient.Data.RapidocId);
+                // var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments/d7d0d355-a188-4ead-be02-2595d72eaffa");
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries");
+                requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+                requestHeader.Headers.Add("clientId", clientId);
+                
+                var content = new StringContent(string.Empty);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+                requestHeader.Content = content;
+                var response = await client.SendAsync(requestHeader);
+                response.EnsureSuccessStatusCode();
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+
+                // string jsonResponse = await response.Content.ReadAsStringAsync();
+                // dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
+                // Util.ConsoleLog(result);
+                // List<dynamic> list = [];
+                // foreach (dynamic item in result!)
+                // {
+                //     BsonDocument bson = BsonDocument.Parse(item.ToString());
+
+                //     list.Add(new {
+                //         id = item.uuid.ToString(),                
+                //         recipientDescription = item.beneficiary.name.ToString(),
+                //         beneficiaryUuid = item.beneficiary.uuid.ToString(),
+                //         cpf = item.beneficiary.cpf.ToString(),
+                //         date = item.detail.date.ToString(),
+                //         startTime = item.detail.from.ToString(),
+                //         endTime = item.detail.to.ToString(),
+                //         specialty = item.specialty.name.ToString(),
+                //         specialtyUuid = item.specialty.uuid.ToString(),
+                //         professional = item.professional.name.ToString(),
+                //         status = item.status.ToString(),
+                //         beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
+                //     });                            
+                // }
+                return new(null);
+            }
+            catch(Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }

@@ -15,6 +15,8 @@ public interface ICustomerRecipientRepository
     Task<ResponseApi<long?>> GetNextCodeAsync();
     Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId);
     Task<ResponseApi<CustomerRecipient?>> GetByDocumentAsync(string cpf);
+    Task<ResponseApi<CustomerRecipient?>> GetByPhoneAsync(string phone);
+    Task<ResponseApi<CustomerRecipient?>> GetByEmailAsync(string email);
     Task<ResponseApi<CustomerRecipient?>> GetByCPFImportAsync(string cpf, string contractorId);
     Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination);
     Task<ResponseApi<CustomerRecipient?>> CreateAsync(CustomerRecipient address);

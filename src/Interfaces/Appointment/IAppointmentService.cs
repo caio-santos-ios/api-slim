@@ -6,6 +6,7 @@ namespace api_slim.src.Interfaces
     public interface IAppointmentService
     {
         Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<dynamic?>> GetByIdAsync(string id);
         Task<ResponseApi<List<dynamic>>> GetSpecialtiesAllAsync();
         Task<ResponseApi<List<dynamic>>> GetSpecialtyAvailabilityAllAsync(string specialtyUuid, string beneficiaryUuid);
         Task<ResponseApi<List<dynamic>>> GetBeneficiaryMedicalReferralsAsync();

@@ -20,6 +20,16 @@ namespace api_slim.src.Controllers
         }
 
         [Authorize]
+        [HttpGet("user")]
+        public async Task<IActionResult> GetByUser()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+            ResponseApi<dynamic?> response = await service.GetByIdAsync(userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [Authorize]
         [HttpGet("specialties")]
         public async Task<IActionResult> GetSpecialtiesAll()
         {

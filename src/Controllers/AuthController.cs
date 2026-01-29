@@ -3,6 +3,7 @@ using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Responses;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -52,13 +53,23 @@ namespace api_slim.src.Controllers
         }
         
         [HttpPut]
+        [Route("reset-password/app")]
+        public async Task<IActionResult> ResetPasswordAppAsync([FromBody] ResetPasswordDTO request)
+        {
+            if (request == null) return BadRequest("Dados inválidos");
+
+            ResponseApi<User> response = await authService.ResetPasswordAppAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpPut]
         [Route("request-forgot-password")]
         public async Task<IActionResult> RequestForgotPasswordAsync([FromBody] ForgotPasswordDTO request)
         {
             if (request == null) return BadRequest("Dados inválidos");
 
             ResponseApi<User> response = await authService.RequestForgotPasswordAsync(request);
-            return StatusCode(response.StatusCode, new { response.Message, response.Data });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
 
         [HttpPut]
