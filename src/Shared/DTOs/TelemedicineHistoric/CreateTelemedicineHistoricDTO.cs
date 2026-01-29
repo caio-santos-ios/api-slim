@@ -9,5 +9,7 @@ namespace api_slim.src.Shared.DTOs
                 public string Status {get;set;} = string.Empty;   
                 public string Date {get;set;} = string.Empty;     
                 public string Time {get;set;} = string.Empty; 
+                public string Type {get;set;} = string.Empty; 
+                public string ParentId {get;set;} = string.Empty; 
         }
 }

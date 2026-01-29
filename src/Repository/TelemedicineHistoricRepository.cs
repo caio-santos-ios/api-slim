@@ -108,8 +108,21 @@ namespace api_slim.src.Repository
         {
             try
             {
-                TelemedicineHistoric? inPerson = await context.TelemedicineHistorics.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                return new(inPerson);
+                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(telemedicineHistoric);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        
+        public async Task<ResponseApi<TelemedicineHistoric?>> GetByParentIdAsync(string parentId, string type)
+        {
+            try
+            {
+                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.ParentId == parentId && x.Type == type && !x.Deleted).FirstOrDefaultAsync();
+                return new(telemedicineHistoric);
             }
             catch
             {
@@ -140,13 +153,13 @@ namespace api_slim.src.Repository
         #endregion
         
         #region CREATE
-        public async Task<ResponseApi<TelemedicineHistoric?>> CreateAsync(TelemedicineHistoric inPerson)
+        public async Task<ResponseApi<TelemedicineHistoric?>> CreateAsync(TelemedicineHistoric telemedicineHistoric)
         {
             try
             {
-                await context.TelemedicineHistorics.InsertOneAsync(inPerson);
+                await context.TelemedicineHistorics.InsertOneAsync(telemedicineHistoric);
 
-                return new(inPerson, 201, "Atendimento Presencial criado com sucesso");
+                return new(telemedicineHistoric, 201, "Atendimento Presencial criado com sucesso");
             }
             catch
             {
@@ -156,13 +169,13 @@ namespace api_slim.src.Repository
         #endregion
         
         #region UPDATE
-        public async Task<ResponseApi<TelemedicineHistoric?>> UpdateAsync(TelemedicineHistoric inPerson)
+        public async Task<ResponseApi<TelemedicineHistoric?>> UpdateAsync(TelemedicineHistoric telemedicineHistoric)
         {
             try
             {
-                await context.TelemedicineHistorics.ReplaceOneAsync(x => x.Id == inPerson.Id, inPerson);
+                await context.TelemedicineHistorics.ReplaceOneAsync(x => x.Id == telemedicineHistoric.Id, telemedicineHistoric);
 
-                return new(inPerson, 201, "Atendimento Presencial atualizado com sucesso");
+                return new(telemedicineHistoric, 201, "Atendimento Presencial atualizado com sucesso");
             }
             catch
             {
@@ -176,14 +189,14 @@ namespace api_slim.src.Repository
         {
             try
             {
-                TelemedicineHistoric? inPerson = await context.TelemedicineHistorics.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                if(inPerson is null) return new(null, 404, "Atendimento Presencial não encontrado");
-                inPerson.Deleted = true;
-                inPerson.DeletedAt = DateTime.UtcNow;
+                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                if(telemedicineHistoric is null) return new(null, 404, "Atendimento Presencial não encontrado");
+                telemedicineHistoric.Deleted = true;
+                telemedicineHistoric.DeletedAt = DateTime.UtcNow;
 
-                await context.TelemedicineHistorics.ReplaceOneAsync(x => x.Id == id, inPerson);
+                await context.TelemedicineHistorics.ReplaceOneAsync(x => x.Id == id, telemedicineHistoric);
 
-                return new(inPerson, 204, "Atendimento Presencial excluído com sucesso");
+                return new(telemedicineHistoric, 204, "Atendimento Presencial excluído com sucesso");
             }
             catch
             {

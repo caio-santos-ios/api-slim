@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
+using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
@@ -8,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService) : IForwardingService
+    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IForwardingService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -23,10 +24,10 @@ namespace api_slim.src.Services
                 string query = "";
                 
                 request.QueryParams.TryGetValue("status", out string? status);
-                request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
+                // request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
                 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
-                if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
+                // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
 
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
@@ -57,6 +58,101 @@ namespace api_slim.src.Services
                     });                 
                 }
                 return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetByBeneficiaryIdAsync(string beneficiaryId)
+        {
+            try
+            {
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals");
+                requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+                requestHeader.Headers.Add("clientId", clientId);
+                
+                var content = new StringContent(string.Empty);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+                requestHeader.Content = content;
+                var response = await client.SendAsync(requestHeader);
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
+
+                List<dynamic> list = [];
+                foreach (dynamic item in result!)
+                {    
+                    if(beneficiaryId != item.beneficiary.uuid.ToString()) continue;
+
+                    BsonDocument bson = BsonDocument.Parse(item.ToString());
+                    ResponseApi<TelemedicineHistoric?> existed = await telemedicineHistoricRepository.GetByParentIdAsync(item.uuid.ToString(), "Encaminhamento");
+                    string status = item.status.ToString();
+
+                    System.Console.WriteLine(item.uuid.ToString() == "5a680aa6-ae08-45d9-a7e7-767e13892c57");
+
+                    if(existed.Data is not null)
+                    {
+                        status = "SCHEDULED";
+                        System.Console.WriteLine(existed.Data);
+                    };
+
+                    list.Add(new {
+                        id = item.uuid.ToString(),                
+                        recipientDescription = item.beneficiary.name.ToString(),
+                        recipienId = item.beneficiary.uuid.ToString(),
+                        cpf = item.beneficiary.cpf.ToString(),
+                        status,
+                        createdAt = bson.Contains("createdAt") ? bson["createdAt"].ToString() : "",
+                        urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
+                        specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
+                        specialtyName = bson.Contains("specialty") ? bson["specialty"]["name"].ToString() : "",
+                    });                 
+                };
+                
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> GetByIdAsync(string id)
+        {
+            try
+            {
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments/{id}");
+                requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+                requestHeader.Headers.Add("clientId", clientId);
+                
+                var content = new StringContent(string.Empty);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+                requestHeader.Content = content;
+                var response = await client.SendAsync(requestHeader);
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
+
+                // List<dynamic> list = [];
+                // foreach (dynamic item in result!)
+                // {    
+                //     if(beneficiaryId != item.beneficiary.uuid.ToString()) continue;
+
+                //     BsonDocument bson = BsonDocument.Parse(item.ToString());
+
+                //     list.Add(new {
+                //         id = item.uuid.ToString(),                
+                //         recipientDescription = item.beneficiary.name.ToString(),
+                //         recipienId = item.beneficiary.uuid.ToString(),
+                //         cpf = item.beneficiary.cpf.ToString(),
+                //         status = item.status.ToString(),
+                //         createdAt = bson.Contains("createdAt") ? bson["createdAt"].ToString() : "",
+                //         urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
+                //         specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
+                //     });                 
+                // };
+
+                return new(null);
             }
             catch
             {
@@ -224,7 +320,9 @@ namespace api_slim.src.Services
                     SpecialistId = request.SpecialtyUuid,
                     RecipientName = request.BeneficiaryName,
                     SpecialistName = request.SpecialtyName,
-                    CreatedBy = request.CreatedBy
+                    CreatedBy = request.CreatedBy,
+                    Type = "Encaminhamento",
+                    ParentId = request.AvailabilityUuid
                 });
 
                 return new(null, 201, "Encaminhamento feito com sucesso");
@@ -268,7 +366,8 @@ namespace api_slim.src.Services
                     SpecialistId = request.SpecialtyUuid,
                     RecipientName = request.BeneficiaryName,
                     SpecialistName = request.SpecialtyName,
-                    CreatedBy = request.CreatedBy
+                    CreatedBy = request.CreatedBy,
+                    Type = "Encaminhamento"
                 });
 
                 return new(null, 204, "Cancelado com sucesso");

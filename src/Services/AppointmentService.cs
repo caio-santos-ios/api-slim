@@ -287,7 +287,8 @@ namespace api_slim.src.Services
                     SpecialistId = request.SpecialtyUuid,
                     RecipientName = request.BeneficiaryName,
                     SpecialistName = request.SpecialtyName,
-                    CreatedBy = request.CreatedBy
+                    CreatedBy = request.CreatedBy,
+                    Type = "Agendamento"
                 });
                 
                 return new(null, 201, "Agendamento feito com sucesso");
@@ -331,7 +332,8 @@ namespace api_slim.src.Services
                     SpecialistId = request.SpecialtyUuid,
                     RecipientName = request.BeneficiaryName,
                     SpecialistName = request.SpecialtyName,
-                    CreatedBy = request.CreatedBy
+                    CreatedBy = request.CreatedBy,
+                    Type = "Agendamento"
                 });
 
                 return new(null, 204, "Cancelado com sucesso");

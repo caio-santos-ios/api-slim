@@ -18,6 +18,14 @@ namespace api_slim.src.Controllers
             ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
+        
+        [Authorize]
+        [HttpGet("{beneficiaryId}")]
+        public async Task<IActionResult> GetByBeneficiaryId(string beneficiaryId)
+        {
+            ResponseApi<List<dynamic>> response = await service.GetByBeneficiaryIdAsync(beneficiaryId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
 
         [Authorize]
         [HttpGet("specialties")]
