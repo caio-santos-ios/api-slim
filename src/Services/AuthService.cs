@@ -42,7 +42,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(request.Cpf)) return new(null, 400, "Cpf é obrigatório");
+                if (string.IsNullOrEmpty(request.Cpf)) return new(null, 400, "CPF é obrigatório");
                 if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
                 
                 ResponseApi<CustomerRecipient?> response = await customerRecipientRepository.GetByDocumentAsync(request.Cpf);

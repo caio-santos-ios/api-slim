@@ -72,6 +72,9 @@ namespace api_slim.src.Configuration
             CreateMap<UpdateTradingTableDTO, TradingTable>().ReverseMap();
             
             CreateMap<CreateTelemedicineHistoricDTO, TelemedicineHistoric>().ReverseMap();
+            
+            CreateMap<CreateVitalDTO, Vital>().ReverseMap();
+            CreateMap<UpdateVitalDTO, Vital>().ReverseMap();
             #endregion
 
             #region FINANCIAL

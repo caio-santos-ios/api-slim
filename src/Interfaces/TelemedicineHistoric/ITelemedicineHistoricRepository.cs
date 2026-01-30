@@ -9,6 +9,8 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<TelemedicineHistoric> pagination);
         Task<int> GetCountDocumentsAsync(PaginationUtil<TelemedicineHistoric> pagination);
         Task<ResponseApi<TelemedicineHistoric?>> GetByParentIdAsync(string parentId, string type);
+        Task<ResponseApi<TelemedicineHistoric?>> GetByParentUuidAsync(string parentUuid);
         Task<ResponseApi<TelemedicineHistoric?>> CreateAsync(TelemedicineHistoric historic);
+        Task<ResponseApi<TelemedicineHistoric?>> UpdateAsync(TelemedicineHistoric historic);
     }
 }

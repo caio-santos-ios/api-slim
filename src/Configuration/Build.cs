@@ -107,6 +107,8 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<ISupplierRepository, SupplierRepository>();
             builder.Services.AddTransient<ITradingTableService, TradingTableService>();
             builder.Services.AddTransient<ITradingTableRepository, TradingTableRepository>();
+            builder.Services.AddTransient<IVitalService, VitalService>();
+            builder.Services.AddTransient<IVitalRepository, VitalRepository>();
 
             // SERVICE
             builder.Services.AddTransient<IInPersonService, InPersonService>();

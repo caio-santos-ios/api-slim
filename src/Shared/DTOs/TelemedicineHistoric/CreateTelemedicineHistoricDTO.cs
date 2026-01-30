@@ -11,5 +11,6 @@ namespace api_slim.src.Shared.DTOs
                 public string Time {get;set;} = string.Empty; 
                 public string Type {get;set;} = string.Empty; 
                 public string ParentId {get;set;} = string.Empty; 
+                public string ParentUuid {get;set;} = string.Empty; 
         }
 }

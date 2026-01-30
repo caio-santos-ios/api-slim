@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ICustomerRecipientRepository customerRecipientRepository) : IAppointmentService
+    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ICustomerRecipientRepository customerRecipientRepository, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -322,6 +322,15 @@ namespace api_slim.src.Services
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+                string type = "Agendamento";
+                ResponseApi<TelemedicineHistoric?> historic = await telemedicineHistoricRepository.GetByParentUuidAsync(request.Id);
+                if(historic.Data is not null)
+                {
+                    historic.Data.Active = false;
+                    type = historic.Data.Type;
+                    
+                    await telemedicineHistoricRepository.UpdateAsync(historic.Data);
+                }
 
                 await telemedicineHistoricService.CreateAsync(new ()
                 {
@@ -333,7 +342,7 @@ namespace api_slim.src.Services
                     RecipientName = request.BeneficiaryName,
                     SpecialistName = request.SpecialtyName,
                     CreatedBy = request.CreatedBy,
-                    Type = "Agendamento"
+                    Type = type
                 });
 
                 return new(null, 204, "Cancelado com sucesso");

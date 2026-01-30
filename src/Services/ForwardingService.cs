@@ -3,7 +3,6 @@ using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
-using api_slim.src.Shared.Utils;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -88,13 +87,17 @@ namespace api_slim.src.Services
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
                     ResponseApi<TelemedicineHistoric?> existed = await telemedicineHistoricRepository.GetByParentIdAsync(item.uuid.ToString(), "Encaminhamento");
                     string status = item.status.ToString();
-
-                    System.Console.WriteLine(item.uuid.ToString() == "5a680aa6-ae08-45d9-a7e7-767e13892c57");
+                    string beneficiaryUrl = "";
 
                     if(existed.Data is not null)
                     {
+                        var historic = await GetByIdAsync(existed.Data.ParentUuid);
+                        if(historic.Data is not null)
+                        {
+                            beneficiaryUrl = historic.Data.beneficiaryUrl;
+                        };
+
                         status = "SCHEDULED";
-                        System.Console.WriteLine(existed.Data);
                     };
 
                     list.Add(new {
@@ -107,6 +110,7 @@ namespace api_slim.src.Services
                         urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
                         specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
                         specialtyName = bson.Contains("specialty") ? bson["specialty"]["name"].ToString() : "",
+                        beneficiaryUrl
                     });                 
                 };
                 
@@ -133,26 +137,16 @@ namespace api_slim.src.Services
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 
-                // List<dynamic> list = [];
-                // foreach (dynamic item in result!)
-                // {    
-                //     if(beneficiaryId != item.beneficiary.uuid.ToString()) continue;
-
-                //     BsonDocument bson = BsonDocument.Parse(item.ToString());
-
-                //     list.Add(new {
-                //         id = item.uuid.ToString(),                
-                //         recipientDescription = item.beneficiary.name.ToString(),
-                //         recipienId = item.beneficiary.uuid.ToString(),
-                //         cpf = item.beneficiary.cpf.ToString(),
-                //         status = item.status.ToString(),
-                //         createdAt = bson.Contains("createdAt") ? bson["createdAt"].ToString() : "",
-                //         urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
-                //         specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
-                //     });                 
-                // };
-
-                return new(null);
+                dynamic obj = new {};
+                if(result is not null)
+                {
+                    obj = new
+                    {
+                        result.beneficiaryUrl
+                    };
+                }
+                
+                return new(obj);
             }
             catch
             {
@@ -322,7 +316,8 @@ namespace api_slim.src.Services
                     SpecialistName = request.SpecialtyName,
                     CreatedBy = request.CreatedBy,
                     Type = "Encaminhamento",
-                    ParentId = request.AvailabilityUuid
+                    ParentId = request.ParentId,
+                    ParentUuid = result is null ? "" : result.uuid
                 });
 
                 return new(null, 201, "Encaminhamento feito com sucesso");

@@ -121,7 +121,19 @@ namespace api_slim.src.Repository
         {
             try
             {
-                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.ParentId == parentId && x.Type == type && !x.Deleted).FirstOrDefaultAsync();
+                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.ParentId == parentId && x.Type == type && !x.Deleted && x.Active).FirstOrDefaultAsync();
+                return new(telemedicineHistoric);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<TelemedicineHistoric?>> GetByParentUuidAsync(string parentUuid)
+        {
+            try
+            {
+                TelemedicineHistoric? telemedicineHistoric = await context.TelemedicineHistorics.Find(x => x.ParentUuid == parentUuid && !x.Deleted).FirstOrDefaultAsync();
                 return new(telemedicineHistoric);
             }
             catch

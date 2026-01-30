@@ -114,6 +114,11 @@ namespace api_slim.src.Configuration
         {
             get { return Database.GetCollection<TelemedicineHistoric>("telemedicine_historics"); }
         }
+
+        public IMongoCollection<Vital> Vitals
+        {
+            get { return Database.GetCollection<Vital>("vitals"); }
+        }
         #endregion
 
         #region FINANCIAL
