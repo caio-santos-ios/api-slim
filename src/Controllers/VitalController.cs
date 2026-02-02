@@ -37,6 +37,16 @@ namespace api_slim.src.Controllers
             ResponseApi<Vital?> response = await service.GetByBeneficiaryIdAsync(userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+
+        [Authorize]
+        [HttpGet("beneficiary-all")]
+        public async Task<IActionResult> GetByBeneficiaryAllAsync()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+            ResponseApi<List<Vital>> response = await service.GetByBeneficiaryAllAsync(userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
         
         [Authorize]
         [HttpPost]

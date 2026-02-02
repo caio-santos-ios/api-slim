@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
@@ -45,12 +46,59 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryAllAsync(string beneficiaryId)
+        {
+            try
+            {
+                ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIAllAsync(beneficiaryId);
+                List<Vital> list = new();
+                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
+                if(customer.Data is not null)
+                {
+                    decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
+                    
+                    if(vitalWeek.Data is not null)
+                    {
+                        foreach (var item in vitalWeek.Data)
+                        {
+                            string dayBr = GetDayWeek(item.CreatedAt.Date.DayOfWeek.ToString()); 
+                            string dayNum = item.CreatedAt.Day.ToString();
+                            string monthBr = item.CreatedAt.ToString("MMM", new CultureInfo("pt-BR")).Replace(".", "");
+                            
+                            list.Add(new ()
+                            {
+                                Id = item.Id,
+                                SleepHours = item.SleepHours,
+                                WaterAmount = item.WaterAmount,
+                                Metric = new() 
+                                {
+                                    IGS = CalcularIGS(item),
+                                    IGN = CalcularIGN(item, CalcularMetaAgua(customer.Data.Weight)),
+                                    IES = CalcularIES(item),
+                                    IPV = CalcularIPV(item, CalcularMetaAgua(customer.Data.Weight)),
+                                    Day = $"{dayBr}, {dayNum} {monthBr}"
+                                }
+                            });
+                        };
+                    };
+                };
+
+                list = list.OrderByDescending(x => x.CreatedAt).ToList();
+
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+
         public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId)
         {
             try
             {
-                ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
                 ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIdWeekAsync(beneficiaryId);
+                ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
 
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
@@ -70,42 +118,43 @@ namespace api_slim.src.Services
 
                 }
 
-                // 2. Lógica da Semana Atual (Gráfico de Barras)
                 var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
                 
-                // Determina o início da semana (Domingo)
                 DateTime hoje = DateTime.Today;
                 DateTime inicioSemana = hoje.AddDays(-(int)hoje.DayOfWeek);
 
-                // Inicializa a lista de métricas da semana para garantir que todos os dias apareçam no gráfico
-                vital.Data.WeekMetric = new List<VitalMetric>();
-
-                for (int i = 0; i < 7; i++)
+                List<VitalMetric> weekMetrics = new();
+                
+                if(vitalWeek.Data is not null)
                 {
-                    DateTime dataDia = inicioSemana.AddDays(i);
-                    
-                    // Busca se existe registro para este dia específico na lista retornada do banco
-                    var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
-
-                    if (registroDia != null)
+                    for (int i = 0; i < 7; i++)
                     {
-                        vital.Data.WeekMetric.Add(new()
+                        DateTime dataDia = inicioSemana.AddDays(i);
+                        
+                        var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
+
+                        if (registroDia != null)
                         {
-                            IGS = CalcularIGS(registroDia),
-                            IGN = CalcularIGN(registroDia, metaAgua),
-                            IES = CalcularIES(registroDia),
-                            IPV = CalcularIPV(registroDia, metaAgua),
-                            Day = diasDaSemanaNomes[i]
-                        });
-                    }
-                    else
-                    {
-                        // Dia sem registro: envia IPV 0 para o gráfico mostrar a barra vazia
-                        vital.Data.WeekMetric.Add(new() { Day = diasDaSemanaNomes[i], IPV = 0 });
-                    }
-                }
+                            weekMetrics.Add(new()
+                            {
+                                IGS = CalcularIGS(registroDia),
+                                IGN = CalcularIGN(registroDia, metaAgua),
+                                IES = CalcularIES(registroDia),
+                                IPV = CalcularIPV(registroDia, metaAgua),
+                                Day = diasDaSemanaNomes[i]
+                            });
+                        }
+                        else
+                        {
+                            weekMetrics.Add(new() { Day = diasDaSemanaNomes[i], IPV = 0 });
+                        }
+                    };
+                };
+                
+                if(vital.Data is not null) vital.Data.WeekMetric = weekMetrics;
 
-                return new(vital?.Data);
+                Vital vitalResponse = vital.Data is null ? new() { WeekMetric = weekMetrics } : vital.Data;
+                return new(vitalResponse);
             }
             catch
             {
@@ -174,37 +223,27 @@ namespace api_slim.src.Services
         #endregion
         
         #region  FUNCTIONS
-        // 1. CÁLCULO DO SCORE IGS (SONO)
-        // DTS (40%) + ES (30%) + CR (30%)
         public double CalcularIGS(Vital vital)
         {
-            // DTS: Meta de 8h = 100 pontos
             double scoreDts = vital.SleepHours >= 8 ? 100 : (vital.SleepHours / 8.0) * 100;
 
-            // ES (Qualidade): 1 a 5 (escala de emoji/estrela)
             double scoreEs = (vital.SleepQuality / 5.0) * 100;
 
-            // CR (Consistência/Celular): Se SleepCell for "Não" ganha 100
             double scoreCr = vital.SleepCell.ToLower() == "não" ? 100 : 50;
 
             return (scoreDts * 0.4) + (scoreEs * 0.3) + (scoreCr * 0.3);
         }
 
-        // 2. CÁLCULO DO SCORE IGN (NUTRIÇÃO)
-        // Alinhamento (40%) + Consistência (30%) + Carga Glicêmica (20%) + Hidratação (10%)
         public double CalcularIGN(Vital vital, decimal metaHidratacao)
         {
-            // Alinhamento (P1): Se comeu até as 20h ganha 100 (Exemplo baseado na LastMeal)
             double scoreP1 = 100; 
             if (!string.IsNullOrEmpty(vital.LastMeal)) {
                 TimeSpan.TryParse(vital.LastMeal, out var lastMealTime);
                 scoreP1 = lastMealTime.Hours <= 20 ? 100 : 60;
             }
 
-            // Consistência (P2): Baseado no SnackHours (intervalos)
             double scoreP2 = vital.SnackHours == "3" ? 100 : 70;
 
-            // Carga Glic (P3): "Leve" = 100, "Média" = 50, "Alta" = 0
             double scoreP3 = vital.GlycemicLoad.ToLower() switch {
                 "leve" => 100,
                 "media" => 50,
@@ -212,18 +251,14 @@ namespace api_slim.src.Services
                 _ => 50
             };
 
-            // Hidratação (P4): (Consumido / Meta) * 100
             double scoreP4 = (double)(vital.WaterAmount / metaHidratacao) * 100;
             if (scoreP4 > 100) scoreP4 = 100;
 
             return (scoreP1 * 0.4) + (scoreP2 * 0.3) + (scoreP3 * 0.2) + (scoreP4 * 0.1);
         }
 
-        // 3. CÁLCULO DO SCORE IES (MENTAL)
-        // Humor (40%) + Estresse (40%) + Descompressão (20%)
         public double CalcularIES(Vital vital)
         {
-            // Humor (P1): Estável/Bom = 100
             double scoreP1 = vital.Mood.ToLower() switch {
                 "excelente" => 100,
                 "bom" => 80,
@@ -232,36 +267,50 @@ namespace api_slim.src.Services
                 _ => 50
             };
 
-            // Estresse (P2): Inverso (Stress 0 = 100 pontos, Stress 10 = 0 pontos)
             double scoreP2 = (double)(10 - vital.Stress) * 10;
 
-            // Descompressão (P3): "Sim" = 100
             double scoreP3 = vital.Decompression.ToLower() == "sim" ? 100 : 0;
 
             return (scoreP1 * 0.4) + (scoreP2 * 0.4) + (scoreP3 * 0.2);
         }
 
-        // 4. IPV FINAL (Média dos 3)
         public double CalcularIPV(Vital vital, decimal metaHidratacao)
         {
             var igs = CalcularIGS(vital);
             var ign = CalcularIGN(vital, metaHidratacao);
             var ies = CalcularIES(vital);
 
-            return (igs + ign + ies) / 3;
+            double resultado = (igs + ign + ies) / 3;
+
+            return Math.Round(resultado, 2);
         }
 
         public static decimal CalcularMetaAgua(decimal peso)
         {
             if (peso <= 0) return 0;
 
-            // Regra: 35ml por kg
             decimal mlTotal = peso * 35;
             
-            // Converte para litros
             decimal litros = mlTotal / 1000;
 
             return litros;
+        }
+
+        public static string GetDayWeek(string day)
+        {
+            if (string.IsNullOrWhiteSpace(day)) return string.Empty;
+
+            return day.ToLower().Trim() switch
+            {
+                "monday"    => "Segunda-feira",
+                "tuesday"   => "Terça-feira",
+                "wednesday" => "Quarta-feira",
+                "thursday"  => "Quinta-feira",
+                "friday"    => "Sexta-feira",
+                "saturday"  => "Sábado",
+                "sunday"    => "Domingo",
+                _           => "Dia inválido" 
+            };
         }
         #endregion
     }

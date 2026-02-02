@@ -99,6 +99,19 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpPut("profile-photo")]
+    public async Task<IActionResult> UpdateProfileApp([FromForm] UpdatePhotoCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        customer.Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient?> response = await service.UpdateProfilePhotoAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Result });
+    }
+    
+    [Authorize]
     [HttpPut("alter-status")]
     public async Task<IActionResult> UpdateStatus([FromBody] UpdateCustomerRecipientDTO customer)
     {

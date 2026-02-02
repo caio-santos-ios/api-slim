@@ -1,3 +1,4 @@
+using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -10,7 +11,7 @@ using System.Text.Json;
 
 namespace api_slim.src.Services
 {
-    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository) : ICustomerRecipientService
+    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository, CloudinaryHandler cloudinaryHandler) : ICustomerRecipientService
 {
     HttpClient client = new();
     private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -653,6 +654,47 @@ namespace api_slim.src.Services
             });
             
             return new(response.Data, 200, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateProfilePhotoAsync(UpdatePhotoCustomerRecipientDTO request)
+    {
+        try
+        {
+            if (request.Photo == null || request.Photo.Length == 0) return new(null, 400, "Falha ao salvar foto de perfil");
+
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+            
+            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            var tempPath = Path.GetTempFileName();
+
+            using (var stream = new FileStream(tempPath, FileMode.Create))
+            {
+                request.Photo.CopyTo(stream);
+            }
+
+            string uriPhoto = await cloudinaryHandler.UploadAttachment("customer-recipient", request.Photo);
+            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            customerResponse.Data.Photo = uriPhoto;
+
+            ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+            
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "customer-recipient",
+                Description = $"Atualizou Beneficiário {customerResponse.Data.Name}",
+                CreatedBy = request.UpdatedBy,
+                Parent = "customer",
+                ParentId = response.Data?.ContractorId ?? ""                 
+            });
+            
+            return new(new() { Photo = response.Data is not null ? response.Data.Photo : "" }, 200, "Atualizado com sucesso");
         }
         catch
         {
