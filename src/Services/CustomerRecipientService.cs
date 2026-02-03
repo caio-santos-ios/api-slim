@@ -40,6 +40,16 @@ namespace api_slim.src.Services
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByIdAggregateAsync(id);
             if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
+            string rapidocId = customer.Data.rapidocId;
+
+            if(string.IsNullOrEmpty(customer.Data.rapidocId))
+            {
+                ResponseApi<dynamic?> res = await GetByCPFAggregateAsync(customer.Data.cpf);
+                if(res.Data is not null)
+                {
+                    rapidocId = res.Data.RapidocId;
+                }
+            };
 
             var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{customer.Data.rapidocId}/appointments");
             requestHeader.Headers.Add("Authorization", $"Bearer {token}");
@@ -49,47 +59,98 @@ namespace api_slim.src.Services
             content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
             requestHeader.Content = content;
             var response = await client.SendAsync(requestHeader);
-            response.EnsureSuccessStatusCode();
+            
             string jsonResponse = await response.Content.ReadAsStringAsync();
 
             dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
             DateTime? nextDate = null;
             dynamic telemedicine = new {};
-
-            foreach (dynamic item in result!)
+            if(result is not null)
             {
-                if(item.status == "CANCELED") continue;
-                DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
-
-                if(date.Date < DateTime.UtcNow.Date) continue;
-
-                if(nextDate is null)
+                foreach (dynamic item in result)
                 {
-                    nextDate = date.Date;
-                }
-                else 
-                {
-                    if(nextDate > date.Date)
+                    if(item.status == "CANCELED") continue;
+                    DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
+
+                    if(date.Date < DateTime.UtcNow.Date) continue;
+
+                    if(nextDate is null)
                     {
                         nextDate = date.Date;
                     }
-                }
+                    else 
+                    {
+                        if(nextDate > date.Date)
+                        {
+                            nextDate = date.Date;
+                        }
+                    }
 
-                telemedicine = new 
-                { 
-                    isToDay = nextDate == DateTime.UtcNow.Date,
-                    date = nextDate, 
-                    professional = item.professional.name.ToString(),
-                    specialty = item.specialty.name.ToString(),
-                    beneficiaryUrl = item.beneficiaryUrl.ToString(),
-                    from = item.detail.from.ToString(),
-                    to = item.detail.to.ToString(),
+                    telemedicine = new 
+                    { 
+                        isToDay = nextDate == DateTime.UtcNow.Date,
+                        date = nextDate, 
+                        professional = item.professional.name.ToString(),
+                        specialty = item.specialty.name.ToString(),
+                        beneficiaryUrl = item.beneficiaryUrl.ToString(),
+                        from = item.detail.from.ToString(),
+                        to = item.detail.to.ToString(),
+                    };
                 };
             };
 
             customer.Data.telemedicine = telemedicine;
 
             return new(customer.Data);
+        }
+        catch(Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    
+    public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
+    {
+        try
+        {
+            ResponseApi<dynamic?> customer = await customerRepository.GetByIdAggregateAsync(id);
+            if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
+            string rapidocId = customer.Data.rapidocId;
+
+            if(string.IsNullOrEmpty(customer.Data.rapidocId))
+            {
+                ResponseApi<dynamic?> res = await GetByCPFAggregateAsync(customer.Data.cpf);
+                if(res.Data is not null)
+                {
+                    rapidocId = res.Data.RapidocId;
+                }
+            };
+
+            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{customer.Data.rapidocId}/request-appointment");
+            requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+            requestHeader.Headers.Add("clientId", clientId);
+            
+            var content = new StringContent(string.Empty);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+            requestHeader.Content = content;
+            var response = await client.SendAsync(requestHeader);
+            
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+
+            dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+            string link = "";
+            if(result is not null)
+            {
+                // if(result.success) {
+                    link = result.url;
+                    Util.ConsoleLog(result.url);
+                // }
+            }
+
+            dynamic? obj = new {link};
+
+            return new(obj);
         }
         catch
         {

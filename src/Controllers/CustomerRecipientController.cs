@@ -63,6 +63,15 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpGet("atendimento")]
+    public async Task<IActionResult> GetAtendimentoAsync()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        ResponseApi<dynamic?> response = await service.GetAtendimentoAsync(userId!);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCustomerRecipientDTO customer)
     {

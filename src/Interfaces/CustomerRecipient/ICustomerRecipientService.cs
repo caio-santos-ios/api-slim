@@ -8,6 +8,7 @@ namespace api_slim.src.Interfaces
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
+        Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id);
         Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf);
         Task<ResponseApi<dynamic?>> GetByRapidocIdAsync(string rapidocId);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
