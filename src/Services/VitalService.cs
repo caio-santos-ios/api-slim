@@ -100,64 +100,67 @@ namespace api_slim.src.Services
                 ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIdWeekAsync(beneficiaryId);
                 ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
 
+                List<VitalMetric> weekMetrics = new();
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
-                decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
-                
-                if(vital.Data is not null)
+                if(customer.Data is not null)
                 {
-                    if(customer.Data is not null)
+                    decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
+                    
+                    if(vital.Data is not null)
                     {
-                        vital.Data.Metric = new ()
+                        if(customer.Data is not null)
                         {
-                            IGS = CalcularIGS(vital.Data),
-                            IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight)),
-                            IES = CalcularIES(vital.Data),
-                            IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight))
-                        };
+                            vital.Data.Metric = new ()
+                            {
+                                IGS = CalcularIGS(vital.Data),
+                                IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight)),
+                                IES = CalcularIES(vital.Data),
+                                IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight))
+                            };
+                        }
                     }
 
-                }
-
-                var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
-                
-                DateTime hoje = DateTime.Today;
-                DateTime inicioSemana = hoje.AddDays(-(int)hoje.DayOfWeek);
-
-                List<VitalMetric> weekMetrics = new();
-                
-                if(vitalWeek.Data is not null)
-                {
-                    for (int i = 0; i < 7; i++)
+                    var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
+                    
+                    DateTime hoje = DateTime.Today;
+                    DateTime inicioSemana = hoje.AddDays(-(int)hoje.DayOfWeek);
+                    
+                    if(vitalWeek.Data is not null)
                     {
-                        DateTime dataDia = inicioSemana.AddDays(i);
-                        
-                        var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
+                        for (int i = 0; i < 7; i++)
+                        {
+                            DateTime dataDia = inicioSemana.AddDays(i);
+                            
+                            var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
 
-                        if (registroDia != null)
-                        {
-                            weekMetrics.Add(new()
+                            if (registroDia != null)
                             {
-                                IGS = CalcularIGS(registroDia),
-                                IGN = CalcularIGN(registroDia, metaAgua),
-                                IES = CalcularIES(registroDia),
-                                IPV = CalcularIPV(registroDia, metaAgua),
-                                Day = diasDaSemanaNomes[i]
-                            });
-                        }
-                        else
-                        {
-                            weekMetrics.Add(new() { Day = diasDaSemanaNomes[i], IPV = 0 });
-                        }
-                    };
+                                var meta = metaAgua == 0 ? 2 : metaAgua;
+                                weekMetrics.Add(new()
+                                {
+                                    IGS = CalcularIGS(registroDia),
+                                    IGN = CalcularIGN(registroDia, metaAgua),
+                                    IES = CalcularIES(registroDia),
+                                    IPV = CalcularIPV(registroDia, metaAgua),
+                                    Day = diasDaSemanaNomes[i]
+                                });
+                            }
+                            else
+                            {
+                                weekMetrics.Add(new() { Day = diasDaSemanaNomes[i], IPV = 0 });
+                            }
+                        };
+                    };    
                 };
-                
+
                 if(vital.Data is not null) vital.Data.WeekMetric = weekMetrics;
 
                 Vital vitalResponse = vital.Data is null ? new() { WeekMetric = weekMetrics } : vital.Data;
                 return new(vitalResponse);
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
