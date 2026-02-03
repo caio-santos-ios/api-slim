@@ -142,10 +142,7 @@ namespace api_slim.src.Services
             string link = "";
             if(result is not null)
             {
-                // if(result.success) {
-                    link = result.url;
-                    Util.ConsoleLog(result.url);
-                // }
+                link = result.url;
             }
 
             dynamic? obj = new {link};
