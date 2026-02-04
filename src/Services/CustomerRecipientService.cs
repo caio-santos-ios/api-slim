@@ -603,114 +603,48 @@ namespace api_slim.src.Services
             customerResponse.Data.Cpf = request.Cpf;
             customerResponse.Data.Weight = request.Weight;
             customerResponse.Data.Height = request.Height;
+            customerResponse.Data.TargetSleepTime = request.TargetSleepTime;
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+
+            // await logRepository.CreateAsync(new()
+            // {   
+            //     Action = "Atualização",
+            //     Collection = "customer-recipient",
+            //     Description = $"Atualizou Beneficiário {customerResponse.Data.Name}",
+            //     CreatedBy = request.UpdatedBy,
+            //     Parent = "customer",
+            //     ParentId = response.Data.ContractorId                 
+            // });
             
-            // var requestRapidoc = new HttpRequestMessage(HttpMethod.Put, $"{uri}/beneficiaries/{response.Data!.RapidocId}");
-
-            // requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
-            // requestRapidoc.Headers.Add("clientId", clientId);
-            // requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
-            // string typePlan = "G";
-            // bool psicologia = false;
-            // bool especialista = false;
-
-            // ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
-            // if(plan.Data is not null)
-            // {
-            //     foreach (string moduleId in plan.Data.ServiceModuleIds)
-            //     {
-            //         ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
-            //         if(serviceModule.Data is not null) 
-            //         {
-            //             if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
-            //             {
-            //                 especialista = true;
-            //             }
-
-            //             if(serviceModule.Data.Name.Equals("Bem + Papo"))
-            //             {
-            //                 psicologia = true;
-            //             }
-            //         }
-            //     }
-            // }
-
-            // if(psicologia || especialista) 
-            // {
-            //     if(psicologia && especialista)
-            //     {
-            //         typePlan = "GSP";
-            //     }
-            //     else 
-            //     {
-            //         if(psicologia)
-            //         {
-            //             typePlan = "GP";
-            //         }
-            //         else 
-            //         {
-            //             typePlan = "GS";
-            //         }
-            //     }
-            // }
-            // else
-            // {
-            //     typePlan = "G";
-            // };
-
-            // var beneficiarios = new 
-            // {
-            //     name = request.Name,
-            //     cpf = new string(request.Cpf.Where(char.IsDigit).ToArray()),
-            //     birthday = request.DateOfBirth, 
-            //     email = request.Email,
-            //     zipCode = new string(request.Address.ZipCode.Where(char.IsDigit).ToArray()),
-            //     address = $"{request.Address.Street}, {request.Address.Number}",
-            //     city = request.Address.City,
-            //     state = "",
-            //     paymentType = "S",
-            //     serviceType = typePlan
-            // };
-
-            // string jsonPayload = JsonSerializer.Serialize(beneficiarios);
-
-            // var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/vnd.rapidoc.tema-v2+json");
-
-            // content.Headers.ContentType!.CharSet = null; 
-
-            // requestRapidoc.Content = content;
-
-            // var responseRapidoc = await client.SendAsync(requestRapidoc);
-
-            // await responseRapidoc.Content.ReadAsStringAsync();
+            return new(response.Data, 200, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateDassAsync(UpdateDassCustomerRecipientDTO request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
             
-            // if(!string.IsNullOrEmpty(request.Address.Id))
-            // {            
-            //     ResponseApi<Address?> addressResponse = await addressRepository.UpdateAsync(request.Address);
-            //     if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao atualizar.");
-            // }
-            // else
-            // {
-            //     Address address = _mapper.Map<Address>(request.Address);
-            //     address.Parent = "customer-recipient";
-            //     address.ParentId = response.Data!.Id;
-            //     ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
-            //     if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
-            // };
+            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            customerResponse.Data.RapidocId = customerResponse.Data.RapidocId;
+            customerResponse.Data.Dass = new Dass()
+            {
+                Anxiety = request.Anxiety,
+                Depression = request.Depression,
+                Stress = request.Stress,
+                Total = request.Total
+            };
 
-            await logRepository.CreateAsync(new()
-            {   
-                Action = "Atualização",
-                Collection = "customer-recipient",
-                Description = $"Atualizou Beneficiário {customerResponse.Data.Name}",
-                CreatedBy = request.UpdatedBy,
-                Parent = "customer",
-                ParentId = response.Data.ContractorId                 
-            });
-            
+            ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+
             return new(response.Data, 200, "Atualizado com sucesso");
         }
         catch

@@ -15,6 +15,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> CreateAsync(CreateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateProfileAsync(UpdateCustomerRecipientDTO request);
+        Task<ResponseApi<CustomerRecipient?>> UpdateDassAsync(UpdateDassCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateProfilePhotoAsync(UpdatePhotoCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId);

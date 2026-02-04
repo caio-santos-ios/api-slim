@@ -29,5 +29,6 @@ namespace api_slim.src.Shared.DTOs
                 public string Device { get; set; } = string.Empty;
                 public decimal Height { get; set; }
                 public decimal Weight { get; set; }
+                public string TargetSleepTime { get; set; } = string.Empty;
         }
 }

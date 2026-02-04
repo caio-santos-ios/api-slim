@@ -165,7 +165,7 @@ namespace api_slim.src.Repository
             DateTime inicioSemana = hoje.AddDays(-diasParaSegunda);
             DateTime fimSemana = inicioSemana.AddDays(6);
 
-            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= inicioSemana && x.CreatedAt <= fimSemana && x.CreatedAt.Date == DateTime.UtcNow.Date && !x.Deleted).ToListAsync();
+            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= inicioSemana && x.CreatedAt <= fimSemana && !x.Deleted).ToListAsync();
             return new(vitals);
         }
         catch

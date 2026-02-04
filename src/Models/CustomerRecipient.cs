@@ -105,5 +105,25 @@ namespace api_slim.src.Models
 
         [BsonElement("weight")]
         public decimal Weight { get; set; }
-    } 
+        
+        [BsonElement("targetSleepTime")]
+        public string TargetSleepTime { get; set; } = string.Empty;
+        
+        [BsonElement("dass")]
+        public Dass Dass { get; set; } = new();
+    }
+
+    public class Dass 
+    {
+        [BsonElement("anxiety")]
+        public decimal Anxiety { get; set; }
+
+        [BsonElement("depression")]
+        public decimal Depression { get; set; }
+        
+        [BsonElement("stress")]
+        public decimal Stress { get; set; }
+        [BsonElement("total")]
+        public decimal Total { get; set; }
+    }
 }

@@ -98,9 +98,15 @@ namespace api_slim.src.Services
             try
             {
                 ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIdWeekAsync(beneficiaryId);
+
                 ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
 
                 List<VitalMetric> weekMetrics = new();
+                VitalMetric weekMetric = new();
+                double IGS = 0;
+                double IGN = 0;
+                double IES = 0;
+                double IPV = 0;
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
                 {
@@ -132,7 +138,6 @@ namespace api_slim.src.Services
                             DateTime dataDia = inicioSemana.AddDays(i);
                             
                             var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
-
                             if (registroDia != null)
                             {
                                 var meta = metaAgua == 0 ? 2 : metaAgua;
@@ -144,6 +149,11 @@ namespace api_slim.src.Services
                                     IPV = CalcularIPV(registroDia, metaAgua),
                                     Day = diasDaSemanaNomes[i]
                                 });
+                                
+                                IGS = CalcularIGS(registroDia);
+                                IGN = CalcularIGN(registroDia, metaAgua);
+                                IES = CalcularIES(registroDia);
+                                IPV = CalcularIPV(registroDia, metaAgua);
                             }
                             else
                             {
@@ -153,14 +163,16 @@ namespace api_slim.src.Services
                     };    
                 };
 
-                if(vital.Data is not null) vital.Data.WeekMetric = weekMetrics;
+                // if(vital.Data is not null) vital.Data.WeekMetric = weekMetrics;
 
-                Vital vitalResponse = vital.Data is null ? new() { WeekMetric = weekMetrics } : vital.Data;
-                return new(vitalResponse);
+                // Vital vitalResponse = vital.Data is null ? new() { WeekMetric = weekMetrics } : new() { Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV } };
+                return new(new Vital() {
+                    WeekMetric = weekMetrics,
+                    Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV }
+                });
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
