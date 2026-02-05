@@ -163,10 +163,8 @@ namespace api_slim.src.Services
                     };    
                 };
 
-                // if(vital.Data is not null) vital.Data.WeekMetric = weekMetrics;
-
-                // Vital vitalResponse = vital.Data is null ? new() { WeekMetric = weekMetrics } : new() { Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV } };
                 return new(new Vital() {
+                    Id = vital.Data is null ? "" : vital.Data.Id,
                     WeekMetric = weekMetrics,
                     Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV }
                 });
