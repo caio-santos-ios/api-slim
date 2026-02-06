@@ -352,12 +352,12 @@ namespace api_slim.src.Services
             {
                 switch(patrology)
                 {
-                    case "Diabetes": return 15;
-                    case "Hipertensão": return 15;
+                    case "Diabetes": return 0;
+                    case "Hipertensão": return 0;
                     case "Ansiedade": return 15;
-                    case "Neoplasia": return 0;
+                    case "Neoplasia": return 15;
                     case "Bipolar": return 15;
-                    case "Pós AVC": return 0;
+                    case "Pós AVC": return 15;
                     case "Outros": return 0;
                     default: return 0;
                 }
@@ -370,9 +370,9 @@ namespace api_slim.src.Services
                     case "Diabetes": return 15;
                     case "Hipertensão": return 15;
                     case "Ansiedade": return 0;
-                    case "Neoplasia": return 0;
+                    case "Neoplasia": return 15;
                     case "Bipolar": return 0;
-                    case "Pós AVC": return 0;
+                    case "Pós AVC": return 15;
                     case "Outros": return 0;
                     default: return 0;
                 }
@@ -385,9 +385,9 @@ namespace api_slim.src.Services
                     case "Diabetes": return 0;
                     case "Hipertensão": return 0;
                     case "Ansiedade": return 15;
-                    case "Neoplasia": return 0;
+                    case "Neoplasia": return 15;
                     case "Bipolar": return 15;
-                    case "Pós AVC": return 0;
+                    case "Pós AVC": return 15;
                     case "Outros": return 0;
                     default: return 0;
                 }
