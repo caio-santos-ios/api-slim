@@ -109,6 +109,12 @@ namespace api_slim.src.Models
         [BsonElement("targetSleepTime")]
         public string TargetSleepTime { get; set; } = string.Empty;
         
+        [BsonElement("lastSupper")]
+        public string LastSupper { get; set; } = string.Empty;
+
+        [BsonElement("patrology")]
+        public string Patrology { get; set; } = string.Empty;
+        
         [BsonElement("dass")]
         public Dass Dass { get; set; } = new();
     }

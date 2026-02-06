@@ -19,8 +19,18 @@ namespace api_slim.src.Shared.DTOs
 
 
                 // MENTAL
-                public string Mood { get; set; } = string.Empty;
-                public decimal Stress { get; set; }
-                public string Decompression { get; set; } = string.Empty;
+                // public string Mood { get; set; } = string.Empty;
+                // public decimal Stress { get; set; }
+                // public string Decompression { get; set; } = string.Empty;
+
+                public int Dass1 { get; set; }
+                public int Dass2 { get; set; }
+                public int Dass3 { get; set; }
+                public int Dass4 { get; set; }
+                public int Dass5 { get; set; }
+                public int Dass6 { get; set; }
+                public int Dass7 { get; set; }
+                public int Dass8 { get; set; }
+                public int Dass9 { get; set; }
         }
 }

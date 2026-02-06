@@ -169,6 +169,9 @@ namespace api_slim.src.Services
                 
                 if(Validator.IsReliable(request.Password).Equals("Ruim")) return new(null, 400, $"Senha é muito fraca");
 
+                ResponseApi<CustomerRecipient?> codeAccess = await customerRecipientRepository.GetByCodeAccessAsync(request.CodeAccess);
+                if(!codeAccess.IsSuccess || codeAccess.Data is null) return new(null, 400, "Código expirou, solicite um novo código");
+
                 ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByIdAsync(request.Id);
                 if(!customerRecipient.IsSuccess || customerRecipient.Data is null) return new(null, 400, "Falha ao alterar senha");
 
@@ -191,12 +194,11 @@ namespace api_slim.src.Services
                 if(request.Device == "app")
                 {
                     dynamic access = Util.GenerateCodeAccess();
-                    
-                    ResponseApi<dynamic?> customerRecipientVerify = await customerRecipientService.GetByCPFAggregateAsync(request.CPF);
-                    if(customerRecipientVerify.Data is null) return new(null, 404, "CPF inválido");
+                    // ResponseApi<dynamic?> customerRecipientVerify = await customerRecipientService.GetByCPFAggregateAsync(request.CPF);
+                    // if(customerRecipientVerify.Data is null) return new(null, 404, "CPF inválido");
 
-                    ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByDocumentAsync(request.CPF);
-                    if(customerRecipient.Data is null) return new(null, 404, "CPF inválido");
+                    ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByEmailAsync(request.Email);
+                    if(customerRecipient.Data is null) return new(null, 404, "E-mail inválido");
 
                     customerRecipient.Data.CodeAccess = access.CodeAccess;
                     customerRecipient.Data.CodeAccessExpiration = access.CodeAccessExpiration;
@@ -204,6 +206,9 @@ namespace api_slim.src.Services
                     customerRecipient.Data.FirstAccess = false;
 
                     await customerRecipientRepository.UpdateAsync(customerRecipient.Data);
+
+                    string template = MailTemplate.ForgotPasswordWeb(access.CodeAccess);
+                    await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
 
                     return new(new User() {Id = customerRecipient.Data.Id, CodeAccess = access.CodeAccess}, 200, "Código enviado");
                 }

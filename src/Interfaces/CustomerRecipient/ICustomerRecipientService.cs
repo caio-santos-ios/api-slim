@@ -13,6 +13,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<dynamic?>> GetByRapidocIdAsync(string rapidocId);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<CustomerRecipient?>> CreateAsync(CreateCustomerRecipientDTO request);
+        Task<ResponseApi<CustomerRecipient?>> EmailAsync(CreateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateProfileAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateDassAsync(UpdateDassCustomerRecipientDTO request);

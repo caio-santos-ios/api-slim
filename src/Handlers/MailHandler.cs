@@ -10,21 +10,29 @@ namespace api_slim.src.Handlers
 
         public async Task SendMailAsync(string recipient, string subject, string body)
         {
-            MimeMessage mensagem = new();
-            mensagem.From.Add(MailboxAddress.Parse(EmailFrom));
-            mensagem.To.Add(MailboxAddress.Parse(recipient));
-            mensagem.Subject = subject;
-
-            mensagem.Body = new TextPart("html")
+            try
             {
-                Text = body
-            };
+                MimeMessage mensagem = new();
+                mensagem.From.Add(MailboxAddress.Parse(EmailFrom));
+                mensagem.To.Add(MailboxAddress.Parse(recipient));
+                mensagem.Subject = subject;
 
-            using SmtpClient smtp = new();
-            await smtp.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-            await smtp.AuthenticateAsync(EmailFrom, Password);
-            await smtp.SendAsync(mensagem);
-            await smtp.DisconnectAsync(true);
+                mensagem.Body = new TextPart("html")
+                {
+                    Text = body
+                };
+
+                using SmtpClient smtp = new();
+                await smtp.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(EmailFrom, Password);
+                await smtp.SendAsync(mensagem);
+                await smtp.DisconnectAsync(true);
+                
+            }
+            catch(Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
+            }
         } 
     }
 }

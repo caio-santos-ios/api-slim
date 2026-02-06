@@ -30,5 +30,7 @@ namespace api_slim.src.Shared.DTOs
                 public decimal Height { get; set; }
                 public decimal Weight { get; set; }
                 public string TargetSleepTime { get; set; } = string.Empty;
+                public string LastSupper { get; set; } = string.Empty;
+                public string Patrology { get; set; } = string.Empty;
         }
 }

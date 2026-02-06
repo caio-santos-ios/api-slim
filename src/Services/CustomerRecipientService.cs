@@ -3,6 +3,7 @@ using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Templates;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
 using System.Globalization;
@@ -11,7 +12,7 @@ using System.Text.Json;
 
 namespace api_slim.src.Services
 {
-    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository, CloudinaryHandler cloudinaryHandler) : ICustomerRecipientService
+    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository, CloudinaryHandler cloudinaryHandler, MailHandler mailHandler) : ICustomerRecipientService
 {
     HttpClient client = new();
     private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -174,7 +175,6 @@ namespace api_slim.src.Services
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                     requestRapidoc.Content = content;
                     var response = await client.SendAsync(requestRapidoc);
-                    response.EnsureSuccessStatusCode();
 
                     string jsonResponse = await response.Content.ReadAsStringAsync();
                     dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
@@ -444,7 +444,139 @@ namespace api_slim.src.Services
                 ParentId = response.Data.ContractorId                 
             });
 
+            string passowrd = request.Cpf.Replace(".", "").Replace("-", "");
+            string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
+            await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", template);
+
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
+        }
+        catch
+        { 
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> EmailAsync(CreateCustomerRecipientDTO request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> existed = await customerRepository.GetByCPFAsync(request.Cpf, request.ContractorId);
+            if(existed.Data is not null) return new(null, 400, "CPF já utilizado");
+            string passowrd = request.Cpf.Replace(".", "").Replace("-", "");
+            string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
+            await mailHandler.SendMailAsync("caiosantos.cs1981@gmail.com", "Aplicativo Pasbem", template);
+
+            // CustomerRecipient customer = _mapper.Map<CustomerRecipient>(request);
+            // ResponseApi<long?> code = await customerRepository.GetNextCodeAsync();
+            // customer.Code = code.Data.ToString()!.PadLeft(6, '0');
+
+            // ResponseApi<CustomerRecipient?> response = await customerRepository.CreateAsync(customer);
+
+            // if(response.Data is null) return new(null, 400, "Falha ao criar Beneficiário.");
+
+            // var requestRapidoc = new HttpRequestMessage(HttpMethod.Post, $"{uri}/beneficiaries");
+
+            // requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
+            // requestRapidoc.Headers.Add("clientId", clientId);
+            // requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            // string typePlan = "G";
+            // bool psicologia = false;
+            // bool especialista = false;
+
+            // ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
+            // if(plan.Data is not null)
+            // {
+            //     foreach (string moduleId in plan.Data.ServiceModuleIds)
+            //     {
+            //         ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+            //         if(serviceModule.Data is not null) 
+            //         {
+            //             if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
+            //             {
+            //                 especialista = true;
+            //             }
+
+            //             if(serviceModule.Data.Name.Equals("Bem + Papo"))
+            //             {
+            //                 psicologia = true;
+            //             }
+            //         }
+            //     }
+            // }
+
+            // if(psicologia || especialista) 
+            // {
+            //     if(psicologia && especialista)
+            //     {
+            //         typePlan = "GSP";
+            //     }
+            //     else 
+            //     {
+            //         if(psicologia)
+            //         {
+            //             typePlan = "GP";
+            //         }
+            //         else 
+            //         {
+            //             typePlan = "GS";
+            //         }
+            //     }
+            // }
+            // else
+            // {
+            //     typePlan = "G";
+            // };
+
+            // var beneficiarios = new[]
+            // {
+            //     new {
+            //         name = request.Name,
+            //         cpf = new string(request.Cpf.Where(char.IsDigit).ToArray()),
+            //         birthday = request.DateOfBirth, 
+            //         email = request.Email,
+            //         zipCode = new string(request.Address.ZipCode.Where(char.IsDigit).ToArray()),
+            //         address = $"{request.Address.Street}, {request.Address.Number}",
+            //         city = request.Address.City,
+            //         state = "",
+            //         serviceType = typePlan
+            //     }
+            // };
+
+            // string jsonPayload = JsonSerializer.Serialize(beneficiarios);
+
+            // var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/vnd.rapidoc.tema-v2+json");
+
+            // content.Headers.ContentType!.CharSet = null; 
+
+            // requestRapidoc.Content = content;
+
+            // var responseRapidoc = await client.SendAsync(requestRapidoc);
+            // responseRapidoc.EnsureSuccessStatusCode();
+            // string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
+            // dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+            // if(result is not null && result.success == "true") 
+            // {
+            //     response.Data.RapidocId = result!.beneficiaries[0].uuid.ToString(); 
+            //     await customerRepository.UpdateAsync(response.Data);
+            // }
+
+            // Address address = _mapper.Map<Address>(request.Address);
+            // address.Parent = "customer-recipient";
+            // address.ParentId = response.Data!.Id;
+            // ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
+            // if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
+
+            // await logRepository.CreateAsync(new()
+            // {   
+            //     Action = "Criação",
+            //     Collection = "customer-recipient",
+            //     Description = $"Criação Beneficiário {request.Name}",
+            //     CreatedBy = request.CreatedBy,
+            //     Parent = "customer",
+            //     ParentId = response.Data.ContractorId                 
+            // });
+
+            return new(null, 201, "Beneficiário criado com sucesso.");
         }
         catch
         { 
@@ -604,6 +736,8 @@ namespace api_slim.src.Services
             customerResponse.Data.Weight = request.Weight;
             customerResponse.Data.Height = request.Height;
             customerResponse.Data.TargetSleepTime = request.TargetSleepTime;
+            customerResponse.Data.LastSupper = request.LastSupper;
+            customerResponse.Data.Patrology = request.Patrology;
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");

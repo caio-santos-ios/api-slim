@@ -72,10 +72,10 @@ namespace api_slim.src.Services
                                 WaterAmount = item.WaterAmount,
                                 Metric = new() 
                                 {
-                                    IGS = CalcularIGS(item),
-                                    IGN = CalcularIGN(item, CalcularMetaAgua(customer.Data.Weight)),
-                                    IES = CalcularIES(item),
-                                    IPV = CalcularIPV(item, CalcularMetaAgua(customer.Data.Weight)),
+                                    IGS = CalcularIGS(item, customer.Data.Patrology),
+                                    IGN = CalcularIGN(item, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
+                                    IES = CalcularIES(item, customer.Data.Patrology),
+                                    IPV = CalcularIPV(item, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
                                     Day = $"{dayBr}, {dayNum} {monthBr}"
                                 }
                             });
@@ -111,23 +111,26 @@ namespace api_slim.src.Services
                 if(customer.Data is not null)
                 {
                     decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
-                    
+
                     if(vital.Data is not null)
                     {
                         if(customer.Data is not null)
                         {
                             vital.Data.Metric = new ()
                             {
-                                IGS = CalcularIGS(vital.Data),
-                                IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight)),
-                                IES = CalcularIES(vital.Data),
-                                IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight))
+                                IGS = (int)Math.Round(CalcularIGS(vital.Data, customer.Data.Patrology)),
+                                IGN = (int)Math.Round(CalcularIGN(vital.Data, metaAgua, customer.Data.Patrology)),
+                                IES = (int)Math.Round(CalcularIES(vital.Data, customer.Data.Patrology)),
+                                // IGS = CalcularIGS(vital.Data),
+                                // IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight)),
+                                // IES = CalcularIES(vital.Data),
+                                IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology)
                             };
                         }
                     }
 
                     var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
-                    
+                    string patrology = customer.Data is null ? "" : customer.Data.Patrology;
                     DateTime hoje = DateTime.Today;
                     DateTime inicioSemana = hoje.AddDays(-(int)hoje.DayOfWeek);
                     
@@ -143,17 +146,17 @@ namespace api_slim.src.Services
                                 var meta = metaAgua == 0 ? 2 : metaAgua;
                                 weekMetrics.Add(new()
                                 {
-                                    IGS = CalcularIGS(registroDia),
-                                    IGN = CalcularIGN(registroDia, metaAgua),
-                                    IES = CalcularIES(registroDia),
-                                    IPV = CalcularIPV(registroDia, metaAgua),
+                                    IGS = (int)Math.Round(CalcularIGS(registroDia, patrology)),
+                                    IGN = (int)Math.Round(CalcularIGN(registroDia, metaAgua, patrology)),
+                                    IES = (int)Math.Round(CalcularIES(registroDia, patrology)),
+                                    IPV = CalcularIPV(registroDia, metaAgua, patrology),
                                     Day = diasDaSemanaNomes[i]
                                 });
                                 
-                                IGS = CalcularIGS(registroDia);
-                                IGN = CalcularIGN(registroDia, metaAgua);
-                                IES = CalcularIES(registroDia);
-                                IPV = CalcularIPV(registroDia, metaAgua);
+                                IGS = (int)Math.Round(CalcularIGS(registroDia, patrology));
+                                IGN = (int)Math.Round(CalcularIGN(registroDia, metaAgua, patrology));
+                                IES = (int)Math.Round(CalcularIES(registroDia, patrology));
+                                IPV = CalcularIPV(registroDia, metaAgua, patrology);
                             }
                             else
                             {
@@ -236,7 +239,7 @@ namespace api_slim.src.Services
         #endregion
         
         #region  FUNCTIONS
-        public double CalcularIGS(Vital vital)
+        public double CalcularIGS(Vital vital, string patrology)
         {
             double scoreDts = vital.SleepHours >= 8 ? 100 : (vital.SleepHours / 8.0) * 100;
 
@@ -244,10 +247,11 @@ namespace api_slim.src.Services
 
             double scoreCr = vital.SleepCell.ToLower() == "não" ? 100 : 50;
 
-            return (scoreDts * 0.4) + (scoreEs * 0.3) + (scoreCr * 0.3);
+            double result = (scoreDts * 0.4) + (scoreEs * 0.3) + (scoreCr * 0.3);
+            return AplicarDescontoScore(result, GetDescontoScore(patrology, "igs"));
         }
 
-        public double CalcularIGN(Vital vital, decimal metaHidratacao)
+        public double CalcularIGN(Vital vital, decimal metaHidratacao, string patrology)
         {
             double scoreP1 = 100; 
             if (!string.IsNullOrEmpty(vital.LastMeal)) {
@@ -267,31 +271,41 @@ namespace api_slim.src.Services
             double scoreP4 = (double)(vital.WaterAmount / metaHidratacao) * 100;
             if (scoreP4 > 100) scoreP4 = 100;
 
-            return (scoreP1 * 0.4) + (scoreP2 * 0.3) + (scoreP3 * 0.2) + (scoreP4 * 0.1);
+            double result = (scoreP1 * 0.4) + (scoreP2 * 0.3) + (scoreP3 * 0.2) + (scoreP4 * 0.1);
+
+            return AplicarDescontoScore(result, GetDescontoScore(patrology, "ign"));
         }
 
-        public double CalcularIES(Vital vital)
+        public double CalcularIES(Vital vital, string patrology)
         {
-            double scoreP1 = vital.Mood.ToLower() switch {
-                "excelente" => 100,
-                "bom" => 80,
-                "estável" => 70,
-                "ruim" => 30,
-                _ => 50
-            };
+            // double scoreP1 = vital.Mood.ToLower() switch {
+            //     "excelente" => 100,
+            //     "bom" => 80,
+            //     "estável" => 70,
+            //     "ruim" => 30,
+            //     _ => 50
+            // };
 
-            double scoreP2 = (double)(10 - vital.Stress) * 10;
+            // double scoreP2 = (double)(10 - vital.Stress) * 10;
 
-            double scoreP3 = vital.Decompression.ToLower() == "sim" ? 100 : 0;
+            // double scoreP3 = vital.Decompression.ToLower() == "sim" ? 100 : 0;
 
-            return (scoreP1 * 0.4) + (scoreP2 * 0.4) + (scoreP3 * 0.2);
+            // return (scoreP1 * 0.4) + (scoreP2 * 0.4) + (scoreP3 * 0.2);
+
+            int somaDass = vital.Dass1 + vital.Dass2 + vital.Dass3 + 
+                            vital.Dass4 + vital.Dass5 + vital.Dass6 + 
+                            vital.Dass7 + vital.Dass8 + vital.Dass9;
+
+            double scoreIES = ((27.0 - somaDass) / 27.0) * 100;
+            double result = Math.Round(scoreIES, 2);
+            return AplicarDescontoScore(result, GetDescontoScore(patrology, "ies"));
         }
 
-        public double CalcularIPV(Vital vital, decimal metaHidratacao)
+        public double CalcularIPV(Vital vital, decimal metaHidratacao, string patrology)
         {
-            var igs = CalcularIGS(vital);
-            var ign = CalcularIGN(vital, metaHidratacao);
-            var ies = CalcularIES(vital);
+            var igs = CalcularIGS(vital, patrology);
+            var ign = CalcularIGN(vital, metaHidratacao, patrology);
+            var ies = CalcularIES(vital, patrology);
 
             double resultado = (igs + ign + ies) / 3;
 
@@ -324,6 +338,62 @@ namespace api_slim.src.Services
                 "sunday"    => "Domingo",
                 _           => "Dia inválido" 
             };
+        }
+        public double AplicarDescontoScore(double score, double porcentagem)
+        {
+            double valorDesconto = score * (porcentagem / 100.0);
+            double resultado = score - valorDesconto;
+
+            return Math.Round(resultado);
+        }
+        public double GetDescontoScore(string patrology, string indice)
+        {
+            if(indice == "igs")
+            {
+                switch(patrology)
+                {
+                    case "Diabetes": return 15;
+                    case "Hipertensão": return 15;
+                    case "Ansiedade": return 15;
+                    case "Neoplasia": return 0;
+                    case "Bipolar": return 15;
+                    case "Pós AVC": return 0;
+                    case "Outros": return 0;
+                    default: return 0;
+                }
+            }
+
+            if(indice == "ign")
+            {
+                switch(patrology)
+                {
+                    case "Diabetes": return 15;
+                    case "Hipertensão": return 15;
+                    case "Ansiedade": return 0;
+                    case "Neoplasia": return 0;
+                    case "Bipolar": return 0;
+                    case "Pós AVC": return 0;
+                    case "Outros": return 0;
+                    default: return 0;
+                }
+            }
+            
+            if(indice == "ies")
+            {
+                switch(patrology)
+                {
+                    case "Diabetes": return 0;
+                    case "Hipertensão": return 0;
+                    case "Ansiedade": return 15;
+                    case "Neoplasia": return 0;
+                    case "Bipolar": return 15;
+                    case "Pós AVC": return 0;
+                    case "Outros": return 0;
+                    default: return 0;
+                }
+            }
+
+            return 0;
         }
         #endregion
     }
