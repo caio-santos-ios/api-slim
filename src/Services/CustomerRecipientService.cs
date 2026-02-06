@@ -9,6 +9,7 @@ using AutoMapper;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using ImageMagick;
 
 namespace api_slim.src.Services
 {
@@ -790,37 +791,53 @@ namespace api_slim.src.Services
     {
         try
         {
-            if (request.Photo == null || request.Photo.Length == 0) return new(null, 400, "Falha ao salvar foto de perfil");
+            if (request.Photo == null || request.Photo.Length == 0) 
+            return new(null, 400, "Falha ao salvar foto de perfil");
 
-            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
-            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
-            
-            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
-            var tempPath = Path.GetTempFileName();
+            var customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if (customerResponse.Data is null) return new(null, 404, "Beneficiário não encontrado");
 
-            using (var stream = new FileStream(tempPath, FileMode.Create))
+            // 1. Processamento e Conversão
+            byte[] convertedBytes;
+            using (var stream = request.Photo.OpenReadStream())
+            using (var image = new MagickImage(stream))
             {
-                request.Photo.CopyTo(stream);
+                image.AutoOrient(); // Corrige rotação automática
+                
+                // Redimensiona para não sobrecarregar o storage (opcional, mas recomendado)
+                image.Resize(new MagickGeometry(800, 800) { IgnoreAspectRatio = false });
+                
+                image.Format = MagickFormat.Jpeg;
+                image.Quality = 80;
+                
+                convertedBytes = image.ToByteArray();
             }
 
-            string uriPhoto = await cloudinaryHandler.UploadAttachment("customer-recipient", request.Photo);
+            // 2. Criamos o "Falso" IFormFile com os bytes do JPEG
+            var convertedPhoto = new ByteArrayFormFile(convertedBytes, "profile.jpg");
+
+            // 3. Chamamos o seu Handler ORIGINAL sem alterá-lo
+            string uriPhoto = await cloudinaryHandler.UploadAttachment("customer-recipient", convertedPhoto);
+
+            // 4. Atualização no Banco
             customerResponse.Data.UpdatedAt = DateTime.UtcNow;
             customerResponse.Data.Photo = uriPhoto;
 
-            ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
-            if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
-            
+            var response = await customerRepository.UpdateAsync(customerResponse.Data);
+            if (!response.IsSuccess) return new(null, 400, "Falha ao salvar no banco");
+
+            // Log de Auditoria
             await logRepository.CreateAsync(new()
-            {   
+            { 
                 Action = "Atualização",
                 Collection = "customer-recipient",
                 Description = $"Atualizou Beneficiário {customerResponse.Data.Name}",
                 CreatedBy = request.UpdatedBy,
                 Parent = "customer",
                 ParentId = response.Data?.ContractorId ?? ""                 
-            });
-            
-            return new(new() { Photo = response.Data is not null ? response.Data.Photo : "" }, 200, "Atualizado com sucesso");
+            });            
+
+            return new(new() { Photo = response.Data?.Photo ?? "" }, 200, "Atualizado com sucesso");
         }
         catch
         {
@@ -900,5 +917,20 @@ namespace api_slim.src.Services
         }
     }
     #endregion 
+    #region Fuctions
+    public class ByteArrayFormFile(byte[] bytes, string fileName) : IFormFile
+    {
+        private readonly byte[] _bytes = bytes;
+        public string ContentType => "image/jpeg";
+        public string ContentDisposition => $"form-data; name=\"photo\"; filename=\"{fileName}\"";
+        public IHeaderDictionary Headers => new HeaderDictionary();
+        public long Length => _bytes.Length;
+        public string Name => "photo";
+        public string FileName => fileName;
+        public Stream OpenReadStream() => new MemoryStream(_bytes);
+        public void CopyTo(Stream target) => new MemoryStream(_bytes).CopyTo(target);
+        public Task CopyToAsync(Stream target, CancellationToken cancellationToken = default) => new MemoryStream(_bytes).CopyToAsync(target, cancellationToken);
+    }
+    #endregion
 }
 }
