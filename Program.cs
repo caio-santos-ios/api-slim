@@ -1,9 +1,20 @@
 using api_slim.src.Configuration;
 using DotNetEnv;
+using Microsoft.AspNetCore.Http.Features;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // Permite até 20MB
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 20 * 1024 * 1024; // Permite até 20MB no servidor Kestrel
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.AddBuilderConfiguration();
