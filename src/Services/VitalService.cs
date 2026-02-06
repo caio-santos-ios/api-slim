@@ -107,6 +107,17 @@ namespace api_slim.src.Services
                 double IGN = 0;
                 double IES = 0;
                 double IPV = 0;
+
+                double dass1 = 0;
+                double dass2 = 0;
+                double dass3 = 0;
+                double dass4 = 0;
+                double dass5 = 0;
+                double dass6 = 0;
+                double dass7 = 0;
+                double dass8 = 0;
+                double dass9 = 0;
+
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
                 {
@@ -144,6 +155,17 @@ namespace api_slim.src.Services
                             if (registroDia != null)
                             {
                                 var meta = metaAgua == 0 ? 2 : metaAgua;
+
+                                dass1 += registroDia.Dass1;
+                                dass2 += registroDia.Dass2;
+                                dass3 += registroDia.Dass3;
+                                dass4 += registroDia.Dass4;
+                                dass5 += registroDia.Dass5;
+                                dass6 += registroDia.Dass6;
+                                dass7 += registroDia.Dass7;
+                                dass8 += registroDia.Dass8;
+                                dass9 += registroDia.Dass9;
+
                                 weekMetrics.Add(new()
                                 {
                                     IGS = (int)Math.Round(CalcularIGS(registroDia, patrology)),
@@ -169,7 +191,16 @@ namespace api_slim.src.Services
                 return new(new Vital() {
                     Id = vital.Data is null ? "" : vital.Data.Id,
                     WeekMetric = weekMetrics,
-                    Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV }
+                    Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV },
+                    Dass1 = dass1 > 0 ? (int)dass1 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass2 = dass2 > 0 ? (int)dass2 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass3 = dass3 > 0 ? (int)dass3 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass4 = dass4 > 0 ? (int)dass4 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass5 = dass5 > 0 ? (int)dass5 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass6 = dass6 > 0 ? (int)dass6 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass7 = dass7 > 0 ? (int)dass7 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass8 = dass8 > 0 ? (int)dass8 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass9 = dass9 > 0 ? (int)dass9 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
                 });
             }
             catch
