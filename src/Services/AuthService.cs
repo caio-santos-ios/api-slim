@@ -75,7 +75,7 @@ namespace api_slim.src.Services
                     if(!isValid) return new(null, 400, "Dados incorretos");
                 }
 
-                return new(new() {Token = GenerateJwtToken(user, false, true), RefreshToken = GenerateJwtToken(user, true, true) , Name = customer.Name, Photo = user.Photo, RapidocId = customer.RapidocId});
+                return new(new() {Token = GenerateJwtToken(user, false, true), RefreshToken = GenerateJwtToken(user, true, true) , Name = customer.Name, Photo = user.Photo, RapidocId = customer.RapidocId, FirstAccess = customer.FirstAccess});
             }
             catch
             {
@@ -171,6 +171,31 @@ namespace api_slim.src.Services
 
                 ResponseApi<CustomerRecipient?> codeAccess = await customerRecipientRepository.GetByCodeAccessAsync(request.CodeAccess);
                 if(!codeAccess.IsSuccess || codeAccess.Data is null) return new(null, 400, "Código expirou, solicite um novo código");
+
+                ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByIdAsync(request.Id);
+                if(!customerRecipient.IsSuccess || customerRecipient.Data is null) return new(null, 400, "Falha ao alterar senha");
+
+                customerRecipient.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                customerRecipient.Data.FirstAccess = false;
+                ResponseApi<CustomerRecipient?> response = await customerRecipientRepository.UpdateAsync(customerRecipient.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao alterar senha");
+
+                return new(null, 200, "Senha alterada com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
+            }
+        }
+        public async Task<ResponseApi<User>> ResetPasswordFirstAppAsync(ResetPasswordDTO request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
+                if (request.Password != request.NewPassword) return new(null, 400, "As senhas precisam ser iguais");
+                if (string.IsNullOrEmpty(request.Id)) return new(null, 400, "Falha ao alterar senha");
+                
+                if(Validator.IsReliable(request.Password).Equals("Ruim")) return new(null, 400, $"Senha é muito fraca");
 
                 ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByIdAsync(request.Id);
                 if(!customerRecipient.IsSuccess || customerRecipient.Data is null) return new(null, 400, "Falha ao alterar senha");

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -59,6 +60,17 @@ namespace api_slim.src.Controllers
             if (request == null) return BadRequest("Dados inválidos");
 
             ResponseApi<User> response = await authService.ResetPasswordAppAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpPut]
+        [Route("reset-password-first/app")]
+        public async Task<IActionResult> ResetPasswordFirstAppAsync([FromBody] ResetPasswordDTO request)
+        {
+            if (request == null) return BadRequest("Dados inválidos");
+            request.Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            
+            ResponseApi<User> response = await authService.ResetPasswordFirstAppAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
         }
         

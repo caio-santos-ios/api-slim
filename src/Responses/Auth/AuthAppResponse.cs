@@ -7,5 +7,6 @@ namespace api_slim.src.Responses
         public string Name {get;set;} = string.Empty; 
         public string Photo {get;set;} = string.Empty; 
         public string RapidocId {get;set;} = string.Empty; 
+        public bool FirstAccess {get;set;}
     }
 }

@@ -11,6 +11,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<AuthResponse>> RefreshTokenAsync(string token);
         Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordAsync(ResetPasswordDTO request);
         Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordAppAsync(ResetPasswordDTO request);
+        Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordFirstAppAsync(ResetPasswordDTO request);
         Task<ResponseApi<api_slim.src.Models.User>> RequestForgotPasswordAsync(ForgotPasswordDTO request);
         Task<ResponseApi<api_slim.src.Models.User>> ForgotPasswordAsync(ResetPasswordDTO request);
     }
