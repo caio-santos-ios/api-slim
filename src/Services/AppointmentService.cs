@@ -49,7 +49,7 @@ namespace api_slim.src.Services
                     if(!string.IsNullOrEmpty(beneficiaryUuid))
                     {   
                         if(beneficiaryUuid != item.beneficiary.uuid.ToString()) continue;
-                    }
+                    };
 
                     list.Add(new {
                         id = item.uuid.ToString(),                
@@ -83,16 +83,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                ResponseApi<CustomerRecipient?> recipient = await customerRecipientRepository.GetByIdAsync(id);
-
-                if(recipient.Data is null) return new(null, 404, "Beneficiario não encontrado");
-                if(string.IsNullOrEmpty(recipient.Data.RapidocId))
-                {
-                    System.Console.WriteLine("beneficiario nao tem id da rapidoc");
-                }
-                System.Console.WriteLine(recipient.Data.RapidocId);
-                // var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments/d7d0d355-a188-4ead-be02-2595d72eaffa");
-                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries");
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{id}/appointments");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
                 
@@ -100,37 +91,34 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                response.EnsureSuccessStatusCode();
-                Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-                // string jsonResponse = await response.Content.ReadAsStringAsync();
-                // dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
-                // Util.ConsoleLog(result);
-                // List<dynamic> list = [];
-                // foreach (dynamic item in result!)
-                // {
-                //     BsonDocument bson = BsonDocument.Parse(item.ToString());
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
+                
+                List<dynamic> list = [];
+                foreach (dynamic item in result!)
+                {
+                    BsonDocument bson = BsonDocument.Parse(item.ToString());
 
-                //     list.Add(new {
-                //         id = item.uuid.ToString(),                
-                //         recipientDescription = item.beneficiary.name.ToString(),
-                //         beneficiaryUuid = item.beneficiary.uuid.ToString(),
-                //         cpf = item.beneficiary.cpf.ToString(),
-                //         date = item.detail.date.ToString(),
-                //         startTime = item.detail.from.ToString(),
-                //         endTime = item.detail.to.ToString(),
-                //         specialty = item.specialty.name.ToString(),
-                //         specialtyUuid = item.specialty.uuid.ToString(),
-                //         professional = item.professional.name.ToString(),
-                //         status = item.status.ToString(),
-                //         beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
-                //     });                            
-                // }
-                return new(null);
+                    list.Add(new {
+                        id = item.uuid.ToString(),                
+                        recipientDescription = item.beneficiary.name.ToString(),
+                        beneficiaryUuid = item.beneficiary.uuid.ToString(),
+                        cpf = item.beneficiary.cpf.ToString(),
+                        date = item.detail.date.ToString(),
+                        startTime = item.detail.from.ToString(),
+                        endTime = item.detail.to.ToString(),
+                        specialty = item.specialty.name.ToString(),
+                        specialtyUuid = item.specialty.uuid.ToString(),
+                        professional = item.professional.name.ToString(),
+                        status = item.status.ToString(),
+                        beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
+                    });                            
+                }
+                return new(list);
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -146,7 +134,7 @@ namespace api_slim.src.Services
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
                 requestHeader.Content = content;
                 var response = await client.SendAsync(requestHeader);
-                response.EnsureSuccessStatusCode();
+
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 
@@ -190,7 +178,7 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                response.EnsureSuccessStatusCode();
+                // response.EnsureSuccessStatusCode();
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
 

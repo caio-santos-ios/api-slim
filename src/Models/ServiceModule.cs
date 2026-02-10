@@ -12,7 +12,10 @@ namespace api_slim.src.Models
         
         [BsonElement("code")]
         public string Code {get;set;} = string.Empty;
-       
+        
+        [BsonElement("identification")]
+        public string Identification {get;set;} = string.Empty;
+
         [BsonElement("name")]
         public string Name {get;set;} = string.Empty;
 
@@ -30,10 +33,10 @@ namespace api_slim.src.Models
 
         [BsonElement("image")]
         public string Image { get; set; } = string.Empty;
-       
+
         [BsonElement("type")]
         public string Type { get; set; } = string.Empty;
-       
+
         [BsonElement("rapiDocId")]
         public string RapiDocId { get; set; } = string.Empty;
     }

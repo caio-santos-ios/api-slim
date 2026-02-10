@@ -20,12 +20,10 @@ namespace api_slim.src.Controllers
         }
 
         [Authorize]
-        [HttpGet("user")]
-        public async Task<IActionResult> GetByUser()
+        [HttpGet("user/{beneficiaryUuid}")]
+        public async Task<IActionResult> GetByUser(string beneficiaryUuid)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-
-            ResponseApi<dynamic?> response = await service.GetByIdAsync(userId);
+            ResponseApi<dynamic?> response = await service.GetByIdAsync(beneficiaryUuid);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

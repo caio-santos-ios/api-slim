@@ -14,7 +14,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, ICustomerRecipientService customerRecipientService, MailHandler mailHandler) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -51,6 +51,23 @@ namespace api_slim.src.Services
 
                 if(customer is null) return new(null, 400, "Dados incorretos");
 
+                ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(customer.PlanId);
+                
+                if(plan.Data is null) return new(null, 400, "Beneficiário não tem plano ativo");
+                
+                if(plan.Data.ServiceModuleIds.Count == 0) return new(null, 400, "Plano do beneficiário não possui módulos ativos");
+
+                List<string> listModules = [];
+
+                foreach (string module in plan.Data.ServiceModuleIds)
+                {
+                    ResponseApi<ServiceModule?> modules = await serviceModuleRepository.GetByIdAsync(module);
+                    if(modules.Data is not null)
+                    {
+                        listModules.Add(modules.Data.Identification);
+                    } 
+                };
+
                 User user = new()
                 {
                     Id = customer.Id,
@@ -75,7 +92,18 @@ namespace api_slim.src.Services
                     if(!isValid) return new(null, 400, "Dados incorretos");
                 }
 
-                return new(new() {Token = GenerateJwtToken(user, false, true), RefreshToken = GenerateJwtToken(user, true, true) , Name = customer.Name, Photo = user.Photo, RapidocId = customer.RapidocId, FirstAccess = customer.FirstAccess});
+                AuthAppResponse data = new() 
+                {
+                    Token = GenerateJwtToken(user, false, true), 
+                    RefreshToken = GenerateJwtToken(user, true, true), 
+                    Name = customer.Name, 
+                    Photo = customer.Photo, 
+                    RapidocId = customer.RapidocId, 
+                    FirstAccess = customer.FirstAccess,
+                    ModulesIdentifications = listModules
+                };
+
+                return new(data);
             }
             catch
             {
