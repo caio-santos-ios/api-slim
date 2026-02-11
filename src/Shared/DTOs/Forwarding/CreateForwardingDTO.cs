@@ -10,6 +10,7 @@ namespace api_slim.src.Shared.DTOs
         public string Date {get;set;} = string.Empty;
         public string Time {get;set;} = string.Empty;
         public string ParentId {get;set;} = string.Empty;
+        public string BeneficiaryCPF {get;set;} = string.Empty;
         public bool ApproveAdditionalPayment {get;set;}
     }
 }

@@ -23,7 +23,8 @@ namespace api_slim.src.Controllers
         [HttpGet("{beneficiaryId}")]
         public async Task<IActionResult> GetByBeneficiaryId(string beneficiaryId)
         {
-            ResponseApi<List<dynamic>> response = await service.GetByBeneficiaryIdAsync(beneficiaryId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<List<dynamic>> response = await service.GetByBeneficiaryIdAsync(userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

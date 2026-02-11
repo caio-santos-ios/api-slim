@@ -15,6 +15,7 @@ namespace api_slim.src.Services
             try
             {
                 PaginationUtil<TelemedicineHistoric> pagination = new(request.QueryParams);
+                Util.ConsoleLog(pagination.PipelineFilter);
                 ResponseApi<List<dynamic>> inPersons = await repository.GetAllAsync(pagination);
                 int count = await repository.GetCountDocumentsAsync(pagination);
                 return new(inPersons.Data, count, pagination.PageNumber, pagination.PageSize);

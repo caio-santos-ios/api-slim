@@ -45,5 +45,8 @@ namespace api_slim.src.Models
 
         [BsonElement("parentUuid")]
         public string ParentUuid {get;set;} = string.Empty;
+        
+        [BsonElement("beneficiaryCPF")]
+        public string BeneficiaryCPF {get;set;} = string.Empty;
     }
 }

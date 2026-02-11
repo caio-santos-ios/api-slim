@@ -12,5 +12,6 @@ namespace api_slim.src.Shared.DTOs
                 public string Type {get;set;} = string.Empty; 
                 public string ParentId {get;set;} = string.Empty; 
                 public string ParentUuid {get;set;} = string.Empty; 
+                public string BeneficiaryCPF {get;set;} = string.Empty; 
         }
 }

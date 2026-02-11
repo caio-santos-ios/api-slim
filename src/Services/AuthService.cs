@@ -100,7 +100,8 @@ namespace api_slim.src.Services
                     Photo = customer.Photo, 
                     RapidocId = customer.RapidocId, 
                     FirstAccess = customer.FirstAccess,
-                    ModulesIdentifications = listModules
+                    ModulesIdentifications = listModules,
+                    CPF = customer.Cpf
                 };
 
                 return new(data);

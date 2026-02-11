@@ -3,12 +3,13 @@ using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Utils;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IForwardingService
+    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository, ICustomerRecipientRepository customerRecipientRepository) : IForwardingService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -27,7 +28,7 @@ namespace api_slim.src.Services
                 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
                 // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
-
+                System.Console.WriteLine(query);
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
@@ -43,6 +44,7 @@ namespace api_slim.src.Services
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
                 {    
+                    Util.ConsoleLog(item);
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
 
                     list.Add(new {
@@ -67,6 +69,8 @@ namespace api_slim.src.Services
         {
             try
             {
+                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
+
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
@@ -82,7 +86,8 @@ namespace api_slim.src.Services
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
                 {    
-                    if(beneficiaryId != item.beneficiary.uuid.ToString()) continue;
+                    if(customer.Data is null) continue;
+                    if(customer.Data.Cpf.Replace(".", "").Replace("-", "") != item.beneficiary.cpf.ToString()) continue;
 
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
                     ResponseApi<TelemedicineHistoric?> existed = await telemedicineHistoricRepository.GetByParentIdAsync(item.uuid.ToString(), "Encaminhamento");
@@ -317,7 +322,8 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Encaminhamento",
                     ParentId = request.ParentId,
-                    ParentUuid = result is null ? "" : result.uuid
+                    ParentUuid = result is null ? "" : result.uuid,
+                    BeneficiaryCPF = request.BeneficiaryCPF
                 });
 
                 return new(null, 201, "Encaminhamento feito com sucesso");
