@@ -446,8 +446,13 @@ namespace api_slim.src.Services
             });
 
             string passowrd = request.Cpf.Replace(".", "").Replace("-", "");
-            string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
-            await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", template);
+
+            string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
+            string htmlEmail = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo", caminhoDoLogo);
+            await mailHandler.SendMailAsync("caiodev.fullstack@gmail.com", "Aplicativo Pasbem", htmlEmail);
+
+            // string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
+            // await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", template);
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
         }
@@ -463,8 +468,11 @@ namespace api_slim.src.Services
             ResponseApi<CustomerRecipient?> existed = await customerRepository.GetByCPFAsync(request.Cpf, request.ContractorId);
             if(existed.Data is not null) return new(null, 400, "CPF já utilizado");
             string passowrd = request.Cpf.Replace(".", "").Replace("-", "");
-            string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
-            await mailHandler.SendMailAsync("caiosantos.cs1981@gmail.com", "Aplicativo Pasbem", template);
+
+            string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
+            // string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
+            string htmlEmail = MailTemplate.GetPwaAccessTemplate("João", "joao@email.com", "123456", "https://pasbem.com.br", caminhoDoLogo);
+            await mailHandler.SendMailAsync("caiodev.fullstack@gmail.com", "Aplicativo Pasbem", htmlEmail);
 
             // CustomerRecipient customer = _mapper.Map<CustomerRecipient>(request);
             // ResponseApi<long?> code = await customerRepository.GetNextCodeAsync();

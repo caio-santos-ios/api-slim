@@ -83,6 +83,18 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         return StatusCode(response.StatusCode, new { response.Message });
     }
     
+    // [Authorize]
+    [HttpPost("email")]
+    public async Task<IActionResult> Email([FromBody] CreateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient?> response = await service.EmailAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
     [Authorize]
     [HttpPut]
     public async Task<IActionResult> Update([FromBody] UpdateCustomerRecipientDTO customer)
