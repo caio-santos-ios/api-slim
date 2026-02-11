@@ -29,22 +29,21 @@ namespace api_slim.src.Controllers
         }
 
         [Authorize]
-        [HttpGet("beneficiary")]
-        public async Task<IActionResult> GetByBeneficiaryIdAsync()
+        [HttpGet("beneficiary/{period}")]
+        public async Task<IActionResult> GetByBeneficiaryIdAsync(string period)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
-            ResponseApi<Vital?> response = await service.GetByBeneficiaryIdAsync(userId);
+            ResponseApi<Vital?> response = await service.GetByBeneficiaryIdAsync(userId, period);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
         [Authorize]
-        [HttpGet("beneficiary-all")]
-        public async Task<IActionResult> GetByBeneficiaryAllAsync()
+        [HttpGet("beneficiary-all/{startDate}/{endDate}")]
+        public async Task<IActionResult> GetByBeneficiaryAllAsync(string startDate, string endDate)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-
-            ResponseApi<List<Vital>> response = await service.GetByBeneficiaryAllAsync(userId);
+            ResponseApi<List<Vital>> response = await service.GetByBeneficiaryAllAsync(userId, startDate, endDate);
             return StatusCode(response.StatusCode, new { response.Result });
         }
         

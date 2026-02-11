@@ -10,8 +10,8 @@ public interface IVitalRepository
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
     Task<ResponseApi<Vital?>> GetByIdAsync(string id);
     Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId);
-    Task<ResponseApi<List<Vital>>> GetByBeneficiaryIdWeekAsync(string beneficiaryId);
-    Task<ResponseApi<List<Vital>>> GetByBeneficiaryIAllAsync(string beneficiaryId);
+    Task<ResponseApi<List<Vital>>> GetByBeneficiaryIdWeekAsync(string beneficiaryId, string period);
+    Task<ResponseApi<List<Vital>>> GetByBeneficiaryIAllAsync(string beneficiaryId, DateTime? start, DateTime? end);
     Task<int> GetCountDocumentsAsync(PaginationUtil<Vital> pagination);
     Task<ResponseApi<Vital?>> CreateAsync(Vital vital);
     Task<ResponseApi<Vital?>> UpdateAsync(Vital vital);

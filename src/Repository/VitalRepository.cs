@@ -154,18 +154,71 @@ namespace api_slim.src.Repository
         }
     }
     
-    public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryIdWeekAsync(string beneficiaryId)
+    public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryIdWeekAsync(string beneficiaryId, string period)
     {
         try
         {
-            DateTime hoje = DateTime.Today;
-            int diasParaSegunda = (int)hoje.DayOfWeek - (int)DayOfWeek.Monday;
-            if (diasParaSegunda < 0) diasParaSegunda += 7;
+            DateTime hoje = DateTime.UtcNow; 
+DateTime dataInicio = DateTime.MinValue;
+DateTime dataFim = DateTime.MaxValue; 
 
-            DateTime inicioSemana = hoje.AddDays(-diasParaSegunda);
-            DateTime fimSemana = inicioSemana.AddDays(6);
+switch (period.ToLower())
+{
+    case "semana":
+        int diasParaSegunda = (int)hoje.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diasParaSegunda < 0) diasParaSegunda += 7;
+        dataInicio = hoje.AddDays(-diasParaSegunda).Date;
+        dataFim = dataInicio.AddDays(7);
+        break;
 
-            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= inicioSemana && x.CreatedAt <= fimSemana && !x.Deleted).ToListAsync();
+    case "mes":
+        dataInicio = new DateTime(hoje.Year, hoje.Month, 1);
+        dataFim = dataInicio.AddMonths(1);
+        break;
+
+    case "ano":
+        dataInicio = new DateTime(hoje.Year, 1, 1);
+        dataFim = dataInicio.AddYears(1);
+        break;
+
+    case "tudo":
+        // Já inicializados como Min e Max
+        break;
+
+    default:
+        if (period.Contains("&"))
+        {
+            var dates = period.Split("&");
+            
+            // Tenta converter a data inicial se não estiver vazia
+            if (dates.Length > 0 && !string.IsNullOrWhiteSpace(dates[0]))
+            {
+                if (DateTime.TryParse(dates[0], out DateTime start))
+                    dataInicio = start;
+            }
+
+            // Tenta converter a data final se existir e não estiver vazia
+            if (dates.Length > 1 && !string.IsNullOrWhiteSpace(dates[1]))
+            {
+                if (DateTime.TryParse(dates[1], out DateTime end))
+                    // Somamos 1 dia para incluir as horas do último dia
+                    dataFim = end.Date.AddDays(1);
+            }
+        }
+        break;
+}
+
+// Filtro robusto: se as datas não forem enviadas, 
+// ele usa MinValue e MaxValue, trazendo "tudo".
+List<Vital> vitals = await context.Vitals
+    .Find(x => x.BeneficiaryId == beneficiaryId && 
+               x.CreatedAt >= dataInicio && 
+               x.CreatedAt < dataFim && 
+               !x.Deleted)
+    .SortBy(x => x.CreatedAt)
+    .ToListAsync();
+
+            // List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= inicioSemana && x.CreatedAt <= fimSemana && !x.Deleted).ToListAsync();
             return new(vitals);
         }
         catch
@@ -173,12 +226,36 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Item");
         }
     }
-    public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryIAllAsync(string beneficiaryId)
+    public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryIAllAsync(string beneficiaryId, DateTime? start, DateTime? end)
     {
         try
         {
-            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && !x.Deleted).ToListAsync();
-            return new(vitals);
+            if(start is null && end is null) 
+            {
+                List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && !x.Deleted).ToListAsync();
+                return new(vitals);
+            };
+
+            
+            if(start is not null && end is not null) 
+            {
+                List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= start && x.CreatedAt <= end && !x.Deleted).ToListAsync();
+                return new(vitals);
+            };
+
+            if(start is not null) 
+            {
+                List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= start && !x.Deleted).ToListAsync();
+                return new(vitals);
+            }
+
+            if(end is not null) 
+            {
+                List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt <= end && !x.Deleted).ToListAsync();
+                return new(vitals);
+            }
+
+            return new([]);
         }
         catch
         {

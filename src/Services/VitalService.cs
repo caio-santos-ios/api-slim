@@ -46,11 +46,14 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryAllAsync(string beneficiaryId)
+        public async Task<ResponseApi<List<Vital>>> GetByBeneficiaryAllAsync(string beneficiaryId, string startDate, string endDate)
         {
             try
             {
-                ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIAllAsync(beneficiaryId);
+                DateTime? start = null; 
+                DateTime? end = null; 
+                
+                ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIAllAsync(beneficiaryId, start, end);
                 List<Vital> list = new();
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
@@ -93,11 +96,11 @@ namespace api_slim.src.Services
             }
         }
 
-        public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId)
+        public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period)
         {
             try
             {
-                ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIdWeekAsync(beneficiaryId);
+                ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIdWeekAsync(beneficiaryId, period);
 
                 ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
 
@@ -117,90 +120,190 @@ namespace api_slim.src.Services
                 double dass7 = 0;
                 double dass8 = 0;
                 double dass9 = 0;
+                int qtd = 0;
 
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
                 {
                     decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
 
-                    if(vital.Data is not null)
+                    // if(vital.Data is not null)
+                    // {
+                    //     if(customer.Data is not null)
+                    //     {
+                    //         vital.Data.Metric = new ()
+                    //         {
+                    //             IGS = (int)Math.Round(CalcularIGS(vital.Data, customer.Data.Patrology)),
+                    //             IGN = (int)Math.Round(CalcularIGN(vital.Data, metaAgua, customer.Data.Patrology)),
+                    //             IES = (int)Math.Round(CalcularIES(vital.Data, customer.Data.Patrology)),
+                    //             IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology)
+                    //         };
+                    //     }
+                    // }
+
+                    DateTime hoje = DateTime.Today;
+                    DateTime dataInicio;
+                    int quantidadeIteracoes;
+
+                    switch (period.ToLower())
                     {
-                        if(customer.Data is not null)
-                        {
-                            vital.Data.Metric = new ()
-                            {
-                                IGS = (int)Math.Round(CalcularIGS(vital.Data, customer.Data.Patrology)),
-                                IGN = (int)Math.Round(CalcularIGN(vital.Data, metaAgua, customer.Data.Patrology)),
-                                IES = (int)Math.Round(CalcularIES(vital.Data, customer.Data.Patrology)),
-                                // IGS = CalcularIGS(vital.Data),
-                                // IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight)),
-                                // IES = CalcularIES(vital.Data),
-                                IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology)
-                            };
-                        }
+                        case "mes":
+                            dataInicio = new DateTime(hoje.Year, hoje.Month, 1);
+                            quantidadeIteracoes = DateTime.DaysInMonth(hoje.Year, hoje.Month);
+                            break;
+                        case "ano":
+                            dataInicio = new DateTime(hoje.Year, 1, 1);
+                            quantidadeIteracoes = 12; 
+                            break;
+                        case "semana":
+                            dataInicio = hoje.AddDays(-(int)hoje.DayOfWeek); 
+                            quantidadeIteracoes = 7;
+                            break;
+                        default:
+                            dataInicio = hoje.AddDays(-(int)hoje.DayOfWeek); 
+                            quantidadeIteracoes = vitalWeek.Data is null ? 0 : vitalWeek.Data.Count;
+                            break;
                     }
 
-                    var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
                     string patrology = customer.Data is null ? "" : customer.Data.Patrology;
-                    DateTime hoje = DateTime.Today;
-                    DateTime inicioSemana = hoje.AddDays(-(int)hoje.DayOfWeek);
-                    
-                    if(vitalWeek.Data is not null)
-                    {
-                        for (int i = 0; i < 7; i++)
-                        {
-                            DateTime dataDia = inicioSemana.AddDays(i);
-                            
-                            var registroDia = vitalWeek.Data.FirstOrDefault(x => x.CreatedAt.Date == dataDia.Date);
-                            if (registroDia != null)
-                            {
-                                var meta = metaAgua == 0 ? 2 : metaAgua;
 
-                                dass1 += registroDia.Dass1;
-                                dass2 += registroDia.Dass2;
-                                dass3 += registroDia.Dass3;
-                                dass4 += registroDia.Dass4;
-                                dass5 += registroDia.Dass5;
-                                dass6 += registroDia.Dass6;
-                                dass7 += registroDia.Dass7;
-                                dass8 += registroDia.Dass8;
-                                dass9 += registroDia.Dass9;
+                    if (vitalWeek.Data is not null)
+                    {
+                        var diasDaSemanaNomes = new[] { "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" };
+                        var mesesNomes = new[] { "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez" };
+                        
+                        if(!new List<string> { "semana", "mes", "ano" }.Contains(period))
+                        {
+                            var dadosAgrupados = vitalWeek.Data
+                                .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+                                .OrderBy(g => g.Key.Year)
+                                .ThenBy(g => g.Key.Month);
+
+                            foreach (var grupo in dadosAgrupados)
+                            {
+                                var mediaIPV = grupo.Average(x => CalcularIPV(x, metaAgua, patrology));
+                                var mediaIGS = grupo.Average(x => CalcularIGS(x, patrology));
+                                var mediaIGN = grupo.Average(x => CalcularIGN(x, metaAgua, patrology));
+                                var mediaIES = grupo.Average(x => CalcularIES(x, patrology));
+
+                                string labelTudo = $"{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
 
                                 weekMetrics.Add(new()
                                 {
-                                    IGS = (int)Math.Round(CalcularIGS(registroDia, patrology)),
-                                    IGN = (int)Math.Round(CalcularIGN(registroDia, metaAgua, patrology)),
-                                    IES = (int)Math.Round(CalcularIES(registroDia, patrology)),
-                                    IPV = CalcularIPV(registroDia, metaAgua, patrology),
-                                    Day = diasDaSemanaNomes[i]
+                                    IGS = (int)Math.Round(mediaIGS),
+                                    IGN = (int)Math.Round(mediaIGN),
+                                    IES = (int)Math.Round(mediaIES),
+                                    IPV = (int)Math.Round(mediaIPV),
+                                    Day = labelTudo
                                 });
                                 
-                                IGS = (int)Math.Round(CalcularIGS(registroDia, patrology));
-                                IGN = (int)Math.Round(CalcularIGN(registroDia, metaAgua, patrology));
-                                IES = (int)Math.Round(CalcularIES(registroDia, patrology));
-                                IPV = CalcularIPV(registroDia, metaAgua, patrology);
+                                qtd += 1;
+                                IGS += (int)Math.Round(mediaIGS);
+                                IGN += (int)Math.Round(mediaIGN);
+                                IES += (int)Math.Round(mediaIES);
+                                IPV += (int)Math.Round(mediaIPV);
+
+                                dass1 += grupo.Sum(x => x.Dass1); 
+                                dass2 += grupo.Sum(x => x.Dass2); 
+                                dass3 += grupo.Sum(x => x.Dass3); 
+                                dass4 += grupo.Sum(x => x.Dass4); 
+                                dass5 += grupo.Sum(x => x.Dass5); 
+                                dass6 += grupo.Sum(x => x.Dass6); 
+                                dass7 += grupo.Sum(x => x.Dass7); 
+                                dass8 += grupo.Sum(x => x.Dass8); 
+                                dass9 += grupo.Sum(x => x.Dass9);
                             }
-                            else
+                        }
+                        else 
+                        {
+                            for (int i = 0; i < quantidadeIteracoes; i++)
                             {
-                                weekMetrics.Add(new() { Day = diasDaSemanaNomes[i], IPV = 0 });
+                                string labelEixo = "";
+                                List<Vital> registrosPeriodo = new List<Vital>();
+
+                                if (period.Equals("ano"))
+                                {
+                                    int mesAlvo = i + 1;
+                                    labelEixo = mesesNomes[i];
+                                    registrosPeriodo = vitalWeek.Data.Where(x => x.CreatedAt.Month == mesAlvo && x.CreatedAt.Year == hoje.Year).ToList();
+                                }
+                                else
+                                {
+                                    DateTime dataAlvo = dataInicio.AddDays(i);
+                                    labelEixo = period.Equals("mes") ? dataAlvo.Day.ToString("00") : diasDaSemanaNomes[(int)dataAlvo.DayOfWeek];
+                                    registrosPeriodo = vitalWeek.Data.Where(x => x.CreatedAt.Date == dataAlvo.Date).ToList();
+                                }
+
+                                if (registrosPeriodo.Count > 0)
+                                {
+                                    var mediaIPV = registrosPeriodo.Average(x => CalcularIPV(x, metaAgua, patrology));
+                                    var mediaIGS = registrosPeriodo.Average(x => CalcularIGS(x, patrology));
+                                    var mediaIGN = registrosPeriodo.Average(x => CalcularIGN(x, metaAgua, patrology));
+                                    var mediaIES = registrosPeriodo.Average(x => CalcularIES(x, patrology));
+                                    
+                                    dass1 += registrosPeriodo.Sum(x => x.Dass1); 
+                                    dass2 += registrosPeriodo.Sum(x => x.Dass2); 
+                                    dass3 += registrosPeriodo.Sum(x => x.Dass3); 
+                                    dass4 += registrosPeriodo.Sum(x => x.Dass4); 
+                                    dass5 += registrosPeriodo.Sum(x => x.Dass5); 
+                                    dass6 += registrosPeriodo.Sum(x => x.Dass6); 
+                                    dass7 += registrosPeriodo.Sum(x => x.Dass7); 
+                                    dass8 += registrosPeriodo.Sum(x => x.Dass8); 
+                                    dass9 += registrosPeriodo.Sum(x => x.Dass9); 
+
+                                    qtd += 1;
+
+                                    IGS += (int)Math.Round(mediaIGS);
+                                    IGN += (int)Math.Round(mediaIGN);
+                                    IES += (int)Math.Round(mediaIES);
+                                    IPV += (int)Math.Round(mediaIPV);
+
+                                    weekMetrics.Add(new()
+                                    {
+                                        IGS = (int)Math.Round(mediaIGS),
+                                        IGN = (int)Math.Round(mediaIGN),
+                                        IES = (int)Math.Round(mediaIES),
+                                        IPV = (int)Math.Round(mediaIPV),
+                                        Day = labelEixo
+                                    });
+                                }
+                                else
+                                {
+                                    weekMetrics.Add(new() { Day = labelEixo, IPV = 0, IGS = 0, IGN = 0, IES = 0 });
+                                }
                             }
-                        };
-                    };    
+                        }
+                    }
                 };
 
                 return new(new Vital() {
                     Id = vital.Data is null ? "" : vital.Data.Id,
                     WeekMetric = weekMetrics,
-                    Metric = new () { IGS = IGS, IGN = IGN, IES = IES, IPV = IPV },
-                    Dass1 = dass1 > 0 ? (int)dass1 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass2 = dass2 > 0 ? (int)dass2 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass3 = dass3 > 0 ? (int)dass3 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass4 = dass4 > 0 ? (int)dass4 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass5 = dass5 > 0 ? (int)dass5 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass6 = dass6 > 0 ? (int)dass6 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass7 = dass7 > 0 ? (int)dass7 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass8 = dass8 > 0 ? (int)dass8 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    Dass9 = dass9 > 0 ? (int)dass9 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Metric = new () 
+                        { 
+                            IGS = qtd == 0 ? 0 : Math.Round(IGS / qtd), 
+                            IGN = qtd == 0 ? 0 : Math.Round(IGN / qtd), 
+                            IES = qtd == 0 ? 0 : Math.Round(IES / qtd), 
+                            IPV = qtd == 0 ? 0 : Math.Round(IPV / qtd)
+                        },
+                    // Dass1 = dass1 > 0 ? (int)dass1 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass2 = dass2 > 0 ? (int)dass2 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass3 = dass3 > 0 ? (int)dass3 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass4 = dass4 > 0 ? (int)dass4 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass5 = dass5 > 0 ? (int)dass5 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass6 = dass6 > 0 ? (int)dass6 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass7 = dass7 > 0 ? (int)dass7 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass8 = dass8 > 0 ? (int)dass8 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    // Dass9 = dass9 > 0 ? (int)dass9 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
+                    Dass1 = dass1 > 0 ? (int)dass1 / qtd : 0,
+                    Dass2 = dass2 > 0 ? (int)dass2 / qtd : 0,
+                    Dass3 = dass3 > 0 ? (int)dass3 / qtd : 0,
+                    Dass4 = dass4 > 0 ? (int)dass4 / qtd : 0,
+                    Dass5 = dass5 > 0 ? (int)dass5 / qtd : 0,
+                    Dass6 = dass6 > 0 ? (int)dass6 / qtd : 0,
+                    Dass7 = dass7 > 0 ? (int)dass7 / qtd : 0,
+                    Dass8 = dass8 > 0 ? (int)dass8 / qtd : 0,
+                    Dass9 = dass9 > 0 ? (int)dass9 / qtd : 0,
                 });
             }
             catch
