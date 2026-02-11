@@ -174,10 +174,16 @@ namespace api_slim.src.Services
                         
                         if(!new List<string> { "semana", "mes", "ano" }.Contains(period))
                         {
+                            // var dadosAgrupados = vitalWeek.Data
+                            //     .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+                            //     .OrderBy(g => g.Key.Year)
+                            //     .ThenBy(g => g.Key.Month);
+
                             var dadosAgrupados = vitalWeek.Data
-                                .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
-                                .OrderBy(g => g.Key.Year)
-                                .ThenBy(g => g.Key.Month);
+                            .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day })
+                            .OrderBy(g => g.Key.Year)
+                            .ThenBy(g => g.Key.Month)
+                            .ThenBy(g => g.Key.Day);
 
                             foreach (var grupo in dadosAgrupados)
                             {
@@ -186,8 +192,9 @@ namespace api_slim.src.Services
                                 var mediaIGN = grupo.Average(x => CalcularIGN(x, metaAgua, patrology));
                                 var mediaIES = grupo.Average(x => CalcularIES(x, patrology));
 
-                                string labelTudo = $"{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
-
+                                // string labelTudo = $"{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
+                                string labelTudo = $"{grupo.Key.Day:00}/{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
+                                
                                 weekMetrics.Add(new()
                                 {
                                     IGS = (int)Math.Round(mediaIGS),
