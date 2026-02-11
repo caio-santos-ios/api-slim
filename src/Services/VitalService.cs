@@ -52,6 +52,9 @@ namespace api_slim.src.Services
             {
                 DateTime? start = null; 
                 DateTime? end = null; 
+
+                if(!string.IsNullOrEmpty(startDate) && startDate != "sem") start = DateTime.Parse(startDate);
+                if(!string.IsNullOrEmpty(endDate) && endDate != "sem") end = DateTime.Parse(endDate);
                 
                 ResponseApi<List<Vital>> vitalWeek = await vitalRepository.GetByBeneficiaryIAllAsync(beneficiaryId, start, end);
                 List<Vital> list = new();
