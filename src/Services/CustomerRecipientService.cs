@@ -72,6 +72,7 @@ namespace api_slim.src.Services
                 foreach (dynamic item in result)
                 {
                     if(item.status == "CANCELED") continue;
+
                     DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
 
                     if(date.Date < DateTime.UtcNow.Date) continue;
@@ -79,25 +80,36 @@ namespace api_slim.src.Services
                     if(nextDate is null)
                     {
                         nextDate = date.Date;
+
+                        telemedicine = new 
+                        { 
+                            isToDay = nextDate == DateTime.UtcNow.Date,
+                            date = nextDate, 
+                            professional = item.professional.name.ToString(),
+                            specialty = item.specialty.name.ToString(),
+                            beneficiaryUrl = item.beneficiaryUrl.ToString(),
+                            from = item.detail.from.ToString(),
+                            to = item.detail.to.ToString(),
+                        };
                     }
                     else 
                     {
                         if(nextDate > date.Date)
                         {
                             nextDate = date.Date;
-                        }
-                    }
 
-                    telemedicine = new 
-                    { 
-                        isToDay = nextDate == DateTime.UtcNow.Date,
-                        date = nextDate, 
-                        professional = item.professional.name.ToString(),
-                        specialty = item.specialty.name.ToString(),
-                        beneficiaryUrl = item.beneficiaryUrl.ToString(),
-                        from = item.detail.from.ToString(),
-                        to = item.detail.to.ToString(),
-                    };
+                            telemedicine = new 
+                            { 
+                                isToDay = nextDate == DateTime.UtcNow.Date,
+                                date = nextDate, 
+                                professional = item.professional.name.ToString(),
+                                specialty = item.specialty.name.ToString(),
+                                beneficiaryUrl = item.beneficiaryUrl.ToString(),
+                                from = item.detail.from.ToString(),
+                                to = item.detail.to.ToString(),
+                            };
+                        }
+                    }                    
                 };
             };
 
@@ -105,9 +117,8 @@ namespace api_slim.src.Services
 
             return new(customer.Data);
         }
-        catch(Exception ex)
+        catch
         {
-            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
