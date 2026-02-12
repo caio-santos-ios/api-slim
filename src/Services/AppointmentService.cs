@@ -106,6 +106,7 @@ namespace api_slim.src.Services
                         beneficiaryUuid = item.beneficiary.uuid.ToString(),
                         cpf = item.beneficiary.cpf.ToString(),
                         date = item.detail.date.ToString(),
+                        data = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR")),
                         startTime = item.detail.from.ToString(),
                         endTime = item.detail.to.ToString(),
                         specialty = item.specialty.name.ToString(),
@@ -115,6 +116,7 @@ namespace api_slim.src.Services
                         beneficiaryUrl = bson.Contains("beneficiaryUrl") ? bson["beneficiaryUrl"].ToString() : "" 
                     });                            
                 }
+                list = list.OrderByDescending(x => x.data).ToList();
                 return new(list);
             }
             catch
