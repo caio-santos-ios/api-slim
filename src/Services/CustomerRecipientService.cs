@@ -460,7 +460,7 @@ namespace api_slim.src.Services
 
             string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
             string htmlEmail = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo", caminhoDoLogo);
-            await mailHandler.SendMailAsync("caiodev.fullstack@gmail.com", "Aplicativo Pasbem", htmlEmail);
+            await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", htmlEmail);
 
             // string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
             // await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", template);
