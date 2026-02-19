@@ -71,7 +71,7 @@ namespace api_slim.src.Services
             {
                 foreach (dynamic item in result)
                 {
-                    if(item.status == "CANCELED") continue;
+                    if(item.status != "SCHEDULED") continue;
 
                     DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
 

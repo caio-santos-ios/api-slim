@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ICustomerRecipientRepository customerRecipientRepository, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IAppointmentService
+    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
