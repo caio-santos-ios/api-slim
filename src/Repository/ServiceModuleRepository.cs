@@ -25,8 +25,8 @@ namespace api_slim.src.Repository
                 }),
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
-                new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit),
+                // new("$skip", pagination.Skip),
+                // new("$limit", pagination.Limit),
                 new("$project", new BsonDocument
                 {
                     {"_id", 0}, 

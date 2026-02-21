@@ -20,8 +20,8 @@ namespace api_slim.src.Repository
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
-                new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit),
+                // new("$skip", pagination.Skip),
+                // new("$limit", pagination.Limit),
 
                 new BsonDocument("$lookup", new BsonDocument
                 {
