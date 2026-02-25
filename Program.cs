@@ -8,12 +8,12 @@ Env.Load();
 
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // Permite até 20MB
+    options.MultipartBodyLengthLimit = 20 * 1024 * 1024; 
 });
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 20 * 1024 * 1024; // Permite até 20MB no servidor Kestrel
+    options.Limits.MaxRequestBodySize = 20 * 1024 * 1024;
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -60,15 +60,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: ProductionCorsPolicy, policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 
     options.AddPolicy(name: DevelopmentCorsPolicy, policy  =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 

@@ -13,7 +13,19 @@ using ImageMagick;
 
 namespace api_slim.src.Services
 {
-    public class CustomerRecipientService(ICustomerRecipientRepository customerRepository, IAddressRepository addressRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, IMapper _mapper, ILogRepository logRepository, CloudinaryHandler cloudinaryHandler, MailHandler mailHandler) : ICustomerRecipientService
+    public class CustomerRecipientService
+    (
+        ICustomerRecipientRepository customerRepository, 
+        // ICustomerService customerService, 
+        ICustomerRepository customerRepository1, 
+        IAddressRepository addressRepository, 
+        IPlanRepository planRepository, 
+        IServiceModuleRepository serviceModuleRepository, 
+        IMapper _mapper, 
+        ILogRepository logRepository, 
+        CloudinaryHandler cloudinaryHandler, 
+        MailHandler mailHandler
+    ) : ICustomerRecipientService
 {
     HttpClient client = new();
     private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -35,7 +47,6 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
-    
     public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
     {
         try
@@ -122,7 +133,6 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
-    
     public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
     {
         try
@@ -320,7 +330,6 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
-
     public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
     {
         try
@@ -816,14 +825,12 @@ namespace api_slim.src.Services
             var customerResponse = await customerRepository.GetByIdAsync(request.Id);
             if (customerResponse.Data is null) return new(null, 404, "Beneficiário não encontrado");
 
-            // 1. Processamento e Conversão
             byte[] convertedBytes;
             using (var stream = request.Photo.OpenReadStream())
             using (var image = new MagickImage(stream))
             {
-                image.AutoOrient(); // Corrige rotação automática
+                image.AutoOrient(); 
                 
-                // Redimensiona para não sobrecarregar o storage (opcional, mas recomendado)
                 image.Resize(new MagickGeometry(800, 800) { IgnoreAspectRatio = false });
                 
                 image.Format = MagickFormat.Jpeg;
@@ -832,20 +839,16 @@ namespace api_slim.src.Services
                 convertedBytes = image.ToByteArray();
             }
 
-            // 2. Criamos o "Falso" IFormFile com os bytes do JPEG
             var convertedPhoto = new ByteArrayFormFile(convertedBytes, "profile.jpg");
 
-            // 3. Chamamos o seu Handler ORIGINAL sem alterá-lo
             string uriPhoto = await cloudinaryHandler.UploadAttachment("customer-recipient", convertedPhoto);
 
-            // 4. Atualização no Banco
             customerResponse.Data.UpdatedAt = DateTime.UtcNow;
             customerResponse.Data.Photo = uriPhoto;
 
             var response = await customerRepository.UpdateAsync(customerResponse.Data);
             if (!response.IsSuccess) return new(null, 400, "Falha ao salvar no banco");
 
-            // Log de Auditoria
             await logRepository.CreateAsync(new()
             { 
                 Action = "Atualização",
@@ -897,6 +900,64 @@ namespace api_slim.src.Services
             });
             
             return new(response.Data, 201, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateConvertOrContractorAsync(UpdateCustomerRecipientDTO request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+            
+            ResponseApi<Customer?> customerRes = await customerRepository1.GetByIdAsync(customerResponse.Data.ContractorId);
+            if(customerRes.Data is null) return new(null, 404, "Falha ao atualizar");
+            
+            ResponseApi<Customer?> newCustomer = await customerRepository1.CreateAsync(new ()
+            {
+                Type = "B2C",
+                CorporateName = customerResponse.Data.Name,
+                Document = customerResponse.Data.Cpf,
+                Rg = customerResponse.Data.Rg,
+                DateOfBirth = customerResponse.Data.DateOfBirth,
+                Gender = customerResponse.Data.Gender,
+                Phone = customerResponse.Data.Phone,
+                Whatsapp = customerResponse.Data.Whatsapp,
+                Email = customerResponse.Data.Email,
+                Segment = "",
+                Origin = "",
+                Responsible = new(),
+                EffectiveDate = customerResponse.Data.EffectiveDate,
+                MinimumValue = 0,
+                Notes = "",
+                TypePlan = customerRes.Data.TypePlan,
+                CreatedBy = request.UpdatedBy
+            });
+
+            if(!newCustomer.IsSuccess || newCustomer.Data is null) return new(null, 400, "Falha ao tornar beneficiário contratante");
+            
+            customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+            customerResponse.Data.UpdatedBy = request.UpdatedBy;
+            customerResponse.Data.ContractorId = newCustomer.Data.Id;
+            customerResponse.Data.Bond = "Titular";
+
+            ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+            await logRepository.CreateAsync(new()
+            {   
+                Action = "Atualização",
+                Collection = "customer-recipient",
+                Description = $"O Beneficiário {customerResponse.Data.Name} foi convertido para contratante",
+                CreatedBy = request.UpdatedBy,
+                Parent = "customer",
+                ParentId = response.Data.ContractorId                 
+            });
+            
+            return new(response.Data, 201, "Alterado com sucesso");
         }
         catch
         {

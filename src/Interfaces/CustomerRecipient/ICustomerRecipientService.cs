@@ -19,6 +19,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> UpdateDassAsync(UpdateDassCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateProfilePhotoAsync(UpdatePhotoCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request);
+        Task<ResponseApi<CustomerRecipient?>> UpdateConvertOrContractorAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId);
     }
 }

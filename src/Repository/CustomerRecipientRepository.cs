@@ -43,9 +43,11 @@ namespace api_slim.src.Repository
 
                 new("$addFields", new BsonDocument
                 {
+                    {"addressId", MongoUtil.ToString("$addressId")},
                     {"type", MongoUtil.First("_customer.type")},
                     {"userName", MongoUtil.First("_user.name")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
+                    {"customerDocument", MongoUtil.First("_customer.document")},
                     {"genderDescription", MongoUtil.First("_gender.description")},
                     {"planName", MongoUtil.First("_plan.name")},
                     {"address", new BsonDocument
@@ -70,6 +72,7 @@ namespace api_slim.src.Repository
                     {"_gender", 0}, 
                     {"_plan", 0}, 
                     {"_user", 0}, 
+                    {"_customer", 0} 
                 }),
                 new("$sort", pagination.PipelineSort),
                 // new("$skip", pagination.Skip),
