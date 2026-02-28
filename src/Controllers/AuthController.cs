@@ -4,7 +4,6 @@ using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Responses;
 using api_slim.src.Shared.DTOs;
-using api_slim.src.Shared.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,8 +37,18 @@ namespace api_slim.src.Controllers
         [Route("refresh-token")]
         public async Task<IActionResult> RefreshTokenAsync()
         {
-            ResponseApi<AuthResponse> response = await authService.RefreshTokenAsync(Request.Headers.Authorization[0]!.Split(" ")[1]);
+            string token = Request.Headers.Authorization[0]!.Split(" ")[1];
+            ResponseApi<AuthResponse> response = await authService.RefreshTokenAsync(token);
             return response.IsSuccess ? Ok(new {response.Data}) : BadRequest(new{response.Data, response.Message});
+        }
+
+        [HttpPost]
+        [Route("refresh-token/app")]
+        public async Task<IActionResult> RefreshTokenAppAsync()
+        {
+            string token = Request.Headers.Authorization[0]!.Split(" ")[1];
+            ResponseApi<AuthResponse> response = await authService.RefreshTokenAppAsync(token);
+            return response.IsSuccess ? Ok(new {response.Data}) : BadRequest(new{response.Result});
         }
         
         [Authorize]

@@ -53,15 +53,15 @@ namespace api_slim.src.Services
             
             ResponseApi<SellerRepresentative?> response = await sellerRepresentativeRepository.CreateAsync(sellerRepresentative);
 
-            if(response.Data is null) return new(null, 400, "Falha ao criar Item.");
+            if(response.Data is null) return new(null, 400, "Falha ao criar Representante.");
 
             Address address = _mapper.Map<Address>(request.Address);
             address.Parent = "seller-representative";
             address.ParentId = response.Data!.Id;
             ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
-            if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
+            if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Representante.");
 
-            return new(response.Data, 201, "Item criado com sucesso.");
+            return new(response.Data, 201, "Representante criado com sucesso.");
         }
         catch
         { 
@@ -105,8 +105,9 @@ namespace api_slim.src.Services
 
             return new(response.Data, 200, "Atualizado com sucesso");
         }
-        catch
+        catch(Exception ex)
         {
+            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }

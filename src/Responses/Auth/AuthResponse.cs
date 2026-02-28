@@ -12,5 +12,6 @@ namespace api_slim.src.Responses
         public string Id {get;set;} = string.Empty; 
         public string Photo {get;set;} = string.Empty; 
         public List<Module> Modules {get;set;} = [];
+        public DateTime Expires {get;set;}
     }
 }

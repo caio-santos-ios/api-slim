@@ -32,5 +32,16 @@ namespace api_slim.src.Shared.DTOs
                 public string TargetSleepTime { get; set; } = string.Empty;
                 public string LastSupper { get; set; } = string.Empty;
                 public string Patrology { get; set; } = string.Empty;
+                public List<string> ServiceModuleIds { get; set; } = [];
+                public string Branch { get; set; } = string.Empty;
+                public string Department { get; set; } = string.Empty;
+                public string Registration { get; set; } = string.Empty;
+                public string CNO { get; set; } = string.Empty;
+                public string Function { get; set; } = string.Empty;
+                public string Type { get; set; } = string.Empty;
+                public string Cat { get; set; } = string.Empty;
+                public string CatNumber { get; set; } = string.Empty;
+                public string CatCID { get; set; } = string.Empty;
+                public DateTime CatDate { get; set; }
         }
 }

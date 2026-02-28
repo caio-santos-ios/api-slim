@@ -16,7 +16,6 @@ namespace api_slim.src.Services
     public class CustomerRecipientService
     (
         ICustomerRecipientRepository customerRepository, 
-        // ICustomerService customerService, 
         ICustomerRepository customerRepository1, 
         IAddressRepository addressRepository, 
         IPlanRepository planRepository, 
@@ -358,6 +357,9 @@ namespace api_slim.src.Services
             ResponseApi<long?> code = await customerRepository.GetNextCodeAsync();
             customer.Code = code.Data.ToString()!.PadLeft(6, '0');
 
+            ResponseApi<Customer?> customerContractor = await customerRepository1.GetByIdAsync(customer.ContractorId);
+            customer.Type = customerContractor.Data is not null ? customerContractor.Data.Type : "";
+            
             ResponseApi<CustomerRecipient?> response = await customerRepository.CreateAsync(customer);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Beneficiário.");
@@ -470,9 +472,6 @@ namespace api_slim.src.Services
             string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
             string htmlEmail = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo", caminhoDoLogo);
             await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", htmlEmail);
-
-            // string template = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo");
-            // await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", template);
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
         }
@@ -622,11 +621,14 @@ namespace api_slim.src.Services
             ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
             if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
             
+            ResponseApi<Customer?> customerContractor = await customerRepository1.GetByIdAsync(customerResponse.Data.ContractorId);
+
             CustomerRecipient customer = _mapper.Map<CustomerRecipient>(request);
             customer.UpdatedAt = DateTime.UtcNow;
             customer.CreatedAt = customerResponse.Data.CreatedAt;
             customer.Code = customerResponse.Data.Code;
             customer.RapidocId = customerResponse.Data.RapidocId;
+            customer.Type = customerContractor.Data is not null ? customerContractor.Data.Type : "";
 
             ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customer);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
@@ -892,11 +894,12 @@ namespace api_slim.src.Services
             await logRepository.CreateAsync(new()
             {   
                 Action = "Atualização",
-                Collection = "customer-recipient",
-                Description = customerResponse.Data.Active ? $"Ativou Beneficiário {customerResponse.Data.Name}" : $"Inativou Beneficiário {customerResponse.Data.Name}",
+                Collection = request.Rason,
+                Description = customerResponse.Data.Active ? $"Ativou Beneficiário {customerResponse.Data.Name}" : $"Inativou Beneficiário {customerResponse.Data.Name} - Justificativa: {request.Justification}",
                 CreatedBy = request.UpdatedBy,
                 Parent = "customer",
-                ParentId = response.Data.ContractorId                 
+                ParentId = customerResponse.Data.Id,
+                Key = "update-status-recipient"               
             });
             
             return new(response.Data, 201, "Atualizado com sucesso");

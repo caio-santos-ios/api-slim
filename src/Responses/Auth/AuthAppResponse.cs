@@ -10,5 +10,6 @@ namespace api_slim.src.Responses
         public string CPF {get;set;} = string.Empty; 
         public bool FirstAccess {get;set;}
         public List<string> ModulesIdentifications {get;set;} = [];
+        public DateTime Expires {get;set;}        
     }
 }

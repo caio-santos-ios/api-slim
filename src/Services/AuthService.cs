@@ -96,6 +96,7 @@ namespace api_slim.src.Services
                 {
                     Token = GenerateJwtToken(user, false, true), 
                     RefreshToken = GenerateJwtToken(user, true, true), 
+                    Expires = DateTime.UtcNow.AddDays(7),
                     Name = customer.Name, 
                     Photo = customer.Photo, 
                     RapidocId = customer.RapidocId, 
@@ -125,9 +126,7 @@ namespace api_slim.src.Services
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = Environment.GetEnvironmentVariable("ISSUER"),
                     ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE"),
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("SECRET_KEY") ?? "")
-                    ),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("SECRET_KEY") ?? "")),
                     ValidateLifetime = false 
                 };
 
@@ -140,8 +139,10 @@ namespace api_slim.src.Services
                 if (tokenType != "refresh") return new(null, 401, "O token fornecido não é um refresh token.");
 
                 var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub || c.Type == ClaimTypes.NameIdentifier)?.Value;
-
+                
                 if (string.IsNullOrEmpty(userId)) return new(null, 401, "Usuário não encontrado no token.");
+                System.Console.WriteLine(tokenType);
+                System.Console.WriteLine(userId);
 
                 ResponseApi<User?> user = await userRepository.GetByIdAsync(userId);
                 if (user.Data is null) return new(null, 401, "Usuário não encontrado.");
@@ -154,7 +155,64 @@ namespace api_slim.src.Services
                     Token = accessToken,
                     RefreshToken = refreshToken,
                     Role = user.Data.Role.ToString(),
-                    Id = user.Data.Id
+                    Id = user.Data.Id,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
+            }
+        }
+        public async Task<ResponseApi<AuthResponse>> RefreshTokenAppAsync(string token)
+        {
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                SecurityToken? validatedToken;
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Environment.GetEnvironmentVariable("ISSUER"),
+                    ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE"),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("SECRET_KEY") ?? "")),
+                    ValidateLifetime = false 
+                };
+
+                var principal = handler.ValidateToken(token, validationParameters, out validatedToken);
+                var jwtToken = validatedToken as JwtSecurityToken;
+
+                if (jwtToken == null) return new(null, 401, "Token inválido.");
+
+                string? tokenType = jwtToken.Claims.FirstOrDefault(c => c.Type == "type")?.Value;
+                if (tokenType != "refresh") return new(null, 401, "O token fornecido não é um refresh token.");
+
+                var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub || c.Type == ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(userId)) return new(null, 401, "Usuário não encontrado no token.");
+
+                ResponseApi<CustomerRecipient?> user = await customerRecipientRepository.GetByIdAsync(userId);
+                if (user.Data is null) return new(null, 401, "Usuário não encontrado.");
+
+                User newUser = new ()
+                {
+                    Id = user.Data.Id,
+                    Email = user.Data.Email,
+                    UserName = user.Data.Name
+                };
+
+                string accessToken = GenerateJwtToken(newUser, false, true);
+                string refreshToken = GenerateJwtToken(newUser, true, true);
+
+                return new(new AuthResponse
+                {
+                    Token = accessToken,
+                    RefreshToken = refreshToken,
+                    Id = user.Data.Id,
+                    Expires = DateTime.UtcNow.AddDays(7)
                 });
             }
             catch

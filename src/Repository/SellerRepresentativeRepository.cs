@@ -23,144 +23,24 @@ namespace api_slim.src.Repository
                 new("$skip", pagination.Skip),
                 new("$limit", pagination.Limit),
 
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "addresses" },
-
-                    { "let", new BsonDocument("profId", "$_id") },
-
-                    { "pipeline", new BsonArray
-                        {
-                            new BsonDocument("$match", new BsonDocument
-                            {
-                                { "$expr", new BsonDocument("$and", new BsonArray
-                                    {
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            new BsonDocument("$toObjectId", "$parentId"),
-                                            "$$profId"
-                                        }),
-
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            "$parent",
-                                            "seller-representative"
-                                        })
-                                    })
-                                }
-                            })
-                        }
-                    },
-
-                    { "as", "_address" }
+                new("$addFields", new BsonDocument {
+                    {"id", new BsonDocument("$toString", "$_id")}
                 }),
 
-                new BsonDocument("$unwind", new BsonDocument
-                {
-                    { "path", "$_address" },
-                    { "preserveNullAndEmptyArrays", true }
-                }),
-
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "addresses" },
-
-                    { "let", new BsonDocument("profId", "$_id") },
-
-                    { "pipeline", new BsonArray
-                        {
-                            new BsonDocument("$match", new BsonDocument
-                            {
-                                { "$expr", new BsonDocument("$and", new BsonArray
-                                    {
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            new BsonDocument("$toObjectId", "$parentId"),
-                                            "$$profId"
-                                        }),
-
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            "$parent",
-                                            "seller-representative-responsible"
-                                        })
-                                    })
-                                }
-                            })
-                        }
-                    },
-
-                    { "as", "_address_responsible" }
-                }),
-
-                new BsonDocument("$unwind", new BsonDocument
-                {
-                    { "path", "$_address_responsible" },
-                    { "preserveNullAndEmptyArrays", true }
-                }),
+                MongoUtil.Lookup("addresses", ["$parentId"], ["$id"], "_address", [["deleted", false], ["parent", "seller-representative"]], 1),
+                MongoUtil.Lookup("addresses", ["$parentId"], ["$id"], "_addressResponsible", [["deleted", false], ["parent", "seller-representative-responsible"]], 1),
+                MongoUtil.Lookup("sellers", ["$parentId"], ["$id"], "_seller", [["deleted", false]], 1),
                 
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "sellers" },
-                    { "let", new BsonDocument("repId", new BsonDocument("$toString", "$_id")) },
-                    { "pipeline", new BsonArray
-                        {
-                            new BsonDocument("$match", new BsonDocument
-                            {
-                                { "$expr", new BsonDocument("$eq", new BsonArray
-                                    {
-                                        "$parentId",   
-                                        "$$repId"     
-                                    })
-                                }
-                            })
-                        }
-                    },
-                    { "as", "_seller" }
+                new("$addFields", new BsonDocument {
+                    {"myAddress", MongoUtil.First("_address")},
+                    {"_address_responsible", MongoUtil.First("_addressResponsible")},
+                    {"_seller", MongoUtil.First("_seller")},
                 }),
 
-                new BsonDocument("$unwind", new BsonDocument
-                {
-                    { "path", "$_seller" },
-                    { "preserveNullAndEmptyArrays", true }
-                }),
-
-                new BsonDocument("$lookup", new BsonDocument
-                {
-                    { "from", "addresses" },
-
-                    { "let", new BsonDocument("profId", "$_seller._id") },
-
-                    { "pipeline", new BsonArray
-                        {
-                            new BsonDocument("$match", new BsonDocument
-                            {
-                                { "$expr", new BsonDocument("$and", new BsonArray
-                                    {
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            new BsonDocument("$toObjectId", "$parentId"),
-                                            "$$profId"
-                                        }),
-
-                                        new BsonDocument("$eq", new BsonArray
-                                        {
-                                            "$parent",
-                                            "seller"
-                                        })
-                                    })
-                                }
-                            })
-                        }
-                    },
-
-                    { "as", "_address_seller" }
-                }),
-
-                new BsonDocument("$unwind", new BsonDocument
-                {
-                    { "path", "$_address_seller" },
-                    { "preserveNullAndEmptyArrays", true }
+                MongoUtil.Lookup("addresses", ["$_seller._id"], ["$_id"], "_sellerAddress", [["deleted", false]], 1),
+                
+                new("$addFields", new BsonDocument {
+                    {"_address_seller", MongoUtil.First("_sellerAddress")},
                 }),
 
                 new("$project", new BsonDocument
@@ -176,6 +56,7 @@ namespace api_slim.src.Repository
                     {"effectiveDate", 1},
                     {"bank", 1},
                     {"createdAt", 1},
+                    {"_address", 1},
                     {"responsible", new BsonDocument 
                         {
                             {
@@ -206,16 +87,16 @@ namespace api_slim.src.Repository
                     },
                     {"address", new BsonDocument
                         {
-                            {"id", new BsonDocument("$ifNull", new BsonArray { new BsonDocument("$toString", "$_address._id"), "" })},
-                            {"street", new BsonDocument("$ifNull", new BsonArray { "$_address.street", "" })},
-                            {"number", new BsonDocument("$ifNull", new BsonArray {"$_address.number" , "" })},
-                            {"complement", new BsonDocument("$ifNull", new BsonArray {"$_address.complement" , "" })},
-                            {"neighborhood", new BsonDocument("$ifNull", new BsonArray {"$_address.neighborhood" , "" })},
-                            {"city", new BsonDocument("$ifNull", new BsonArray {"$_address.city" , "" })},
-                            {"state", new BsonDocument("$ifNull", new BsonArray {"$_address.state" , "" })},
-                            {"zipCode", new BsonDocument("$ifNull", new BsonArray {"$_address.zipCode" , "" })},
-                            {"parent", new BsonDocument("$ifNull", new BsonArray {"$_address.parent" , "" })},
-                            {"parentId", new BsonDocument("$ifNull", new BsonArray {"$_address.parentId" , "" })},
+                            {"id", new BsonDocument("$ifNull", new BsonArray { new BsonDocument("$toString", "$myAddress._id"), "" })},
+                            {"street", new BsonDocument("$ifNull", new BsonArray { "$myAddress.street", "" })},
+                            {"number", new BsonDocument("$ifNull", new BsonArray {"$myAddress.number" , "" })},
+                            {"complement", new BsonDocument("$ifNull", new BsonArray {"$myAddress.complement" , "" })},
+                            {"neighborhood", new BsonDocument("$ifNull", new BsonArray {"$myAddress.neighborhood" , "" })},
+                            {"city", new BsonDocument("$ifNull", new BsonArray {"$myAddress.city" , "" })},
+                            {"state", new BsonDocument("$ifNull", new BsonArray {"$myAddress.state" , "" })},
+                            {"zipCode", new BsonDocument("$ifNull", new BsonArray {"$myAddress.zipCode" , "" })},
+                            {"parent", new BsonDocument("$ifNull", new BsonArray {"$myAddress.parent" , "" })},
+                            {"parentId", new BsonDocument("$ifNull", new BsonArray {"$myAddress.parentId" , "" })},
                         }
                     },
                     {

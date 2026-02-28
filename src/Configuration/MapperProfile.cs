@@ -26,6 +26,7 @@ namespace api_slim.src.Configuration
 
             CreateMap<CreateSellerRepresentativeDTO, SellerRepresentative>().ReverseMap();
             CreateMap<UpdateSellerRepresentativeDTO, SellerRepresentative>().ReverseMap();      
+            CreateMap<CreateResponsibleDTO, RepresentativeResponsible>().ReverseMap();      
 
             CreateMap<CreatePlanDTO, Plan>().ReverseMap();
             CreateMap<UpdatePlanDTO, Plan>().ReverseMap();

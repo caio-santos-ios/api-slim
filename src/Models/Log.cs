@@ -12,7 +12,7 @@ namespace api_slim.src.Models
         
         [BsonElement("collection")]
         public string Collection {get;set;} = string.Empty;
-       
+
         [BsonElement("action")]
         public string Action {get;set;} = string.Empty;   
 
@@ -24,5 +24,8 @@ namespace api_slim.src.Models
         
         [BsonElement("parent")]
         public string Parent {get;set;} = string.Empty;      
+
+        [BsonElement("key")]
+        public string Key {get;set;} = string.Empty;      
     }
 }

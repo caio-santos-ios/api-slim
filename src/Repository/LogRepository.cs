@@ -24,17 +24,20 @@ namespace api_slim.src.Repository
                     new("$limit", pagination.Limit),
                     
                     MongoUtil.Lookup("users", ["$createdBy"], ["$_id"], "_user", [["deleted", false]], 1),
+                    MongoUtil.Lookup("generic_tables", ["$collection"], ["$code"], "_rason", [["deleted", false], ["table", "motivo-inativa-beneficiario"]], 1),
 
                     new("$addFields", new BsonDocument
                     {
                         {"id", MongoUtil.ToString("$_id")},
-                        {"userCreate", MongoUtil.First("_user.name")}
+                        {"userCreate", MongoUtil.First("_user.name")},
+                        {"rason", MongoUtil.First("_rason.description")},
                     }),
 
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
                         {"_user", 0},
+                        {"_rason", 0},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

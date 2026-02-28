@@ -24,5 +24,9 @@ namespace api_slim.src.Shared.DTOs
                 public decimal MinimumValue { get; set; }
                 public string TypePlan { get; set; } = string.Empty;
                 public string SellerId { get; set; } = string.Empty;
+                public string TaxRegime { get; set; } = string.Empty;
+                public string TechnicalManager { get; set; } = string.Empty;
+                public decimal RatRate { get; set; }
+                public decimal SheetValue { get; set; }
         }
 }

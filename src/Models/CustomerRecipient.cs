@@ -117,6 +117,27 @@ namespace api_slim.src.Models
         
         [BsonElement("dass")]
         public Dass Dass { get; set; } = new();
+
+        [BsonElement("serviceModuleIds")]
+        public List<string> ServiceModuleIds { get; set; } = [];
+
+        [BsonElement("branch")]
+        public string Branch { get; set; } = string.Empty;
+        
+        [BsonElement("department")]
+        public string Department { get; set; } = string.Empty;
+        
+        [BsonElement("registration")]
+        public string Registration { get; set; } = string.Empty;
+        
+        [BsonElement("cno")]
+        public string CNO { get; set; } = string.Empty;
+        
+        [BsonElement("function")]
+        public string Function { get; set; } = string.Empty;
+        
+        [BsonElement("type")]
+        public string Type { get; set; } = string.Empty;
     }
 
     public class Dass 

@@ -9,6 +9,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request);
         Task<ResponseApi<AuthAppResponse>> LoginAppAsync(LoginAppDTO request);
         Task<ResponseApi<AuthResponse>> RefreshTokenAsync(string token);
+        Task<ResponseApi<AuthResponse>> RefreshTokenAppAsync(string token);
         Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordAsync(ResetPasswordDTO request);
         Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordAppAsync(ResetPasswordDTO request);
         Task<ResponseApi<api_slim.src.Models.User>> ResetPasswordFirstAppAsync(ResetPasswordDTO request);

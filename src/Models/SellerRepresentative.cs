@@ -86,12 +86,11 @@ namespace api_slim.src.Models
         
         [BsonElement("type")]
         public string Type { get; set; } = string.Empty;
-       
+
         [BsonElement("pixKey")]
         public string PixKey { get; set; } = string.Empty;
 
         [BsonElement("pixType")]
         public string PixType { get; set; } = string.Empty;
-     
     }
 }

@@ -54,7 +54,7 @@ namespace api_slim.src.Models
 
         [BsonElement("notes")]
         public string Notes { get; set; } = string.Empty;
-       
+
         [BsonElement("minimumValue")]
         public decimal MinimumValue { get; set; }
 
@@ -63,6 +63,30 @@ namespace api_slim.src.Models
 
         [BsonElement("sellerId")]
         public string SellerId { get; set; } = string.Empty;
+        
+        [BsonElement("taxRegime")]
+        public string TaxRegime { get; set; } = string.Empty;
+        
+        [BsonElement("technicalManager")]
+        public string TechnicalManager { get; set; } = string.Empty;
+        
+        [BsonElement("ratRate")]
+        public decimal RatRate { get; set; }
+        
+        [BsonElement("sheetValue")]
+        public decimal SheetValue { get; set; }
+
+        [BsonElement("cat")]
+        public string Cat { get; set; } = string.Empty;
+        
+        [BsonElement("catNumber")]
+        public string CatNumber { get; set; } = string.Empty;
+
+        [BsonElement("catCID")]
+        public string CatCID { get; set; } = string.Empty;
+        
+        [BsonElement("catDate")]
+        public DateTime CatDate { get; set; }
     }
 
     public class Contractor
