@@ -15,7 +15,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         {
             await ProcessPushJobsAsync();
             // Regra específica: Verificar a cada 30 segundos ou o tempo que desejar
-            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
         }
     }
 
