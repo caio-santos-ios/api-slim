@@ -129,7 +129,6 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<IAppointmentNotificationService, AppointmentNotificationService>();
             builder.Services.AddTransient<ISmClickService, SmClickService>();
             builder.Services.AddTransient<SmClickHandler>();
-            builder.Services.AddHostedService<NotificationWorker>();
 
             // DASHBOARD
             builder.Services.AddTransient<IDashboardService, DashboardService>();
@@ -144,6 +143,10 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<MailHandler>();
             builder.Services.AddTransient<CloudinaryHandler>();
 
+            // WORKERS
+            builder.Services.AddHostedService<NotificationWorker>();
+            builder.Services.AddHostedService<BirthdayNotificationWorker>();
+            
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }
     }

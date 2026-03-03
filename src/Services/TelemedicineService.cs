@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class TelemedicineService(ICustomerRecipientRepository customerRepository) : ITelemedicineService
+    public class TelemedicineService() : ITelemedicineService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";

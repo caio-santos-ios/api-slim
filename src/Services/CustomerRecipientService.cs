@@ -23,8 +23,7 @@ namespace api_slim.src.Services
         IMapper _mapper, 
         ILogRepository logRepository, 
         CloudinaryHandler cloudinaryHandler, 
-        MailHandler mailHandler,
-        IAppointmentNotificationService appointmentNotificationService
+        MailHandler mailHandler
     ) : ICustomerRecipientService
 {
     HttpClient client = new();

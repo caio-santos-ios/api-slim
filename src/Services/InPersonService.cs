@@ -71,7 +71,7 @@ namespace api_slim.src.Services
                         Phone = recipientResponse.Data.Phone,
                         BeneficiaryName = recipientResponse.Data.Name,
                         BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AccreditedDescription, request.AddressDescription),
+                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request!.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AccreditedDescription, request.AddressDescription),
                         SendDate = DateTime.UtcNow.AddSeconds(30),
                         Type = "Notification"
                     },
