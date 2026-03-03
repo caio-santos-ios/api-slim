@@ -171,6 +171,19 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpPut("sub-notification")]
+    public async Task<IActionResult> UpdateSubNotification([FromBody] PushSubscriptionRequest customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        
+        customer.UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        
+        ResponseApi<CustomerRecipient?> response = await service.UpdateSubNotificationAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
     [HttpPut("import")]
     public async Task<IActionResult> Import([FromForm] ImportCustomerRecipientDTO request)
     {

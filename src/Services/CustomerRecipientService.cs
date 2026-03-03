@@ -995,6 +995,37 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateSubNotificationAsync(PushSubscriptionRequest request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.UserId);
+            if(customerResponse.Data is not null)
+            {
+                customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+                customerResponse.Data.UpdatedBy = request.UserId;
+                customerResponse.Data.SubNotification = new()
+                {
+                    Endpoint = request.Endpoint,
+                    ExpirationTime = request.ExpirationTime,
+                    UserId = request.UserId,
+                    Keys = new()
+                    {
+                        P256dh = request.Keys.P256dh,
+                        Auth = request.Keys.Auth
+                    }
+                };
+
+                ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            };
+            
+            return new(null, 200, "Alterado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
     #endregion
     
     #region DELETE

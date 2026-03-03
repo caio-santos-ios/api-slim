@@ -142,10 +142,12 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<SmsHandler>();
             builder.Services.AddTransient<MailHandler>();
             builder.Services.AddTransient<CloudinaryHandler>();
+            builder.Services.AddSingleton<WebPushHandler>();
 
             // WORKERS
             builder.Services.AddHostedService<NotificationWorker>();
             builder.Services.AddHostedService<BirthdayNotificationWorker>();
+            builder.Services.AddHostedService<WebPushWorker>();
             
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }

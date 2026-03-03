@@ -1,6 +1,8 @@
 using api_slim.src.Models.Base;
+using api_slim.src.Shared.DTOs;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using WebPush;
 
 namespace api_slim.src.Models
 {    
@@ -138,6 +140,9 @@ namespace api_slim.src.Models
         
         [BsonElement("type")]
         public string Type { get; set; } = string.Empty;
+
+        [BsonElement("subNotification")]
+        public PushSubscriptionRequest SubNotification { get; set; } = new();
     }
 
     public class Dass 
