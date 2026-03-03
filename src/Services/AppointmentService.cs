@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net.Http.Headers;
+using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -10,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository) : IAppointmentService
+    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository, ICustomerRecipientRepository customerRecipientRepository, IAppointmentNotificationService appointmentNotificationService) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -28,7 +29,6 @@ namespace api_slim.src.Services
                 request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
-                // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
 
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/appointments{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
@@ -264,10 +264,10 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                responseRapidoc.EnsureSuccessStatusCode();
+                // responseRapidoc.EnsureSuccessStatusCode();
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-
+                
                 await telemedicineHistoricService.CreateAsync(new ()
                 {
                     Status = "Agendado",
@@ -280,6 +280,64 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Agendamento"
                 });
+
+                ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByIdAsync(request.BeneficiaryUuid);
+                if(recipientResponse.Data is not null && result is not null)
+                {
+                    if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
+                    {
+                        DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        var timeString = request.Time.Split("Até")[0].Trim();
+                        TimeSpan time = TimeSpan.Parse(timeString);
+                        DateTime dateTime = date.Add(time);
+
+                        List<NotificationJob> jobs = new()
+                        {
+                            new() {
+                                Parent = "Appointment",
+                                ParentId = result!.uuid.ToString(),
+                                Phone = recipientResponse.Data.Phone,
+                                BeneficiaryName = recipientResponse.Data.Name,
+                                BeneficiaryCPF = recipientResponse.Data.Cpf,
+                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, request.ProfessionalName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                                SendDate = DateTime.UtcNow.AddSeconds(30),
+                                Type = "Notification"
+                            },
+                            new() {
+                                Parent = "Appointment",
+                                ParentId = result!.uuid.ToString(),
+                                Phone = recipientResponse.Data.Phone,
+                                BeneficiaryName = recipientResponse.Data.Name,
+                                BeneficiaryCPF = recipientResponse.Data.Cpf,
+                                Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                                SendDate = dateTime.AddDays(-1),
+                                Type = "Notification"
+                            },
+                            new() {
+                                Parent = "Appointment",
+                                ParentId = result!.uuid.ToString(),
+                                Phone = recipientResponse.Data.Phone,
+                                BeneficiaryName = recipientResponse.Data.Name,
+                                BeneficiaryCPF = recipientResponse.Data.Cpf,
+                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, request.ProfessionalName, request.Time, result.beneficiaryUrl.ToString()),
+                                SendDate = dateTime.AddHours(-1),
+                                Type = "Notification"
+                            },
+                            new() {
+                                Parent = "Appointment",
+                                ParentId = result!.uuid.ToString(),
+                                Phone = recipientResponse.Data.Phone,
+                                BeneficiaryName = recipientResponse.Data.Name,
+                                BeneficiaryCPF = recipientResponse.Data.Cpf,
+                                Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
+                                SendDate = dateTime.AddMinutes(-5),
+                                Type = "Notification"
+                            },
+                            // Notificação de avaliação vou implementar depois.
+                        };
+                        await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
+                    }
+                };
                 
                 return new(null, 201, "Agendamento feito com sucesso");
             }

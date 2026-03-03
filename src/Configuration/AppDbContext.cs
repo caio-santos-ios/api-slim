@@ -149,5 +149,11 @@ namespace api_slim.src.Configuration
             get { return Database.GetCollection<Log>("logs"); }
         }
         #endregion
+        #region NOTIFICATIONS
+        public IMongoCollection<NotificationJob> NotificationJobs
+        {
+            get { return Database.GetCollection<NotificationJob>("notification_jobs"); }
+        }
+        #endregion
     }
 }

@@ -192,7 +192,8 @@ namespace api_slim.src.Repository
                     }),
 
                     MongoUtil.Lookup("accredited_networks", ["$accreditedNetworkId"], ["$id"], "_accredited_network", [["deleted", false]], 1),
-                   
+                    MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
+
                     new("$addFields", new BsonDocument {
                         {"tradingTableId", MongoUtil.First("_accredited_network.tradingTable")},
                     }),
@@ -205,6 +206,7 @@ namespace api_slim.src.Repository
                         {"id", 1},
                         {"corporateName", 1},
                         {"tradingTableItems", MongoUtil.First("_trading_table.items")},
+                        {"address", MongoUtil.First("_address")},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

@@ -3,6 +3,7 @@ using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Repository;
 using api_slim.src.Services;
+using api_slim.src.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -26,6 +27,7 @@ namespace api_slim.src.Configuration
 
             AppDbContext.IsSSL = IsSSL;
         }
+
         public static void AddBuilderAuthentication(this WebApplicationBuilder builder)
         {
             string? SecretKey = Environment.GetEnvironmentVariable("SECRET_KEY") ?? "";
@@ -54,10 +56,12 @@ namespace api_slim.src.Configuration
                 };
             });
         }
+
         public static void AddContext(this WebApplicationBuilder builder)
         {
             builder.Services.AddSingleton<AppDbContext>();
         }
+
         public static void AddBuilderServices(this WebApplicationBuilder builder)
         {
             builder.Services.AddTransient<IAuthService, AuthService>();                  
@@ -121,6 +125,11 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<ITelemedicineHistoricService, TelemedicineHistoricService>();
             builder.Services.AddTransient<ITelemedicineHistoricRepository, TelemedicineHistoricRepository>();
 
+            // SMCLICK
+            builder.Services.AddTransient<IAppointmentNotificationService, AppointmentNotificationService>();
+            builder.Services.AddTransient<ISmClickService, SmClickService>();
+            builder.Services.AddTransient<SmClickHandler>();
+            builder.Services.AddHostedService<NotificationWorker>();
 
             // DASHBOARD
             builder.Services.AddTransient<IDashboardService, DashboardService>();
@@ -130,7 +139,7 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<ILogService, LogService>();
             builder.Services.AddTransient<ILogRepository, LogRepository>();
 
-            // Handlers
+            // HANDLERS
             builder.Services.AddTransient<SmsHandler>();
             builder.Services.AddTransient<MailHandler>();
             builder.Services.AddTransient<CloudinaryHandler>();

@@ -12,5 +12,10 @@ namespace api_slim.src.Shared.DTOs
         public string ResponsiblePayment { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public decimal Value {get;set;}
+
+        public string AccreditedDescription { get; set; } = string.Empty;
+        public string AddressDescription { get; set; } = string.Empty;
+        public string ProcedureDescription { get; set; } = string.Empty;
+        public string ProfessionalDescription { get; set; } = string.Empty;
     }
 }

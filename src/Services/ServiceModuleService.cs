@@ -136,6 +136,8 @@ namespace api_slim.src.Services
             serviceModule.CreatedAt = serviceModuleResponse.Data.CreatedAt;
             serviceModule.Image = serviceModuleResponse.Data.Image;
             serviceModule.Code = serviceModuleResponse.Data.Code;
+            serviceModule.RapiDocId = serviceModuleResponse.Data.RapiDocId;
+            serviceModule.Identification = serviceModuleResponse.Data.Identification;
 
             ResponseApi<ServiceModule?> response = await serviceModuleRepository.UpdateAsync(serviceModule);
             if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");

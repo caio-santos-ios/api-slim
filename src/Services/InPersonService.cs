@@ -1,3 +1,4 @@
+using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -7,7 +8,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class InPersonService(IInPersonRepository repository, IMapper _mapper) : IInPersonService
+    public class InPersonService(IInPersonRepository repository, IMapper _mapper, IAppointmentNotificationService appointmentNotificationService, ICustomerRecipientRepository customerRecipientRepository) : IInPersonService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -50,6 +51,44 @@ namespace api_slim.src.Services
             ResponseApi<InPerson?> response = await repository.CreateAsync(inPerson);
 
             if(response.Data is null) return new(null, 400, "Falha ao criar Atendimento Presencial.");
+
+            ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByIdAsync(request.RecipientId);
+            if(recipientResponse.Data is not null)
+            {
+                if(string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
+                {
+                    return new(null, 400, "O Beneficiário não tem WhatsApp cadastrado. A Consulta foi criada, mas não foi possível enviar a notificação.");
+                }
+
+                TimeSpan time = TimeSpan.Parse(request.Hour);
+                DateTime? dateTime = request?.Date?.Add(time);
+                
+                List<NotificationJob> jobs = new()
+                {
+                    new() {
+                        Parent = "InPerson",
+                        ParentId = response.Data.Id!,
+                        Phone = recipientResponse.Data.Phone,
+                        BeneficiaryName = recipientResponse.Data.Name,
+                        BeneficiaryCPF = recipientResponse.Data.Cpf,
+                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AccreditedDescription, request.AddressDescription),
+                        SendDate = DateTime.UtcNow.AddSeconds(30),
+                        Type = "Notification"
+                    },
+                    new() {
+                        Parent = "InPerson",
+                        ParentId = response.Data.Id!,
+                        Phone = recipientResponse.Data.Phone,
+                        BeneficiaryName = recipientResponse.Data.Name,
+                        BeneficiaryCPF = recipientResponse.Data.Cpf,
+                        Message = WhatsAppTemplate.InPersonDayReminder(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AddressDescription),
+                        SendDate = dateTime?.AddDays(-1).AddHours(-1) ?? DateTime.UtcNow.AddSeconds(30),
+                        Type = "Notification"
+                    },
+                    // Notificação de avaliação vou implementar depois.
+                };
+                await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
+            }
 
             return new(response.Data, 201, "Atendimento Presencial criado com sucesso.");
         }

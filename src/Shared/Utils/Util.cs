@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace api_slim.src.Shared.Utils
@@ -15,6 +16,13 @@ namespace api_slim.src.Shared.Utils
                 CodeAccess = new Random().Next(100000, 999999).ToString(),
                 CodeAccessExpiration = DateTime.UtcNow.AddMinutes(15)
             };
+        }
+
+        public static string CleanPhone(string telefone)
+        {
+            if (string.IsNullOrEmpty(telefone)) return string.Empty;
+            
+            return Regex.Replace(telefone, @"[^\d]", "");
         }
     }
 }
