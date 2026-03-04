@@ -16,7 +16,7 @@ public class WebPushHandler
         _webPushClient = new WebPushClient();
     }
 
-    public async Task SendPushAsync(PushSubscriptionRequest subDto, string title, string message)
+    public async Task SendPushAsync(PushSubscriptionRequest subDto, string title, string message, string url, string tag)
     {
         var subscription = new PushSubscription(
             subDto.Endpoint, 
@@ -32,8 +32,10 @@ public class WebPushHandler
 
         var payload = JsonSerializer.Serialize(new 
         { 
-            title = title, 
-            body = message 
+            title, 
+            body = message,
+            url,
+            tag,
         });
 
         try

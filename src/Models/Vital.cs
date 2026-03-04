@@ -85,6 +85,18 @@ namespace api_slim.src.Models
         
         [BsonElement("weekMetrics")]
         public List<VitalMetric> WeekMetric { get; set; } = new();
+
+        [BsonElement("chekinIGS")]
+        public bool ChekinIGS { get; set; }
+        
+        [BsonElement("chekinIGN")]
+        public bool ChekinIGN { get; set; }
+
+        [BsonElement("chekinIES")]
+        public bool ChekinIES { get; set; }
+
+        [BsonElement("chekinISO")]
+        public bool ChekinISO { get; set; }
     }
 
     public class VitalMetric 

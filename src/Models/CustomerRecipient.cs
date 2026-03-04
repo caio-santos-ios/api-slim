@@ -143,6 +143,15 @@ namespace api_slim.src.Models
 
         [BsonElement("subNotification")]
         public PushSubscriptionRequest SubNotification { get; set; } = new();
+
+        [BsonElement("IGSNotification")]
+        public DateTime IGSNotification { get; set; }
+        
+        [BsonElement("IGNNotification")]
+        public DateTime IGNNotification { get; set; }
+
+        [BsonElement("IESNotification")]
+        public DateTime IESNotification { get; set; }
     }
 
     public class Dass 
