@@ -37,7 +37,19 @@ public class WebPushHandler
             _privateKey
         );
 
-        var payload = JsonSerializer.Serialize(new { title, body = message, url, tag, image });
+        // var payload = JsonSerializer.Serialize(new { title, body = message, url, tag, image });
+        var options = new JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+        };
+
+        var payload = JsonSerializer.Serialize(new { 
+            title, 
+            body = message, 
+            url, 
+            tag, 
+            image 
+        }, options);
 
         try
         {
