@@ -32,5 +32,7 @@ namespace api_slim.src.Shared.DTOs
                 public int Dass7 { get; set; }
                 public int Dass8 { get; set; }
                 public int Dass9 { get; set; }
+
+                public bool ChekinIGS { get; set; }
         }
 }

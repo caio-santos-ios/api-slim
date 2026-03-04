@@ -1,5 +1,6 @@
 using api_slim.src.Configuration;
 using api_slim.src.Handlers;
+using api_slim.src.Shared.Utils;
 using MongoDB.Driver;
 
 namespace api_slim.src.Workers;
@@ -37,7 +38,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    && c.Cpf == CPF_TESTE
+                    // && c.Cpf == CPF_TESTE
                     && c.SubNotification != null)
             .ToListAsync();
 
@@ -55,11 +56,10 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                 {
                     var IGSToday = await context.Vitals
                         .Find(v => v.BeneficiaryId == recipient.Id
-                                && v.CreatedAt.Date.Date == today.Date
-                                && !v.ChekinIGS)
+                                && v.CreatedAt.Date.Date == today.Date)
                         .FirstOrDefaultAsync();
 
-                    if (IGSToday == null)
+                    if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
                     {
                         logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
 
@@ -70,7 +70,12 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                             url    : "/aplicativo/home/igs",
                             tag    : "checkin-igs"
                         );
+
+                        recipient.IGSNotification = DateTime.UtcNow;
+
+                        await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
                     }
+
                     return; // Janela da manhã — não verifica IGN/IES current
                 }
 
@@ -80,37 +85,25 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                 {
                     var vitalToday = await context.Vitals
                         .Find(v => v.BeneficiaryId == recipient.Id
-                                && v.CreatedAt.Date == today.Date && !v.ChekinIGN)
+                                && v.CreatedAt.Date == today.Date && !v.ChekinIGN || !v.ChekinIES)
                         .FirstOrDefaultAsync();
 
-                    // IGN — verifica se registrou nutrição (waterAmount ou lastMeal)
-                    bool IGNToday = vitalToday != null && !vitalToday.ChekinIGN;
-                    if (!IGNToday)
+                    if(recipient.IGNNotification.Date != DateTime.UtcNow.Date && recipient.IESNotification.Date != DateTime.UtcNow.Date) 
                     {
                         logger.LogInformation("Enviando IGN (noite) para {Name}", recipient.Name);
 
                         await pushHandler.SendPushAsync(
                             subDto : recipient.SubNotification,
-                            title  : "🌙 Check-in da Noite — Nutrição",
-                            message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação e alimentação de hoje.",
+                            title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
+                            message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
                             url    : "/aplicativo/home",
                             tag    : "checkin-ign"
                         );
-                    }
 
-                    // IES — verifica se respondeu o DASS (dass1 a dass9)
-                    bool IESToday = vitalToday != null && !vitalToday.ChekinIES;
-                    if (!IESToday)
-                    {
-                        logger.LogInformation("Enviando IES (noite) para {Name}", recipient.Name);
+                        recipient.IGNNotification = DateTime.UtcNow;
+                        recipient.IESNotification = DateTime.UtcNow;
 
-                        await pushHandler.SendPushAsync(
-                            subDto : recipient.SubNotification,
-                            title  : "🧠 Check-in da Noite — Saúde Mental",
-                            message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Como foi seu estado emocional hoje?",
-                            url    : "/aplicativo/home",
-                            tag    : "checkin-ies"
-                        );
+                        await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
                     }
                 }
             }

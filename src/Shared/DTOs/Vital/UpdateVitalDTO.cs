@@ -8,5 +8,7 @@ namespace api_slim.src.Shared.DTOs
                 public decimal SleepHours { get; set; }
                 public string SleepTime { get; set; } = string.Empty;
                 public decimal WaterAmount { get; set; }
+                public bool ChekinIGN { get; set; }
+                public bool ChekinIES { get; set; }
         }
 }

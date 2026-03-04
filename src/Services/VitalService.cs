@@ -98,6 +98,18 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<Vital?>> GetByBeneficiaryAsync(string beneficiaryId)
+        {
+            try
+            {
+                ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
+                return new(vital.Data);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
 
         public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period)
         {

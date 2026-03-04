@@ -48,6 +48,15 @@ namespace api_slim.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("beneficiary")]
+        public async Task<IActionResult> GetByBeneficiaryAsync()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Vital?> response = await service.GetByBeneficiaryAsync(userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateVitalDTO vital)
         {
