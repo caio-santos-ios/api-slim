@@ -78,7 +78,8 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                         //     );
 
                             recipient.IGSNotification = DateTime.UtcNow.AddDays(-1);
-
+                            recipient.IGNNotification = DateTime.UtcNow.AddDays(-1);
+                            recipient.IESNotification = DateTime.UtcNow.AddDays(-1);
                             await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
                         // }
                     }
