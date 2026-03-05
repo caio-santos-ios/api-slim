@@ -58,27 +58,30 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 && v.CreatedAt.Date.Date == today.Date)
                         .FirstOrDefaultAsync();
 
-                    System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
-                    // System.Console.WriteLine(IGSToday);
 
-                    if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
+                    if(recipient.SubNotification != null)
                     {
-                        logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
+                        System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
+                        System.Console.WriteLine(recipient.SubNotification is not null);
+                        
+                        // if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
+                        // {
+                        //     logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
 
-                        await pushHandler.SendPushAsync(
-                            subDto : recipient.SubNotification,
-                            title  : "☀️ Check-in da Manhã",
-                            message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                            url    : "/aplicativo/home/igs",
-                            tag    : "checkin-igs"
-                        );
+                        //     await pushHandler.SendPushAsync(
+                        //         subDto : recipient.SubNotification,
+                        //         title  : "☀️ Check-in da Manhã",
+                        //         message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
+                        //         url    : "/aplicativo/home/igs",
+                        //         tag    : "checkin-igs"
+                        //     );
 
-                        recipient.IGSNotification = DateTime.UtcNow;
+                        //     recipient.IGSNotification = DateTime.UtcNow;
 
-                        await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
+                        //     await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
+                        // }
                     }
-
-                    return; // Janela da manhã — não verifica IGN/IES current
+                    continue; 
                 }
 
                 // ── IGN + IES (noite) ────────────────────────────────────────
