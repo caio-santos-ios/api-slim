@@ -25,7 +25,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         while (!stoppingToken.IsCancellationRequested)
         {
             await ProcessPushJobsAsync();
-            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
 
@@ -38,7 +38,6 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    // && c.Cpf == CPF_TESTE
                     && c.SubNotification != null)
             .ToListAsync();
 
@@ -59,6 +58,8 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 && v.CreatedAt.Date.Date == today.Date)
                         .FirstOrDefaultAsync();
 
+                    System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
+                    // System.Console.WriteLine(IGSToday);
 
                     if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
                     {
