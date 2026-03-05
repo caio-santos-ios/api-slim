@@ -70,7 +70,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 subDto : recipient.SubNotification!,
                                 title  : "☀️ Check-in da Manhã",
                                 message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                                url    : "/aplicativo/home/igs",
+                                url    : "/aplicativo/home/igs/",
                                 tag    : "checkin-igs"
                             );
 
@@ -95,10 +95,10 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                         logger.LogInformation("Enviando IGN (noite) para {Name}", recipient.Name);
 
                         await pushHandler.SendPushAsync(
-                            subDto : recipient.SubNotification,
+                            subDto : recipient.SubNotification!,
                             title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
                             message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
-                            url    : "/aplicativo/home",
+                            url    : "/aplicativo/home/igs/",
                             tag    : "checkin-ign"
                         );
 
