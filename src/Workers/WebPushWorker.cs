@@ -59,6 +59,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 && v.CreatedAt.Date.Date == today.Date)
                         .FirstOrDefaultAsync();
 
+
                     if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
                     {
                         logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
