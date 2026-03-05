@@ -38,6 +38,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
+                    && c.Cpf == CPF_TESTE
                     && c.SubNotification != null)
             .ToListAsync();
 
@@ -61,25 +62,25 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
                     if(recipient.SubNotification != null)
                     {
-                        // System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
+                        System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
                         // System.Console.WriteLine(recipient.SubNotification is not null);
                         
-                        if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
-                        {
-                            logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
+                        // if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
+                        // {
+                        //     logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
 
-                            await pushHandler.SendPushAsync(
-                                subDto : recipient.SubNotification!,
-                                title  : "☀️ Check-in da Manhã",
-                                message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                                url    : "/aplicativo/home/igs",
-                                tag    : "checkin-igs"
-                            );
+                        //     await pushHandler.SendPushAsync(
+                        //         subDto : recipient.SubNotification!,
+                        //         title  : "☀️ Check-in da Manhã",
+                        //         message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
+                        //         url    : "/aplicativo/home/igs",
+                        //         tag    : "checkin-igs"
+                        //     );
 
-                            recipient.IGSNotification = DateTime.UtcNow;
+                            recipient.IGSNotification = DateTime.UtcNow.AddDays(-1);
 
                             await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
-                        }
+                        // }
                     }
                     continue; 
                 }
