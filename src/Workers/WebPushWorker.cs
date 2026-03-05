@@ -61,8 +61,8 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
                     if(recipient.SubNotification != null)
                     {
-                        System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
-                        System.Console.WriteLine(recipient.SubNotification is not null);
+                        // System.Console.WriteLine($"BENEFICIARIO: {recipient.Name}");
+                        // System.Console.WriteLine(recipient.SubNotification is not null);
                         
                         if (IGSToday is null && recipient.IGSNotification.Date != DateTime.UtcNow.Date)
                         {
