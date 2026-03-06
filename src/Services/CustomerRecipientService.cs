@@ -23,7 +23,8 @@ namespace api_slim.src.Services
         IMapper _mapper, 
         ILogRepository logRepository, 
         CloudinaryHandler cloudinaryHandler, 
-        MailHandler mailHandler
+        MailHandler mailHandler,
+        IAppointmentNotificationService appointmentNotificationService
     ) : ICustomerRecipientService
 {
     HttpClient client = new();
@@ -473,33 +474,33 @@ namespace api_slim.src.Services
             string htmlEmail = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo", caminhoDoLogo);
             await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", htmlEmail);
 
-            // if(!string.IsNullOrEmpty(request.Whatsapp))
-            // {
-            //     List<NotificationJob> jobs = new()
-            //     {
-            //         new() {
-            //             Parent = "CustomerRecipient",
-            //             ParentId = response.Data.Id!,
-            //             Phone = request.Phone,
-            //             BeneficiaryName = request.Name,
-            //             BeneficiaryCPF = request.Cpf,
-            //             Message = WhatsAppTemplate.Welcome(request.Name),
-            //             SendDate = DateTime.UtcNow.AddSeconds(15),
-            //             Type = "Notification"
-            //         },
-            //         new() {
-            //             Parent = "CustomerRecipient",
-            //             ParentId = response.Data.Id!,
-            //             Phone = request.Phone,
-            //             BeneficiaryName = request.Name,
-            //             BeneficiaryCPF = request.Cpf,
-            //             Message = WhatsAppTemplate.AppDownloadInstructions(),
-            //             SendDate = DateTime.UtcNow.AddSeconds(30),
-            //             Type = "Notification"
-            //         },
-            //     };
-            //     await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
-            // }
+            if(!string.IsNullOrEmpty(request.Whatsapp))
+            {
+                List<NotificationJob> jobs = new()
+                {
+                    new() {
+                        Parent = "CustomerRecipient",
+                        ParentId = response.Data.Id!,
+                        Phone = request.Phone,
+                        BeneficiaryName = request.Name,
+                        BeneficiaryCPF = request.Cpf,
+                        Message = WhatsAppTemplate.Welcome(request.Name),
+                        SendDate = DateTime.UtcNow.AddSeconds(15),
+                        Type = "Notification"
+                    },
+                    new() {
+                        Parent = "CustomerRecipient",
+                        ParentId = response.Data.Id!,
+                        Phone = request.Phone,
+                        BeneficiaryName = request.Name,
+                        BeneficiaryCPF = request.Cpf,
+                        Message = WhatsAppTemplate.AppDownloadInstructions(),
+                        SendDate = DateTime.UtcNow.AddSeconds(30),
+                        Type = "Notification"
+                    },
+                };
+                await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
+            }
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
         }
