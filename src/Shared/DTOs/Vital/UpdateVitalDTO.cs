@@ -10,5 +10,14 @@ namespace api_slim.src.Shared.DTOs
                 public decimal WaterAmount { get; set; }
                 public bool ChekinIGN { get; set; }
                 public bool ChekinIES { get; set; }
+                public int ChekinISOPoint { get; set; }
+        
+                public int ChekinIGSPoint { get; set; }
+                
+                public int ChekinIGNPoint { get; set; }
+                
+                public int ChekinIESPoint { get; set; }
+                
+                public int Level { get; set; }
         }
 }

@@ -12,6 +12,8 @@ public interface IVitalRepository
     Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId);
     Task<ResponseApi<List<Vital>>> GetByBeneficiaryIdWeekAsync(string beneficiaryId, string period);
     Task<ResponseApi<List<Vital>>> GetByBeneficiaryIAllAsync(string beneficiaryId, DateTime? start, DateTime? end);
+    Task<ResponseApi<List<Vital>>> GetBeneficiaryIAllAsync(string beneficiaryId);
+    Task<ResponseApi<Vital?>> GetToDateBeneficiaryAsync(string beneficiaryId, DateTime date);
     Task<int> GetCountDocumentsAsync(PaginationUtil<Vital> pagination);
     Task<ResponseApi<Vital?>> CreateAsync(Vital vital);
     Task<ResponseApi<Vital?>> UpdateAsync(Vital vital);

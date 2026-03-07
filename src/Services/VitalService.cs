@@ -341,6 +341,24 @@ namespace api_slim.src.Services
             try
             {
                 Vital vital = _mapper.Map<Vital>(request);
+
+                ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(request.BeneficiaryId);
+
+                DateTime date = DateTime.UtcNow.AddDays(-1);
+                ResponseApi<Vital?> vitalsLast = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, date);
+
+                if(vitalsLast.Data is not null)
+                {
+                    vital.ExtrasPoint = 1;
+                }
+
+                int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
+                int pointIGN = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGNPoint);
+                int pointIES = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIESPoint);
+
+                int level = CurrentLevel(pointIGS + pointIGN + pointIES);
+                vital.Level = level;
+
                 ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
 
                 if(response.Data is null) return new(null, 400, "Falha ao criar salvar.");
@@ -362,6 +380,30 @@ namespace api_slim.src.Services
                 ResponseApi<Vital?> vitalResponse = await vitalRepository.GetByIdAsync(request.Id);
                 if(vitalResponse.Data is null) return new(null, 404, "Falha ao atualizar");
                 
+                ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(request.BeneficiaryId);
+                
+                DateTime date = DateTime.UtcNow.AddDays(-1);
+                ResponseApi<Vital?> vitalsLast = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, date);
+
+                if(vitalsLast.Data is not null)
+                {
+                    if(!vitalResponse.Data.ChekinIGS) 
+                    {
+                        vitalResponse.Data.ExtrasPoint = 3;
+                    }
+                    else 
+                    {
+                        vitalResponse.Data.ExtrasPoint += 2;
+                    }
+                }
+
+                int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
+                int pointIGN = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGNPoint);
+                int pointIES = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIESPoint);
+
+                int level = CurrentLevel(pointIGS + pointIGN + pointIES);
+                vitalResponse.Data.Level = level;
+
                 Vital vital = _mapper.Map<Vital>(request);
                 vital.UpdatedAt = DateTime.UtcNow;
 
@@ -550,6 +592,12 @@ namespace api_slim.src.Services
             }
 
             return 0;
+        }
+        public int CurrentLevel(int points)
+        {
+            if(points >= 0 && points <= 1000) return 1;
+            if(points > 1000 && points <= 2000) return 2;
+            return 3;
         }
         #endregion
     }

@@ -109,6 +109,24 @@ namespace api_slim.src.Models
 
         [BsonElement("chekinISONotificated")]
         public bool ChekinISONotificated { get; set; }
+        
+        [BsonElement("chekinISOPoint")]
+        public int ChekinISOPoint { get; set; }
+        
+        [BsonElement("chekinIGSPoint")]
+        public int ChekinIGSPoint { get; set; }
+        
+        [BsonElement("chekinIGNPoint")]
+        public int ChekinIGNPoint { get; set; }
+        
+        [BsonElement("chekinIESPoint")]
+        public int ChekinIESPoint { get; set; }
+        
+        [BsonElement("level")]
+        public int Level { get; set; }
+        
+        [BsonElement("extrasPoint")]
+        public int ExtrasPoint { get; set; }
     }
 
     public class VitalMetric 

@@ -262,6 +262,31 @@ List<Vital> vitals = await context.Vitals
             return new(null, 500, "Falha ao buscar Item");
         }
     }
+    public async Task<ResponseApi<List<Vital>>> GetBeneficiaryIAllAsync(string beneficiaryId)
+    {
+        try
+        {
+            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && !x.Deleted).ToListAsync();
+            return new(vitals);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Item");
+        }
+    }
+    
+    public async Task<ResponseApi<Vital?>> GetToDateBeneficiaryAsync(string beneficiaryId, DateTime date)
+    {
+        try
+        {
+            Vital? vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt.Date == date.Date && !x.Deleted).FirstOrDefaultAsync();
+            return new(vitals);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Item");
+        }
+    }
     
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<Vital> pagination)
     {
