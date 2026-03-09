@@ -56,22 +56,22 @@ namespace api_slim.src.Services
             string rapidocId = "";
 
             var dataDict = (IDictionary<string, object>)customer.Data;
-
             if (dataDict.ContainsKey("rapidocId")) 
             {
                 rapidocId = dataDict["rapidocId"]?.ToString();
             }
-            else if (dataDict.ContainsKey("RapidocId"))
-            {
-                rapidocId = dataDict["RapidocId"]?.ToString();
-            }
 
-            if(string.IsNullOrEmpty(customer.Data.rapidocId))
+            if(string.IsNullOrEmpty(rapidocId))
             {
                 ResponseApi<dynamic?> res = await GetByCPFAggregateAsync(customer.Data.cpf);
                 if(res.Data is not null)
                 {
-                    rapidocId = res.Data.RapidocId;
+                    var dataDict2 = (IDictionary<string, object>)customer.Data;
+                    
+                    if (dataDict2.ContainsKey("rapidocId"))
+                    {
+                        rapidocId = dataDict2["rapidocId"]?.ToString();
+                    } 
                 }
             };
 
@@ -316,6 +316,7 @@ namespace api_slim.src.Services
                                 var responseRapidoc = await client.SendAsync(requestRapidocPost);
                                 string jsonResponsePost = await responseRapidoc.Content.ReadAsStringAsync();
                                 dynamic? resultPost = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponsePost);
+                                Util.ConsoleLog(resultPost);
                                 if(resultPost is not null)
                                 {
                                     if(resultPost.success == "true")
