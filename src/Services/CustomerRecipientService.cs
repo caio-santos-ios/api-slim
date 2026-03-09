@@ -75,7 +75,7 @@ namespace api_slim.src.Services
                 }
             };
 
-            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{customer.Data.rapidocId}/appointments");
+            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{rapidocId}/appointments");
             requestHeader.Headers.Add("Authorization", $"Bearer {token}");
             requestHeader.Headers.Add("clientId", clientId);
             
