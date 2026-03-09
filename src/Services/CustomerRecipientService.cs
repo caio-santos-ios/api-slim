@@ -130,8 +130,7 @@ namespace api_slim.src.Services
         }
         catch(Exception ex)
         {
-            System.Console.WriteLine($"LOGGED: {ex.Message}");
-            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
         }
     }
     public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
