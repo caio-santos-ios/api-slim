@@ -484,9 +484,11 @@ namespace api_slim.src.Services
                         Phone = request.Phone,
                         BeneficiaryName = request.Name,
                         BeneficiaryCPF = request.Cpf,
+                        BeneficiaryId = response.Data.Id,
                         Message = WhatsAppTemplate.Welcome(request.Name),
                         SendDate = DateTime.UtcNow.AddSeconds(15),
-                        Type = "Notification"
+                        Type = "WhatsApp",
+                        Title = "Boas Vindas"
                     },
                     new() {
                         Parent = "CustomerRecipient",
@@ -494,9 +496,11 @@ namespace api_slim.src.Services
                         Phone = request.Phone,
                         BeneficiaryName = request.Name,
                         BeneficiaryCPF = request.Cpf,
+                        BeneficiaryId = response.Data.Id,
                         Message = WhatsAppTemplate.AppDownloadInstructions(),
                         SendDate = DateTime.UtcNow.AddSeconds(30),
-                        Type = "Notification"
+                        Type = "WhatsApp",
+                        Title = "Instruções pra instalar APP"
                     },
                 };
                 await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));

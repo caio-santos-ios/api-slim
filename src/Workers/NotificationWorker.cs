@@ -57,6 +57,7 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
             "Welcome"    => WhatsAppTemplate.Welcome(job.BeneficiaryName),
             "InstalationApp"    => WhatsAppTemplate.AppDownloadInstructions(),
             "Notification" => job.Message,
+            "WhatsApp" => job.Message,
             _ => ""
         };
     }

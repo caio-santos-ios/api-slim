@@ -124,6 +124,8 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<IAppointmentService, AppointmentService>();
             builder.Services.AddTransient<ITelemedicineHistoricService, TelemedicineHistoricService>();
             builder.Services.AddTransient<ITelemedicineHistoricRepository, TelemedicineHistoricRepository>();
+            builder.Services.AddTransient<INotificationService, NotificationService>();
+            builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
 
             // SMCLICK
             builder.Services.AddTransient<IAppointmentNotificationService, AppointmentNotificationService>();

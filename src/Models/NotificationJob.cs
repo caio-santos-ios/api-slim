@@ -24,6 +24,9 @@ public class NotificationJob
     [BsonElement("beneficiaryCPF")]
     public string BeneficiaryCPF { get; set; } = string.Empty;
     
+    [BsonElement("beneficiaryId")]
+    public string BeneficiaryId { get; set; } = string.Empty;
+    
     [BsonElement("message")]
     public string Message { get; set; } = string.Empty;
 
@@ -35,4 +38,7 @@ public class NotificationJob
 
     [BsonElement("sent")]
     public bool Sent { get; set; } = false;
+    
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
 }
