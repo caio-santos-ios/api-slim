@@ -53,7 +53,18 @@ namespace api_slim.src.Services
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByIdAggregateAsync(id);
             if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
-            string rapidocId = customer.Data.rapidocId;
+            string rapidocId = "";
+
+            var dataDict = (IDictionary<string, object>)customer.Data;
+
+            if (dataDict.ContainsKey("rapidocId")) 
+            {
+                rapidocId = dataDict["rapidocId"]?.ToString();
+            }
+            else if (dataDict.ContainsKey("RapidocId"))
+            {
+                rapidocId = dataDict["RapidocId"]?.ToString();
+            }
 
             if(string.IsNullOrEmpty(customer.Data.rapidocId))
             {
