@@ -193,10 +193,20 @@ namespace api_slim.src.Services
         try
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByCPFAggregateAsync(cpf);
+            var dataDict = (IDictionary<string, object>)customer.Data;
 
             if(customer.Data is not null)
             {
-                string rapidocId = customer.Data.rapidocId;
+                string rapidocId = "";
+                if (dataDict.ContainsKey("rapidocId")) 
+                {
+                    rapidocId = dataDict["rapidocId"]?.ToString();
+                }
+                else if (dataDict.ContainsKey("RapidocId"))
+                {
+                    rapidocId = dataDict["RapidocId"]?.ToString();
+                }
+
                 if(string.IsNullOrEmpty(rapidocId))
                 {
                     var requestRapidoc = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{cpf.Replace(".", "").Replace("-", "")}");
