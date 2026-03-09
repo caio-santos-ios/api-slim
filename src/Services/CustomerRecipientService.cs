@@ -128,8 +128,9 @@ namespace api_slim.src.Services
 
             return new(customer.Data);
         }
-        catch
+        catch(Exception ex)
         {
+            System.Console.WriteLine($"LOGGED: {ex.Message}");
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
