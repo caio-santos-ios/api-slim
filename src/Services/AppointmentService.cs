@@ -264,7 +264,6 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                // responseRapidoc.EnsureSuccessStatusCode();
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
                 
@@ -280,14 +279,20 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Agendamento"
                 });
+                System.Console.WriteLine(request.BeneficiaryUuid);
 
-                ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByIdAsync(request.BeneficiaryUuid);
+                ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByRapidocIdAsync(request.BeneficiaryUuid);
+                if(request.Origin == "app")
+                {
+                    recipientResponse = await customerRecipientRepository.GetByIdAsync(request.CreatedBy);
+                }
+
                 if(recipientResponse.Data is not null && result is not null)
                 {
                     if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
                     {
                         DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        var timeString = request.Time.Split("Até")[0].Trim();
+                        var timeString = request.Time.ToLower().Split("até")[0].Trim();
                         TimeSpan time = TimeSpan.Parse(timeString);
                         DateTime dateTime = date.Add(time);
 
@@ -349,8 +354,9 @@ namespace api_slim.src.Services
                 
                 return new(null, 201, "Agendamento feito com sucesso");
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }

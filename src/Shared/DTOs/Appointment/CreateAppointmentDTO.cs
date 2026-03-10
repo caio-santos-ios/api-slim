@@ -11,5 +11,6 @@ namespace api_slim.src.Shared.DTOs
         public string Date {get;set;} = string.Empty;
         public string Time {get;set;} = string.Empty;
         public string ProfessionalName {get;set;} = string.Empty;
+        public string Origin {get;set;} = string.Empty;
     }
 }

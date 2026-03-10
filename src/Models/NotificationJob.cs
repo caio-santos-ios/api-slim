@@ -41,4 +41,7 @@ public class NotificationJob
     
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
+    
+    [BsonElement("origin")]
+    public string Origin { get; set; } = string.Empty;
 }

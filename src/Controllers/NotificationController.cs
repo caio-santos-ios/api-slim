@@ -17,6 +17,14 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
+        // [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Create()
+        {
+            ResponseApi<dynamic> response = await service.CreateAsync();
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
         [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> ReSend(string id)

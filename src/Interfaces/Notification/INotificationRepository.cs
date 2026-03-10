@@ -8,6 +8,8 @@ namespace api_slim.src.Interfaces
     {
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<NotificationJob> pagination);
         Task<ResponseApi<NotificationJob?>> GetByIdAsync(string id);
+        Task<ResponseApi<NotificationJob?>> GetByTypeAsync(string cpf, string type);
+        Task<ResponseApi<NotificationJob?>> CreateAsync(NotificationJob notification);
         Task<ResponseApi<NotificationJob?>> UpdateAsync(NotificationJob notification);
     }
 }

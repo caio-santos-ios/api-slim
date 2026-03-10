@@ -55,6 +55,33 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificação");
             }
         }
+        public async Task<ResponseApi<NotificationJob?>> GetByTypeAsync(string cpf, string type)
+        {
+            try
+            {
+                NotificationJob? notification = await context.NotificationJobs.Find(x => x.BeneficiaryCPF == cpf && x.Type == type).FirstOrDefaultAsync();
+                return new(notification);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Notificação");
+            }
+        }
+        #endregion
+        #region CREATE
+        public async Task<ResponseApi<NotificationJob?>> CreateAsync(NotificationJob notification)
+        {
+            try
+            {
+                await context.NotificationJobs.InsertOneAsync(notification);
+
+                return new(notification, 201, "Notificação criada com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao criar Notificação");
+            }
+        }
         #endregion
         #region UPDATE
         public async Task<ResponseApi<NotificationJob?>> UpdateAsync(NotificationJob notification)

@@ -509,7 +509,8 @@ namespace api_slim.src.Services
                         BeneficiaryId = response.Data.Id,
                         Message = WhatsAppTemplate.Welcome(request.Name),
                         SendDate = DateTime.UtcNow.AddSeconds(15),
-                        Type = "WhatsApp",
+                        Type = "Welcome",
+                        Origin = "WhatsApp",
                         Title = "Boas Vindas"
                     },
                     new() {
@@ -521,7 +522,8 @@ namespace api_slim.src.Services
                         BeneficiaryId = response.Data.Id,
                         Message = WhatsAppTemplate.AppDownloadInstructions(),
                         SendDate = DateTime.UtcNow.AddSeconds(30),
-                        Type = "WhatsApp",
+                        Type = "InstalationApp",
+                        Origin = "WhatsApp",
                         Title = "Instruções pra instalar APP"
                     },
                 };

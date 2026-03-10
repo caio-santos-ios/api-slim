@@ -6,6 +6,7 @@ namespace api_slim.src.Interfaces
     public interface INotificationService
     {
         Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<dynamic>> CreateAsync();
         Task<ResponseApi<dynamic>> UpdateAsync(string id);
     }
 }
