@@ -83,7 +83,11 @@ namespace api_slim.src.Services
                                     IES = CalcularIES(item, customer.Data.Patrology),
                                     IPV = CalcularIPV(item, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
                                     Day = $"{dayBr}, {dayNum} {monthBr}"
-                                }
+                                },
+                                ExtrasPoint = item.ExtrasPoint,
+                                ChekinIGS = item.ChekinIGS,
+                                ChekinIES = item.ChekinIES,
+                                ChekinIGN = item.ChekinIGN
                             });
                         };
                     };
