@@ -50,7 +50,7 @@ public class BirthdayNotificationWorker(IServiceProvider serviceProvider, ILogge
             try
             {
                 var message = WhatsAppTemplate.HappyBirthday(recipient.Name);
-                await smClick.SendTextMessageAsync(Util.CleanPhone(recipient.Phone), message);
+                // await smClick.SendTextMessageAsync(Util.CleanPhone(recipient.Phone), message);
                 logger.LogInformation("Mensagem de aniversário enviada para {Name}", recipient.Name);
             }
             catch (Exception ex)

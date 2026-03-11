@@ -17,7 +17,7 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
-        // [Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create()
         {
@@ -30,6 +30,14 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> ReSend(string id)
         {
             ResponseApi<dynamic> response = await service.UpdateAsync(id);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [Authorize]
+        [HttpPut("read/{id}")]
+        public async Task<IActionResult> Read(string id)
+        {
+            ResponseApi<dynamic> response = await service.UpdateReadAsync(id);
             return StatusCode(response.StatusCode, new { response.Result });
         }
     }

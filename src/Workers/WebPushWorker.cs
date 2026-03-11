@@ -1,6 +1,5 @@
 using api_slim.src.Configuration;
 using api_slim.src.Handlers;
-using api_slim.src.Shared.Utils;
 using MongoDB.Driver;
 
 namespace api_slim.src.Workers;
@@ -24,8 +23,8 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await ProcessPushJobsAsync();
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            // await ProcessPushJobsAsync();
+            // await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
 
@@ -38,7 +37,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    // && c.Cpf == CPF_TESTE
+                    && c.Cpf == CPF_TESTE
                     && c.SubNotification != null)
             .ToListAsync();
 
@@ -66,16 +65,34 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                         {
                             logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
 
-                            await pushHandler.SendPushAsync(
-                                subDto : recipient.SubNotification!,
-                                title  : "☀️ Check-in da Manhã",
-                                message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                                url    : "/aplicativo/home/check-in/",
-                                tag    : "checkin-igs"
-                            );
+                            // await pushHandler.SendPushAsync(
+                            //     subDto : recipient.SubNotification!,
+                            //     title  : "☀️ Check-in da Manhã",
+                            //     message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
+                            //     url    : "/aplicativo/home/check-in/",
+                            //     tag    : "checkin-igs"
+                            // );
 
                             recipient.IGSNotification = DateTime.UtcNow;
                             await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
+
+                            await context.NotificationJobs.InsertOneAsync(new ()
+                            {
+                                BeneficiaryCPF = recipient.Cpf,
+                                BeneficiaryId = recipient.Id,
+                                BeneficiaryName = recipient.Name,
+                                Title = "Check-in do Sono",
+                                Message = "Olá! Como foi sua noite? Reserve um minutinho para registrar seu sono de hoje",
+                                Origin = "Vital",
+                                Parent = "IGN",
+                                ParentId = recipient.Id,
+                                Phone = recipient.Whatsapp,
+                                Read = false,
+                                Sent = true,
+                                SendDate = DateTime.UtcNow,
+                                Type = "NotificationApp",
+                                Link = "/aplicativo/home/check-in/"
+                            });
                         }
                     }
                     continue; 
@@ -94,18 +111,55 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                     {
                         logger.LogInformation("Enviando IGN (noite) para {Name}", recipient.Name);
 
-                        await pushHandler.SendPushAsync(
-                            subDto : recipient.SubNotification!,
-                            title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
-                            message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
-                            url    : "/aplicativo/home/check-in/",
-                            tag    : "checkin-ign"
-                        );
+                        // await pushHandler.SendPushAsync(
+                        //     subDto : recipient.SubNotification!,
+                        //     title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
+                        //     message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
+                        //     url    : "/aplicativo/home/check-in/",
+                        //     tag    : "checkin-ign"
+                        // );
 
                         recipient.IGNNotification = DateTime.UtcNow;
                         recipient.IESNotification = DateTime.UtcNow;
 
                         await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
+
+                        await context.NotificationJobs.InsertManyAsync([
+                            new () 
+                            {
+                                BeneficiaryCPF = recipient.Cpf,
+                                BeneficiaryId = recipient.Id,
+                                BeneficiaryName = recipient.Name,
+                                Title = "Check-in da Nutrição",
+                                Message = "Hora de registrar suas refeições de hoje!",
+                                Origin = "Vital",
+                                Parent = "IGN",
+                                ParentId = recipient.Id,
+                                Phone = recipient.Whatsapp,
+                                Read = false,
+                                Sent = true,
+                                SendDate = DateTime.UtcNow,
+                                Type = "NotificationApp",
+                                Link = "/aplicativo/home/check-in/"
+                            },
+                            new () 
+                            {
+                                BeneficiaryCPF = recipient.Cpf,
+                                BeneficiaryId = recipient.Id,
+                                BeneficiaryName = recipient.Name,
+                                Title = "Check-in do Saúde Mental",
+                                Message = "Como você está se sentindo agora? Faça seu check-in.",
+                                Origin = "Vital",
+                                Parent = "IGN",
+                                ParentId = recipient.Id,
+                                Phone = recipient.Whatsapp,
+                                Read = false,
+                                Sent = true,
+                                SendDate = DateTime.UtcNow,
+                                Type = "NotificationApp",
+                                Link = "/aplicativo/home/check-in/"
+                            }
+                        ]);
                     }
                 }
             }

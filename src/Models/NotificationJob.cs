@@ -44,4 +44,10 @@ public class NotificationJob
     
     [BsonElement("origin")]
     public string Origin { get; set; } = string.Empty;
+
+    [BsonElement("read")]
+    public bool Read { get; set; } = false;
+    
+    [BsonElement("link")]
+    public string Link { get; set; } = string.Empty;
 }

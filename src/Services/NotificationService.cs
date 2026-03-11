@@ -15,6 +15,7 @@ namespace api_slim.src.Services
             try
             {
                 PaginationUtil<NotificationJob> pagination = new(request.QueryParams);
+
                 ResponseApi<List<dynamic>> notifications = await repository.GetAllAsync(pagination);
                 return new(notifications.Data);
             }
@@ -104,6 +105,25 @@ namespace api_slim.src.Services
                     notification.Data.Sent = false;
                     notification.Data.SendDate = DateTime.Now;
 
+                    await repository.UpdateAsync(notification.Data);
+                }
+
+                return new(null, 200, "Notificação reenviada");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic>> UpdateReadAsync(string id)
+        {
+            try
+            {
+                ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
+
+                if(notification.Data is not null)
+                {
+                    notification.Data.Read = true;
                     await repository.UpdateAsync(notification.Data);
                 }
 

@@ -29,7 +29,9 @@ namespace api_slim.src.Repository
                         {"sendDate", 1},
                         {"sent", 1},
                         {"type", 1},
-                        {"title", 1}
+                        {"title", 1},
+                        {"link", 1},
+                        {"read", 1}
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
