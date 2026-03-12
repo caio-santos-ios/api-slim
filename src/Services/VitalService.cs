@@ -87,7 +87,8 @@ namespace api_slim.src.Services
                                 ExtrasPoint = item.ExtrasPoint,
                                 ChekinIGS = item.ChekinIGS,
                                 ChekinIES = item.ChekinIES,
-                                ChekinIGN = item.ChekinIGN
+                                ChekinIGN = item.ChekinIGN,
+                                CreatedAt = item.CreatedAt
                             });
                         };
                     };
