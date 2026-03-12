@@ -23,8 +23,8 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // await ProcessPushJobsAsync();
-            // await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            await ProcessPushJobsAsync();
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
 
@@ -37,7 +37,6 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    && c.Cpf == CPF_TESTE
                     && c.SubNotification != null)
             .ToListAsync();
 
@@ -65,13 +64,13 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                         {
                             logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
 
-                            // await pushHandler.SendPushAsync(
-                            //     subDto : recipient.SubNotification!,
-                            //     title  : "☀️ Check-in da Manhã",
-                            //     message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                            //     url    : "/aplicativo/home/check-in/",
-                            //     tag    : "checkin-igs"
-                            // );
+                            await pushHandler.SendPushAsync(
+                                subDto : recipient.SubNotification!,
+                                title  : "☀️ Check-in da Manhã",
+                                message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
+                                url    : "/aplicativo/home/check-in/",
+                                tag    : "checkin-igs"
+                            );
 
                             recipient.IGSNotification = DateTime.UtcNow;
                             await context.CustomerRecipients.ReplaceOneAsync(c => c.Id == recipient.Id, recipient);
@@ -111,13 +110,13 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                     {
                         logger.LogInformation("Enviando IGN (noite) para {Name}", recipient.Name);
 
-                        // await pushHandler.SendPushAsync(
-                        //     subDto : recipient.SubNotification!,
-                        //     title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
-                        //     message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
-                        //     url    : "/aplicativo/home/check-in/",
-                        //     tag    : "checkin-ign"
-                        // );
+                        await pushHandler.SendPushAsync(
+                            subDto : recipient.SubNotification!,
+                            title  : "🌙 Check-in da Noite — Nutrição e Saúde Mental",
+                            message: $"Boa noite, {recipient.Name.Split(" ")[0]}! Registre sua hidratação, alimentação e estado emocional de hoje.",
+                            url    : "/aplicativo/home/check-in/",
+                            tag    : "checkin-ign"
+                        );
 
                         recipient.IGNNotification = DateTime.UtcNow;
                         recipient.IESNotification = DateTime.UtcNow;
