@@ -33,11 +33,11 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
             try
             {
                 var message = BuildMessage(job);
-                await smClick.SendTextMessageAsync(job.Phone, message);
+                // await smClick.SendTextMessageAsync(job.Phone, message);
 
-                await context.NotificationJobs.UpdateOneAsync(
-                    j => j.Id == job.Id,
-                    Builders<NotificationJob>.Update.Set(j => j.Sent, true));
+                // await context.NotificationJobs.UpdateOneAsync(
+                //     j => j.Id == job.Id,
+                //     Builders<NotificationJob>.Update.Set(j => j.Sent, true));
 
                 logger.LogInformation("Notification {Type} sent to {Name}", job.Type, job.BeneficiaryName);
             }
