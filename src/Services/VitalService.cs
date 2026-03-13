@@ -147,20 +147,6 @@ namespace api_slim.src.Services
                 {
                     decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
 
-                    // if(vital.Data is not null)
-                    // {
-                    //     if(customer.Data is not null)
-                    //     {
-                    //         vital.Data.Metric = new ()
-                    //         {
-                    //             IGS = (int)Math.Round(CalcularIGS(vital.Data, customer.Data.Patrology)),
-                    //             IGN = (int)Math.Round(CalcularIGN(vital.Data, metaAgua, customer.Data.Patrology)),
-                    //             IES = (int)Math.Round(CalcularIES(vital.Data, customer.Data.Patrology)),
-                    //             IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology)
-                    //         };
-                    //     }
-                    // }
-
                     DateTime hoje = DateTime.Today;
                     DateTime dataInicio;
                     int quantidadeIteracoes;
@@ -194,11 +180,6 @@ namespace api_slim.src.Services
                         
                         if(!new List<string> { "semana", "mes", "ano" }.Contains(period))
                         {
-                            // var dadosAgrupados = vitalWeek.Data
-                            //     .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
-                            //     .OrderBy(g => g.Key.Year)
-                            //     .ThenBy(g => g.Key.Month);
-
                             var dadosAgrupados = vitalWeek.Data
                             .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day })
                             .OrderBy(g => g.Key.Year)
@@ -212,7 +193,6 @@ namespace api_slim.src.Services
                                 var mediaIGN = grupo.Average(x => CalcularIGN(x, metaAgua, patrology));
                                 var mediaIES = grupo.Average(x => CalcularIES(x, patrology));
 
-                                // string labelTudo = $"{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
                                 string labelTudo = $"{grupo.Key.Day:00}/{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
                                 
                                 weekMetrics.Add(new()
@@ -313,15 +293,6 @@ namespace api_slim.src.Services
                             IES = qtd == 0 ? 0 : Math.Round(IES / qtd), 
                             IPV = qtd == 0 ? 0 : Math.Round(IPV / qtd)
                         },
-                    // Dass1 = dass1 > 0 ? (int)dass1 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass2 = dass2 > 0 ? (int)dass2 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass3 = dass3 > 0 ? (int)dass3 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass4 = dass4 > 0 ? (int)dass4 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass5 = dass5 > 0 ? (int)dass5 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass6 = dass6 > 0 ? (int)dass6 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass7 = dass7 > 0 ? (int)dass7 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass8 = dass8 > 0 ? (int)dass8 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass9 = dass9 > 0 ? (int)dass9 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
                     Dass1 = dass1 > 0 ? (int)dass1 / qtd : 0,
                     Dass2 = dass2 > 0 ? (int)dass2 / qtd : 0,
                     Dass3 = dass3 > 0 ? (int)dass3 / qtd : 0,

@@ -135,5 +135,27 @@ namespace api_slim.src.Services
             }
         }
         #endregion
+        #region DELETE
+        public async Task<ResponseApi<dynamic>> DeleteAsync(string id)
+        {
+            try
+            {
+                ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
+
+                if(notification.Data is not null)
+                {
+                    notification.Data.Deleted = true;
+
+                    await repository.UpdateAsync(notification.Data);
+                }
+
+                return new(null, 200, "Notificação excluída");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        #endregion
     }
 }

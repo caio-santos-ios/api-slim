@@ -9,5 +9,6 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<dynamic>> CreateAsync();
         Task<ResponseApi<dynamic>> UpdateAsync(string id);
         Task<ResponseApi<dynamic>> UpdateReadAsync(string id);
+        Task<ResponseApi<dynamic>> DeleteAsync(string id);
     }
 }

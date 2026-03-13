@@ -31,7 +31,8 @@ namespace api_slim.src.Repository
                         {"type", 1},
                         {"title", 1},
                         {"link", 1},
-                        {"read", 1}
+                        {"read", 1},
+                        {"origin", 1}
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

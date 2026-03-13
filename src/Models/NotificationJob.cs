@@ -50,4 +50,7 @@ public class NotificationJob
     
     [BsonElement("link")]
     public string Link { get; set; } = string.Empty;
+    
+    [BsonElement("deleted")]
+    public bool Deleted { get; set; } = false;
 }

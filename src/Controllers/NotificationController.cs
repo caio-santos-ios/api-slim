@@ -40,5 +40,13 @@ namespace api_slim.src.Controllers
             ResponseApi<dynamic> response = await service.UpdateReadAsync(id);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+        
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            ResponseApi<dynamic> response = await service.DeleteAsync(id);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
     }
 }
