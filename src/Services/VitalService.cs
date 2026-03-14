@@ -108,6 +108,19 @@ namespace api_slim.src.Services
             try
             {
                 ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
+                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
+
+                if(vital.Data is not null && customer.Data is not null)
+                {
+                    vital.Data.Metric = new ()
+                    {
+                        IGS = CalcularIGS(vital.Data, customer.Data.Patrology),
+                        IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
+                        IES = CalcularIES(vital.Data, customer.Data.Patrology),
+                        IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
+                    };
+                }
+
                 return new(vital.Data);
             }
             catch
@@ -115,7 +128,6 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-
         public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period)
         {
             try
