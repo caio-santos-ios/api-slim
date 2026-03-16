@@ -7,7 +7,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class NotificationService(INotificationRepository repository, ICustomerRecipientRepository customerRecipientRepository) : INotificationService
+    public class NotificationService(INotificationRepository repository, ICustomerRecipientRepository customerRecipientRepository, SmClickHandler smClickHandler) : INotificationService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -99,10 +99,11 @@ namespace api_slim.src.Services
             try
             {
                 ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
-
                 if(notification.Data is not null)
                 {
-                    notification.Data.Sent = false;
+                    await smClickHandler.SendTextMessageAsync(notification.Data.Phone, notification.Data.Message);
+
+                    notification.Data.Sent = true;
                     notification.Data.SendDate = DateTime.Now;
 
                     await repository.UpdateAsync(notification.Data);
