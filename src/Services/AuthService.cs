@@ -14,7 +14,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -24,14 +24,50 @@ namespace api_slim.src.Services
                 if (string.IsNullOrEmpty(request.Email)) return new(null, 400, "E-mail é obrigatório");
                 
                 ResponseApi<User?> res = await userRepository.GetByEmailAsync(request.Email);
-                if(res.Data is null) return new(null, 400, "Dados incorretos");
-                User user = res.Data!;
+
+                User? user = null;
+                string typeUser = "user";
+
+                if(res.Data is null) 
+                {
+                    ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
+                    if(customer.Data is not null) 
+                    {
+                        user = new()
+                        {
+                            Id = customer.Data.Id,
+                            Name = customer.Data.CorporateName,
+                            Admin = false,
+                            Modules = [],
+                            Photo = ""
+                        };
+
+                        typeUser = "manager";
+                    }
+                }
+                else
+                {
+                    user = res.Data!;
+                }
+
 
                 if(user is null) return new(null, 400, "Dados incorretos");
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if(!isValid) return new(null, 400, "Dados incorretos");
 
-                return new(new() {Token = GenerateJwtToken(user), RefreshToken = GenerateJwtToken(user, true) , Name = user.Name, Id = user.Id, Admin = user.Admin, Modules = user.Modules, Photo = user.Photo});
+                AuthResponse auth = new ()
+                {
+                    Token = GenerateJwtToken(user), 
+                    RefreshToken = GenerateJwtToken(user, true), 
+                    Name = user.Name, 
+                    Id = user.Id, 
+                    Admin = user.Admin, 
+                    Modules = user.Modules, 
+                    Photo = user.Photo,
+                    Role = user.Role.ToString()
+                };
+
+                return new(auth);
             }
             catch
             {
@@ -85,6 +121,7 @@ namespace api_slim.src.Services
                     user.Email = customer.Email;
                     user.Name = customer.Name;
                     user.Photo = customer.Photo;
+                    user.Role = Enums.User.RoleEnum.Manager;
                 } 
                 else
                 {
@@ -319,7 +356,7 @@ namespace api_slim.src.Services
 
                     await customerRecipientRepository.UpdateAsync(customerRecipient.Data);
 
-                    string template = MailTemplate.ForgotPasswordWeb(access.CodeAccess);
+                    string template = MailTemplate.ForgotPasswordWeb(customerRecipient.Data.Name, access.CodeAccess);
                     await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
 
                     return new(new User() {Id = customerRecipient.Data.Id, CodeAccess = access.CodeAccess}, 200, "Código enviado");
@@ -335,7 +372,7 @@ namespace api_slim.src.Services
                     user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
                     user.Data.ValidatedAccess = false;
 
-                    string template = MailTemplate.ForgotPasswordWeb(user.Data.CodeAccess);
+                    string template = MailTemplate.ForgotPasswordWeb(user.Data.Name, user.Data.CodeAccess);
                     await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
 
 
@@ -368,7 +405,7 @@ namespace api_slim.src.Services
                     }
                     else
                     {
-                        template = MailTemplate.ForgotPasswordWeb($"/api/auth/reset-password?codeAccess={user.Data.CodeAccess}");
+                        template = MailTemplate.ForgotPasswordWeb(user.Data.Name, $"/api/auth/reset-password?codeAccess={user.Data.CodeAccess}");
                     };
 
                     await mailHandler.SendMailAsync(user.Data.Email, "Redefinição de Senha", template);
