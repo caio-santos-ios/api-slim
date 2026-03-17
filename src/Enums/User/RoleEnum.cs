@@ -3,7 +3,8 @@ namespace api_slim.src.Enums.User
     public enum RoleEnum
     {
         Client,
-        Barber,
+        Manager,
+        Recipient,
         Admin,
         Master
     }
