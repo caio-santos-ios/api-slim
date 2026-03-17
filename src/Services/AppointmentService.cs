@@ -266,7 +266,6 @@ namespace api_slim.src.Services
 
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-                
                 await telemedicineHistoricService.CreateAsync(new ()
                 {
                     Status = "Agendado",
@@ -279,7 +278,6 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Agendamento"
                 });
-
                 ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByRapidocIdAsync(request.BeneficiaryUuid);
                 if(request.Origin == "app")
                 {
@@ -288,6 +286,7 @@ namespace api_slim.src.Services
 
                 if(recipientResponse.Data is not null && result is not null)
                 {
+                    string professionalName = result.professional.name;
                     if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
                     {
                         DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
@@ -303,7 +302,7 @@ namespace api_slim.src.Services
                                 Phone = recipientResponse.Data.Phone,
                                 BeneficiaryName = recipientResponse.Data.Name,
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, request.ProfessionalName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
                                 SendDate = DateTime.UtcNow.AddSeconds(30),
                                 Type = "WhatsApp",
                                 BeneficiaryId = recipientResponse.Data.Id,
@@ -327,7 +326,7 @@ namespace api_slim.src.Services
                                 Phone = recipientResponse.Data.Phone,
                                 BeneficiaryName = recipientResponse.Data.Name,
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, request.ProfessionalName, request.Time, result.beneficiaryUrl.ToString()),
+                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
                                 SendDate = dateTime.AddHours(-1),
                                 Type = "WhatsApp",
                                 BeneficiaryId = recipientResponse.Data.Id,
