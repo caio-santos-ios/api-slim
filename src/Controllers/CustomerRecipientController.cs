@@ -22,6 +22,14 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpGet("ranking")]
+    public async Task<IActionResult> GetRanking()
+    {
+        ResponseApi<List<dynamic>> response = await service.GetRankingAsync(new(Request.Query));
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetByIdAsync(string id)
     {

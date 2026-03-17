@@ -7,6 +7,7 @@ namespace api_slim.src.Interfaces
     public interface ICustomerRecipientService
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<List<dynamic>>> GetRankingAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id);
         Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf);

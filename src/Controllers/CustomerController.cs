@@ -51,6 +51,17 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     }
     
     [Authorize]
+    [HttpPut("painel-access")]
+    public async Task<IActionResult> UpdatePainelAccess([FromBody] UpdateCustomerDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        ResponseApi<Customer?> response = await customerService.UpdatePainelAccessAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {

@@ -87,6 +87,9 @@ namespace api_slim.src.Models
         
         [BsonElement("catDate")]
         public DateTime CatDate { get; set; }
+
+        [BsonElement("password")]
+        public string Password { get; set; } = string.Empty;
     }
 
     public class Contractor

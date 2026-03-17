@@ -24,7 +24,8 @@ namespace api_slim.src.Services
         ILogRepository logRepository, 
         CloudinaryHandler cloudinaryHandler, 
         MailHandler mailHandler,
-        IAppointmentNotificationService appointmentNotificationService
+        IAppointmentNotificationService appointmentNotificationService,
+        ITelemedicineHistoricRepository telemedicineHistoricRepository
     ) : ICustomerRecipientService
 {
     HttpClient client = new();
@@ -47,6 +48,38 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
+    public async Task<ResponseApi<List<dynamic>>> GetRankingAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> customers = await customerRepository.GetAllAsync(pagination);
+
+            List<dynamic> rankings = [];
+            if(customers.Data is not null)
+            {
+                foreach (var item in customers.Data)
+                {
+                    var dataDict = (IDictionary<string, object>)item;
+
+                    if(!dataDict.ContainsKey("rapidocId")) continue;
+                    if(string.IsNullOrEmpty(item.rapidocId)) continue;
+
+                    ResponseApi<TelemedicineHistoric?> res = await telemedicineHistoricRepository.GetByRecipientIdAsync(item.rapidocId);
+                    
+                    if(res.Data is null) continue;
+
+                    rankings.Add(item);
+                }
+            }
+            return new(rankings);
+        }
+        catch(Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
     public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
     {
         try
@@ -58,7 +91,7 @@ namespace api_slim.src.Services
             var dataDict = (IDictionary<string, object>)customer.Data;
             if (dataDict.ContainsKey("rapidocId")) 
             {
-                rapidocId = dataDict["rapidocId"]?.ToString();
+                rapidocId = dataDict["rapidocId"]?.ToString()!;
             }
 
             if(string.IsNullOrEmpty(rapidocId))
@@ -70,7 +103,7 @@ namespace api_slim.src.Services
                     
                     if (dataDict2.ContainsKey("rapidocId"))
                     {
-                        rapidocId = dataDict2["rapidocId"]?.ToString();
+                        rapidocId = dataDict2["rapidocId"]?.ToString()!;
                     } 
                 }
             };
@@ -193,18 +226,18 @@ namespace api_slim.src.Services
         try
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByCPFAggregateAsync(cpf);
-            var dataDict = (IDictionary<string, object>)customer.Data;
+            var dataDict = (IDictionary<string, object>)customer.Data!;
 
             if(customer.Data is not null)
             {
                 string rapidocId = "";
                 if (dataDict.ContainsKey("rapidocId")) 
                 {
-                    rapidocId = dataDict["rapidocId"]?.ToString();
+                    rapidocId = dataDict["rapidocId"]?.ToString()!;
                 }
                 else if (dataDict.ContainsKey("RapidocId"))
                 {
-                    rapidocId = dataDict["RapidocId"]?.ToString();
+                    rapidocId = dataDict["RapidocId"]?.ToString()!;
                 }
 
                 if(string.IsNullOrEmpty(rapidocId))
