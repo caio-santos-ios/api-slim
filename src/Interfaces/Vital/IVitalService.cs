@@ -12,7 +12,9 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period);
         Task<ResponseApi<Vital?>> GetByBeneficiaryAsync(string beneficiaryId);
         Task<ResponseApi<Vital?>> CreateAsync(CreateVitalDTO request);
+        Task<ResponseApi<Vital?>> CreateISOAsync(CreateVitalDTO request);
         Task<ResponseApi<Vital?>> UpdateAsync(UpdateVitalDTO request);
+        Task<ResponseApi<Vital?>> UpdateISOAsync(UpdateVitalDTO request);
         Task<ResponseApi<Vital>> DeleteAsync(string id, string userId);
     }
 }

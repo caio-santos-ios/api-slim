@@ -1,5 +1,6 @@
 using api_slim.src.Configuration;
 using api_slim.src.Handlers;
+using api_slim.src.Models;
 using MongoDB.Driver;
 
 namespace api_slim.src.Workers;
@@ -8,10 +9,6 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 {
     private const string CPF_TESTE = "086.306.285-70";
 
-    // Horários em UTC (Brasil = UTC-3)
-    // IGS  → manhã  07:30 BRT = 10:30 UTC
-    // IGN  → noite  18:00 BRT = 21:00 UTC
-    // IES  → noite  18:00 BRT = 21:00 UTC (junto com IGN)
     private static readonly TimeOnly IGS_INICIO = new(10, 00); // 07:30 BRT
     private static readonly TimeOnly IGS_FIM    = new(21, 00); // 18:00 BRT (limite antes da noite)
     private static readonly TimeOnly IGN_INICIO = new(21, 00); // 18:00 BRT
@@ -47,9 +44,6 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         {
             try
             {
-                // ── IGS (manhã) ──────────────────────────────────────────────
-                // Janela: 07:30–18:00 BRT (10:30–21:00 UTC)
-                // Condição: vital do dia sem sleepHours preenchido
                 if (current >= IGS_INICIO && current < IGS_FIM)
                 {
                     var IGSToday = await context.Vitals
@@ -97,8 +91,6 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                     continue; 
                 }
 
-                // ── IGN + IES (noite) ────────────────────────────────────────
-                // Janela: 18:00–23:59 BRT (21:00–23:59 UTC)
                 if (current >= IGN_INICIO && current <= IGN_FIM)
                 {
                     var vitalToday = await context.Vitals
@@ -157,6 +149,23 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 SendDate = DateTime.UtcNow,
                                 Type = "NotificationApp",
                                 Link = "/aplicativo/home/check-in/"
+                            },
+                            new () 
+                            {
+                                BeneficiaryCPF = recipient.Cpf,
+                                BeneficiaryId = recipient.Id,
+                                BeneficiaryName = recipient.Name,
+                                Title = "Micro Checkin ISO",
+                                Message = "Registre seu checkin ocupacional do dia.",
+                                Origin = "Vital",
+                                Parent = "ISO",
+                                ParentId = recipient.Id,
+                                Phone = recipient.Whatsapp,
+                                Read = false,
+                                Sent = true,
+                                SendDate = DateTime.UtcNow.AddMinutes(60),
+                                Type = "NotificationApp",
+                                Link = "/aplicativo/home/check-in-iso/"
                             }
                         ]);
                     }

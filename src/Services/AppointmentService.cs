@@ -279,7 +279,6 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Agendamento"
                 });
-                System.Console.WriteLine(request.BeneficiaryUuid);
 
                 ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByRapidocIdAsync(request.BeneficiaryUuid);
                 if(request.Origin == "app")

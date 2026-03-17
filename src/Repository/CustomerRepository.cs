@@ -227,7 +227,18 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Clientes");
         }
     }
-    
+    public async Task<ResponseApi<Customer?>> GetByCodeAccessAsync(string codeAccess)
+    {
+        try
+        {
+            Customer? customer = await context.Customers.Find(x => x.CodeAccess == codeAccess && !x.Deleted).FirstOrDefaultAsync();
+            return new(customer);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar usuário");
+        }
+    }
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<Customer> pagination)
     {
         List<BsonDocument> pipeline = new()

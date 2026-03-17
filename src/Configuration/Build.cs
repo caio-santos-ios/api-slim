@@ -114,6 +114,22 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<IVitalService, VitalService>();
             builder.Services.AddTransient<IVitalRepository, VitalRepository>();
 
+            // B2B PANEL
+            builder.Services.AddTransient<IB2BMassMovementService, B2BMassMovementService>();
+            builder.Services.AddTransient<IB2BMassMovementRepository, B2BMassMovementRepository>();
+            builder.Services.AddTransient<IB2BInvoiceService, B2BInvoiceService>();
+            builder.Services.AddTransient<IB2BInvoiceRepository, B2BInvoiceRepository>();
+            builder.Services.AddTransient<IB2BAttachmentService, B2BAttachmentService>();
+            builder.Services.AddTransient<IB2BAttachmentRepository, B2BAttachmentRepository>();
+
+            // OCCUPATIONAL MANAGEMENT
+            builder.Services.AddTransient<IOccupationalMicroCheckinService, OccupationalMicroCheckinService>();
+            builder.Services.AddTransient<IOccupationalMicroCheckinRepository, OccupationalMicroCheckinRepository>();
+            builder.Services.AddTransient<IOccupationalBemVitalService, OccupationalBemVitalService>();
+            builder.Services.AddTransient<IOccupationalBemVitalRepository, OccupationalBemVitalRepository>();
+            builder.Services.AddTransient<IOccupationalPgrService, OccupationalPgrService>();
+            builder.Services.AddTransient<IOccupationalPgrRepository, OccupationalPgrRepository>();
+
             // SERVICE
             builder.Services.AddTransient<IInPersonService, InPersonService>();
             builder.Services.AddTransient<IInPersonRepository, InPersonRepository>();

@@ -155,5 +155,34 @@ namespace api_slim.src.Configuration
             get { return Database.GetCollection<NotificationJob>("notification_jobs"); }
         }
         #endregion
+        #region B2B PANEL
+        public IMongoCollection<B2BMassMovement> B2BMassMovements
+        {
+            get { return Database.GetCollection<B2BMassMovement>("b2b_mass_movements"); }
+        }
+        public IMongoCollection<B2BInvoice> B2BInvoices
+        {
+            get { return Database.GetCollection<B2BInvoice>("b2b_invoices"); }
+        }
+        public IMongoCollection<B2BAttachment> B2BAttachments
+        {
+            get { return Database.GetCollection<B2BAttachment>("b2b_attachments"); }
+        }
+        #endregion
+
+        #region OCCUPATIONAL MANAGEMENT
+        public IMongoCollection<OccupationalMicroCheckin> OccupationalMicroCheckins
+        {
+            get { return Database.GetCollection<OccupationalMicroCheckin>("occupational_micro_checkins"); }
+        }
+        public IMongoCollection<OccupationalBemVital> OccupationalBemVitals
+        {
+            get { return Database.GetCollection<OccupationalBemVital>("occupational_bem_vitals"); }
+        }
+        public IMongoCollection<OccupationalPgr> OccupationalPgrs
+        {
+            get { return Database.GetCollection<OccupationalPgr>("occupational_pgrs"); }
+        }
+        #endregion
     }
 }

@@ -534,7 +534,6 @@ namespace api_slim.src.Shared.Templates
                     <div class=""container"">
                         <div class=""header"">
                             <img src='https://api.pasbem.com.br/uploads/logo/logo.png' class='logo' alt='Logo'>
-                            <h2>Bem-vindo ao Pasbem</h2>
                         </div>
 
                         <div class=""content"">

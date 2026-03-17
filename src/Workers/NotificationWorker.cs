@@ -25,7 +25,7 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
         var smClick = scope.ServiceProvider.GetRequiredService<SmClickHandler>();
 
         var pending = await context.NotificationJobs
-            .Find(j => !j.Sent && j.SendDate <= DateTime.UtcNow)
+            .Find(j => !j.Sent && j.SendDate <= DateTime.UtcNow && (j.Parent == "InPerson" || j.Parent == "Appointment"))
             .ToListAsync();
 
         foreach (var job in pending)
@@ -33,11 +33,11 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
             try
             {
                 var message = BuildMessage(job);
-                // await smClick.SendTextMessageAsync(job.Phone, message);
+                await smClick.SendTextMessageAsync(job.Phone, message);
 
-                // await context.NotificationJobs.UpdateOneAsync(
-                //     j => j.Id == job.Id,
-                //     Builders<NotificationJob>.Update.Set(j => j.Sent, true));
+                await context.NotificationJobs.UpdateOneAsync(
+                    j => j.Id == job.Id,
+                    Builders<NotificationJob>.Update.Set(j => j.Sent, true));
 
                 logger.LogInformation("Notification {Type} sent to {Name}", job.Type, job.BeneficiaryName);
             }

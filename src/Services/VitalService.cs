@@ -298,6 +298,9 @@ namespace api_slim.src.Services
                 return new(new Vital() {
                     Id = vital.Data is null ? "" : vital.Data.Id,
                     WeekMetric = weekMetrics,
+                    ChekinIGS = vital.Data is null ? false : vital.Data.ChekinIGS,
+                    ChekinIGN = vital.Data is null ? false : vital.Data.ChekinIGN,
+                    ChekinIES = vital.Data is null ? false : vital.Data.ChekinIES,
                     Metric = new () 
                         { 
                             IGS = qtd == 0 ? 0 : Math.Round(IGS / qtd), 
@@ -358,6 +361,26 @@ namespace api_slim.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
             }
         }
+        public async Task<ResponseApi<Vital?>> CreateISOAsync(CreateVitalDTO request)
+        {
+            try
+            {
+                Vital vital = _mapper.Map<Vital>(request);
+                vital.ChekinISO = true;
+                vital.ChekinISOPoint = request.ChekinISOPoint;
+                vital.ChekinISOQuestion = request.ChekinISOQuestion;
+
+                ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
+
+                if(response.Data is null) return new(null, 400, "Falha ao salvar.");
+                
+                return new(response.Data, 201, "Salvo com sucesso.");
+            }
+            catch
+            { 
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+            }
+        }
         #endregion
         
         #region UPDATE
@@ -396,6 +419,26 @@ namespace api_slim.src.Services
                 vital.UpdatedAt = DateTime.UtcNow;
 
                 ResponseApi<Vital?> response = await vitalRepository.UpdateAsync(vital);
+                if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+                return new(response.Data, 201, "Atualizado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<Vital?>> UpdateISOAsync(UpdateVitalDTO request)
+        {
+            try
+            {
+                ResponseApi<Vital?> vitalResponse = await vitalRepository.GetByIdAsync(request.Id);
+                if(vitalResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+
+                vitalResponse.Data.ChekinISO = true;
+                vitalResponse.Data.ChekinISOQuestion = request.ChekinISOQuestion;
+                
+                ResponseApi<Vital?> response = await vitalRepository.UpdateAsync(vitalResponse.Data);
                 if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
                 return new(response.Data, 201, "Atualizado com sucesso");

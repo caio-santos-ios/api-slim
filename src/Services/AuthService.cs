@@ -26,10 +26,10 @@ namespace api_slim.src.Services
                 ResponseApi<User?> res = await userRepository.GetByEmailAsync(request.Email);
 
                 User? user = null;
-                string typeUser = "user";
 
                 if(res.Data is null) 
                 {
+
                     ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
                     if(customer.Data is not null) 
                     {
@@ -39,10 +39,10 @@ namespace api_slim.src.Services
                             Name = customer.Data.CorporateName,
                             Admin = false,
                             Modules = [],
-                            Photo = ""
+                            Photo = "",
+                            Password = customer.Data.Password,
+                            Role = Enums.User.RoleEnum.Manager
                         };
-
-                        typeUser = "manager";
                     }
                 }
                 else
@@ -69,8 +69,9 @@ namespace api_slim.src.Services
 
                 return new(auth);
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
             }
         }
@@ -343,8 +344,6 @@ namespace api_slim.src.Services
                 if(request.Device == "app")
                 {
                     dynamic access = Util.GenerateCodeAccess();
-                    // ResponseApi<dynamic?> customerRecipientVerify = await customerRecipientService.GetByCPFAggregateAsync(request.CPF);
-                    // if(customerRecipientVerify.Data is null) return new(null, 404, "CPF inválido");
 
                     ResponseApi<CustomerRecipient?> customerRecipient = await customerRecipientRepository.GetByEmailAsync(request.Email);
                     if(customerRecipient.Data is null) return new(null, 404, "E-mail inválido");
@@ -364,20 +363,55 @@ namespace api_slim.src.Services
                 else 
                 {
                     ResponseApi<User?> user = await userRepository.GetByEmailAsync(request.Email);
+                    Customer? authCustomer = null;
+                    if(user.Data is null)
+                    {
+                        ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
+                        if(customer.Data is not null) 
+                        {
+                            user.Data = new()
+                            {
+                                Id = customer.Data.Id,
+                                Name = customer.Data.CorporateName,
+                                Admin = false,
+                                Modules = [],
+                                Photo = "",
+                                Role = Enums.User.RoleEnum.Manager
+                            };
+
+                            authCustomer = customer.Data;
+                        }
+                    };
+
                     if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
                     dynamic access = Util.GenerateCodeAccess();
 
-                    user.Data.CodeAccess = access.CodeAccess;
-                    user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
-                    user.Data.ValidatedAccess = false;
+                    if(user.Data.Role == Enums.User.RoleEnum.Manager)
+                    {
+                        if(authCustomer is not null)
+                        {
+                            authCustomer.CodeAccess = access.CodeAccess;
+                            authCustomer.CodeAccessExpiration = access.CodeAccessExpiration;
+                            authCustomer.ValidatedAccess = false;
+                        
+                            ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
+                            if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                    }
+                    else
+                    {
+                        user.Data.CodeAccess = access.CodeAccess;
+                        user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                        user.Data.ValidatedAccess = false;
+                        
+                        ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                        if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                    }
 
                     string template = MailTemplate.ForgotPasswordWeb(user.Data.Name, user.Data.CodeAccess);
                     await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);
 
-
-                    ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
-                    if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
 
                     return new(null, 200, "Foi enviado um e-mail para redefinir sua senha");
                 }
@@ -392,10 +426,37 @@ namespace api_slim.src.Services
             try
             {
                 ResponseApi<User?> user = await userRepository.GetByCodeAccessAsync(request.CodeAccess);
+                DateTime? codeAccessExpiration = null;
+                string codeAccess = "";
+                string name = "";
+                string email = "";
+                string role = "";
+                Customer? authCustomer = null;
 
-                if(user.Data is null) return new(null, 400, "Código inválido.");
+                if(user.Data is null)
+                {
+                    ResponseApi<Customer?> customer = await customerRepository.GetByCodeAccessAsync(request.CodeAccess);
+                    if(customer.Data is null) return new(null, 400, "Código inválido.");
 
-                if(DateTime.UtcNow > user.Data.CodeAccessExpiration) 
+                    codeAccessExpiration = customer.Data.CodeAccessExpiration;
+                    codeAccess = customer.Data.CodeAccess;
+                    name = customer.Data.CorporateName;
+                    email = customer.Data.Email;
+                    role = "manager";
+                    authCustomer = customer.Data;
+                }
+                else
+                {
+                    codeAccessExpiration = user.Data.CodeAccessExpiration;
+                    codeAccess = user.Data.CodeAccess;
+                    name = user.Data.Name;
+                    email = user.Data.Email;
+                    role = "user";
+                }
+
+                // if(user.Data is null) return new(null, 400, "Código inválido.");
+
+                if(DateTime.UtcNow > codeAccessExpiration) 
                 {
                     dynamic access = Util.GenerateCodeAccess();
                     string template = "";
@@ -405,27 +466,55 @@ namespace api_slim.src.Services
                     }
                     else
                     {
-                        template = MailTemplate.ForgotPasswordWeb(user.Data.Name, $"/api/auth/reset-password?codeAccess={user.Data.CodeAccess}");
+                        template = MailTemplate.ForgotPasswordWeb(name, $"/api/auth/reset-password?codeAccess={codeAccess}");
                     };
-
-                    await mailHandler.SendMailAsync(user.Data.Email, "Redefinição de Senha", template);
-                    user.Data.CodeAccess = access.CodeAccess;
-                    user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
-                    user.Data.ValidatedAccess = false;
-
-                    ResponseApi<User?> reset = await userRepository.UpdateAsync(user.Data);
-                    if(!reset.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
                     
-                    return new(null, 400, "Falha ao redefinir senha, um novo e-mail foi enviado.");
+                    // user.Data.CodeAccess = access.CodeAccess;
+                    // user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                    // user.Data.ValidatedAccess = false;
+
+                    // ResponseApi<User?> reset = await userRepository.UpdateAsync(user.Data);
+                    // if(!reset.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+
+                    // await mailHandler.SendMailAsync(email, "Redefinição de Senha", template);
+                    
+                    // return new(null, 400, "Falha ao redefinir senha, um novo e-mail foi enviado.");
+
+                    if(role == "manager")
+                    {
+                        if(authCustomer is not null) 
+                        {
+                            authCustomer.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                            authCustomer.CodeAccess = "";
+                            authCustomer.CodeAccessExpiration = null;
+                            authCustomer.ValidatedAccess = true;
+
+                            ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
+                            if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                    }
+                    else
+                    {
+                        if(user.Data is not null)
+                        {
+                            user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                            user.Data.CodeAccess = "";
+                            user.Data.CodeAccessExpiration = null;
+                            user.Data.ValidatedAccess = true;
+
+                            ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                            if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                    }
                 } 
 
-                user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-                user.Data.CodeAccess = "";
-                user.Data.CodeAccessExpiration = null;
-                user.Data.ValidatedAccess = true;
+                // user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                // user.Data.CodeAccess = "";
+                // user.Data.CodeAccessExpiration = null;
+                // user.Data.ValidatedAccess = true;
 
-                ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                // ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                // if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
 
                 return new(null, 200, "Senha alterada com sucesso");
             }
