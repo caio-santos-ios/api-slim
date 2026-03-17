@@ -4,7 +4,7 @@ using api_slim.src.Shared.DTOs;
 
 namespace api_slim.src.Interfaces
 {
-   public interface IHistoricService
+    public interface IHistoricService
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
         Task<ResponseApi<Historic?>> CreateAsync(CreateHistoricDTO request);
