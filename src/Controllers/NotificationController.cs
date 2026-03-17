@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using api_slim.src.Interfaces;
 using api_slim.src.Models.Base;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 
 namespace api_slim.src.Controllers
 {
@@ -13,7 +15,15 @@ namespace api_slim.src.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+            var queryDict = Request.Query.ToDictionary(x => x.Key, x => x.Value);
+
+            queryDict["beneficiaryId"] = new StringValues(userId);
+
+            QueryCollection modifiedQuery = new(queryDict);
+
+            ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(modifiedQuery));
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
