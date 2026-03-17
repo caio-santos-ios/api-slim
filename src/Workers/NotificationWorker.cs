@@ -25,7 +25,7 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
         var smClick = scope.ServiceProvider.GetRequiredService<SmClickHandler>();
 
         var pending = await context.NotificationJobs
-            .Find(j => !j.Sent && j.SendDate <= DateTime.UtcNow && (j.Parent == "InPerson" || j.Parent == "Appointment"))
+            .Find(j => !j.Sent && j.SendDate <= DateTime.UtcNow)
             .ToListAsync();
 
         foreach (var job in pending)
