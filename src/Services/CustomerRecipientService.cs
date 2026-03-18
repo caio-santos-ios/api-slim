@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using ImageMagick;
+using ClosedXML.Excel;
 
 namespace api_slim.src.Services
 {
@@ -396,6 +397,21 @@ namespace api_slim.src.Services
         }
         catch
         {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<List<dynamic>>> GetManagerPanelAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetManagerContractorIdAggregationAsync(pagination);
+
+            return new(customerRecipient.Data);
+        }
+        catch(Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
@@ -1080,6 +1096,106 @@ namespace api_slim.src.Services
 
                 ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
             };
+            
+            return new(null, 200, "Alterado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateManagerPanelAsync(ImportCustomerRecipientDTO request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0) return new(null, 400, "Arquivo para importação é obrigatório.");
+
+            ResponseApi<Customer?> customerResponse = await customerRepository1.GetByIdAsync(request.ContractorId);
+            if(customerResponse.Data is not null)
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await request.File.CopyToAsync(stream);
+                    using (var workbook = new XLWorkbook(stream))
+                    {
+                        var worksheet = workbook.Worksheet("Beneficiários");
+                        var rows = worksheet.RangeUsed()!.RowsUsed().Skip(1); 
+                        foreach (var row in rows)
+                        {
+                            string name = row.Cell(1).GetValue<string>(); 
+                            string cpf = row.Cell(2).GetValue<string>();
+                            string active = row.Cell(3).GetValue<string>();
+                            string plan = row.Cell(4).GetValue<string>();
+                            string dateOfBirth = row.Cell(5).GetValue<string>();
+                            string email = row.Cell(6).GetValue<string>();
+                            string phone = row.Cell(7).GetValue<string>();
+                            string whatsapp = row.Cell(8).GetValue<string>();
+                            string department = row.Cell(9).GetValue<string>();
+                            string function = row.Cell(10).GetValue<string>();
+                            string bond = row.Cell(11).GetValue<string>();
+                            string zipcode = row.Cell(12).GetValue<string>();
+                            string number = row.Cell(13).GetValue<string>();
+                            string street = row.Cell(14).GetValue<string>();
+                            string complement = row.Cell(15).GetValue<string>();
+                            string neighborhood = row.Cell(16).GetValue<string>();
+                            string city = row.Cell(17).GetValue<string>();
+                            string state = row.Cell(18).GetValue<string>();
+
+                            ResponseApi<CustomerRecipient?> recipient = await customerRepository.GetByCPFAsync(cpf, request.ContractorId);
+                            if(recipient.Data is not null)
+                            {
+                                recipient.Data.Name = name;
+                                recipient.Data.Active = active.ToLower() == "ativo";
+                                recipient.Data.PlanId = plan;
+                                recipient.Data.DateOfBirth = DateTime.TryParse(dateOfBirth, out var dob) ? dob : recipient.Data.DateOfBirth;
+                                recipient.Data.Email = email;
+                                recipient.Data.Phone = phone;
+                                recipient.Data.Whatsapp = whatsapp;
+
+                                recipient.Data.Department = department;
+                                recipient.Data.Function = function;
+                                recipient.Data.Bond = bond;
+
+                                await customerRepository.UpdateAsync(recipient.Data);
+
+                                ResponseApi<Address?> findAddress = await addressRepository.GetByParentIdAsync(recipient.Data.Id, "customer-recipient");
+                                Address address = new();
+
+                                if(findAddress.Data is null)
+                                {
+                                    address = new()
+                                    {
+                                        City = city,
+                                        Complement = complement,
+                                        Neighborhood = neighborhood,
+                                        Number = complement,
+                                        Parent = "customer-recipient",
+                                        ParentId = recipient.Data.Id,
+                                        State = state,
+                                        Street = street,
+                                        ZipCode = zipcode
+                                    };
+
+                                    await addressRepository.CreateAsync(address);
+                                }
+                                else 
+                                {
+                                    address = findAddress.Data;
+                                    address.City = city;
+                                    address.Complement = complement;
+                                    address.Neighborhood = neighborhood;
+                                    address.Number = complement;
+                                    address.State = state;
+                                    address.Street = street;
+                                    address.ZipCode = zipcode;                   
+                                    
+                                    await addressRepository.UpdateAsync(address);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             
             return new(null, 200, "Alterado com sucesso");
         }

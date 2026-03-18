@@ -10,6 +10,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetRankingAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id);
+        Task<ResponseApi<List<dynamic>>> GetManagerPanelAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf);
         Task<ResponseApi<dynamic?>> GetByRapidocIdAsync(string rapidocId);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
@@ -22,6 +23,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateConvertOrContractorAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateSubNotificationAsync(PushSubscriptionRequest request);
+        Task<ResponseApi<CustomerRecipient?>> UpdateManagerPanelAsync(ImportCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId);
     }
 }

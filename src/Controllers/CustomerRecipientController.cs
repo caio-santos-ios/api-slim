@@ -6,6 +6,7 @@ using api_slim.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Primitives;
 
 namespace api_slim.src.Controllers
 {
@@ -76,6 +77,25 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         ResponseApi<dynamic?> response = await service.GetAtendimentoAsync(userId!);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [HttpGet("manager-panel")]
+    public async Task<IActionResult> GetManagerPanelAsync()
+    {
+        var sanitizedDict = Request.Query
+        .Where(kvp => kvp.Value != "undefined" && !string.IsNullOrWhiteSpace(kvp.Value))
+        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId)) 
+        {
+            sanitizedDict["contractorId"] = new StringValues(userId);
+        }
+
+        QueryCollection newQuery = new(sanitizedDict);
+
+        ResponseApi<List<dynamic>> response = await service.GetManagerPanelAsync(new(newQuery));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
     
@@ -187,6 +207,17 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         customer.UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
         
         ResponseApi<CustomerRecipient?> response = await service.UpdateSubNotificationAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
+    [HttpPut("import-manager-painel")]
+    public async Task<IActionResult> UpdateManagerPanel([FromForm] ImportCustomerRecipientDTO request)
+    {        
+        request.ContractorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        
+        ResponseApi<CustomerRecipient?> response = await service.UpdateManagerPanelAsync(request);
 
         return StatusCode(response.StatusCode, new { response.Message });
     }

@@ -13,6 +13,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> GetByCodeAccessAsync(string codeAccess);
         Task<ResponseApi<CustomerRecipient?>> GetByRapidocIdAsync(string rapidoc);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination);
+        Task<ResponseApi<List<dynamic>>> GetManagerContractorIdAggregationAsync(PaginationUtil<CustomerRecipient> pagination);
         Task<ResponseApi<long?>> GetNextCodeAsync();
         Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId);
         Task<ResponseApi<CustomerRecipient?>> GetByDocumentAsync(string cpf);

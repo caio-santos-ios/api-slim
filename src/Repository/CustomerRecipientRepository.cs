@@ -209,6 +209,66 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Items");
         }
     }
+    public async Task<ResponseApi<List<dynamic>>> GetManagerContractorIdAggregationAsync(PaginationUtil<CustomerRecipient> pagination)
+    {
+        try
+        {
+            List<BsonDocument> pipeline = new()
+            {
+                new("$match", pagination.PipelineFilter),
+                new("$sort", pagination.PipelineSort),
+                
+                MongoUtil.Lookup("plans", ["$planId"], ["$_id"], "_plan", [["deleted", false]], 1),
+                MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
+
+                new("$addFields", new BsonDocument
+                {
+                    {"addressId", MongoUtil.First("_address._id")}
+                }),
+
+                new("$project", new BsonDocument
+                {
+                    {"_id", 0}, 
+                    {"id", new BsonDocument("$toString", "$_id")},
+                    {"planName", MongoUtil.First("_plan.name")},
+                    {"name", 1},
+                    {"createdAt", 1},
+                    {"dateOfBirth", 1},
+                    {"cpf", 1},
+                    {"active", 1},
+                    {"email", 1},
+                    {"phone", 1},
+                    {"whatsapp", 1},
+                    {"department", 1},
+                    {"role", 1},
+                    {"bond", 1},
+                    {"address", new BsonDocument
+                        {
+                            {"id", MongoUtil.ToString("$addressId")},
+                            {"street",  MongoUtil.First("_address.street")},
+                            {"number", MongoUtil.First("_address.number") },
+                            {"complement", MongoUtil.First("_address.complement") },
+                            {"neighborhood", MongoUtil.First("_address.neighborhood") },
+                            {"city", MongoUtil.First("_address.city") },
+                            {"state", MongoUtil.First("_address.state") },
+                            {"zipCode", MongoUtil.First("_address.zipCode") },
+                            {"parent", MongoUtil.First("_address.parent") },
+                            {"parentId", MongoUtil.First("_address.parentId") },
+                        }
+                    }
+                }),
+                new("$sort", pagination.PipelineSort),
+            };
+
+            List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+            return new(list);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiários");
+        }
+    }
     public async Task<ResponseApi<long?>> GetNextCodeAsync()
     {
         try

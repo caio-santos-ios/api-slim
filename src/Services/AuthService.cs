@@ -454,31 +454,18 @@ namespace api_slim.src.Services
                     role = "user";
                 }
 
-                // if(user.Data is null) return new(null, 400, "Código inválido.");
-
                 if(DateTime.UtcNow > codeAccessExpiration) 
                 {
                     dynamic access = Util.GenerateCodeAccess();
                     string template = "";
                     if(request.Equals("app"))
                     {
-                        template = MailTemplate.ForgotPasswordApp($"/api/auth/reset-password?codeAccess={user.Data.CodeAccess}");
+                        template = MailTemplate.ForgotPasswordApp($"/api/auth/reset-password?codeAccess={user.Data!.CodeAccess}");
                     }
                     else
                     {
                         template = MailTemplate.ForgotPasswordWeb(name, $"/api/auth/reset-password?codeAccess={codeAccess}");
                     };
-                    
-                    // user.Data.CodeAccess = access.CodeAccess;
-                    // user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
-                    // user.Data.ValidatedAccess = false;
-
-                    // ResponseApi<User?> reset = await userRepository.UpdateAsync(user.Data);
-                    // if(!reset.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
-
-                    // await mailHandler.SendMailAsync(email, "Redefinição de Senha", template);
-                    
-                    // return new(null, 400, "Falha ao redefinir senha, um novo e-mail foi enviado.");
 
                     if(role == "manager")
                     {
@@ -507,14 +494,6 @@ namespace api_slim.src.Services
                         }
                     }
                 } 
-
-                // user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-                // user.Data.CodeAccess = "";
-                // user.Data.CodeAccessExpiration = null;
-                // user.Data.ValidatedAccess = true;
-
-                // ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
-                // if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
 
                 return new(null, 200, "Senha alterada com sucesso");
             }
