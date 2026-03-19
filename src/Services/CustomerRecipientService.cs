@@ -965,19 +965,30 @@ namespace api_slim.src.Services
             // responseRapidoc.EnsureSuccessStatusCode();
             // Console.WriteLine(await responseRapidoc.Content.ReadAsStringAsync());
 
-            if(!string.IsNullOrEmpty(request.Address.Id))
-            {            
-                ResponseApi<Address?> addressResponse = await addressRepository.UpdateAsync(request.Address);
-                if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao atualizar.");
-            }
-            else
-            {
-                Address address = _mapper.Map<Address>(request.Address);
-                address.Parent = "customer-recipient";
-                address.ParentId = response.Data!.Id;
-                ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
-                if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
-            };
+ResponseApi<Address?> existingAddress = await addressRepository.GetByParentIdAsync(response.Data!.Id, "customer-recipient");
+
+if(existingAddress.Data is not null)
+{
+    existingAddress.Data.Street = request.Address.Street;
+    existingAddress.Data.Number = request.Address.Number;
+    existingAddress.Data.Complement = request.Address.Complement;
+    existingAddress.Data.Neighborhood = request.Address.Neighborhood;
+    existingAddress.Data.City = request.Address.City;
+    existingAddress.Data.State = request.Address.State;
+    existingAddress.Data.ZipCode = request.Address.ZipCode;
+
+    ResponseApi<Address?> addressUpdateResponse = await addressRepository.UpdateAsync(existingAddress.Data);
+    if(!addressUpdateResponse.IsSuccess) return new(null, 400, "Falha ao atualizar endereço.");
+}
+else
+{
+    Address address = _mapper.Map<Address>(request.Address);
+    address.Parent = "customer-recipient";
+    address.ParentId = response.Data!.Id;
+
+    ResponseApi<Address?> addressCreateResponse = await addressRepository.CreateAsync(address);
+    if(!addressCreateResponse.IsSuccess) return new(null, 400, "Falha ao criar endereço.");
+};
 
             await logRepository.CreateAsync(new()
             {   

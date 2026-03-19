@@ -93,19 +93,43 @@ namespace api_slim.src.Repository
         try
         {
             BsonDocument[] pipeline = [
-                new("$match", new BsonDocument{
-                    {"_id", new ObjectId(id)},
-                    {"deleted", false}
-                }),
-                new("$addFields", new BsonDocument
-                {
-                    {"id", new BsonDocument("$toString", "$_id")},
-                }),
-                new("$project", new BsonDocument
-                {
-                    {"_id", 0},
-                }),
-            ];
+    new("$match", new BsonDocument{
+        {"_id", new ObjectId(id)},
+        {"deleted", false}
+    }),
+    new("$addFields", new BsonDocument
+    {
+        {"id", new BsonDocument("$toString", "$_id")},
+    }),
+    MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
+    new("$addFields", new BsonDocument
+    {
+        {"addressId", MongoUtil.First("_address._id")},
+    }),
+    new("$addFields", new BsonDocument
+    {
+        {"addressId", MongoUtil.ToString("$addressId")},
+        {"address", new BsonDocument
+            {
+                {"id", MongoUtil.ToString("$addressId")},
+                {"street", MongoUtil.First("_address.street")},
+                {"number", MongoUtil.First("_address.number")},
+                {"complement", MongoUtil.First("_address.complement")},
+                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                {"city", MongoUtil.First("_address.city")},
+                {"state", MongoUtil.First("_address.state")},
+                {"zipCode", MongoUtil.First("_address.zipCode")},
+                {"parent", MongoUtil.First("_address.parent")},
+                {"parentId", MongoUtil.First("_address.parentId")},
+            }
+        }
+    }),
+    new("$project", new BsonDocument
+    {
+        {"_id", 0},
+        {"_address", 0},
+    }),
+];
 
             BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
             dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
