@@ -15,6 +15,14 @@ namespace api_slim.src.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+            ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
+        [HttpGet("app")]
+        public async Task<IActionResult> GetAppAll()
+        {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
             var queryDict = Request.Query.ToDictionary(x => x.Key, x => x.Value);
