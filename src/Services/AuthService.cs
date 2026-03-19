@@ -11,6 +11,7 @@ using api_slim.src.Handlers;
 using api_slim.src.Shared.Templates;
 using api_slim.src.Shared.Validators;
 using api_slim.src.Shared.Utils;
+using MongoDB.Bson;
 
 namespace api_slim.src.Services
 {
