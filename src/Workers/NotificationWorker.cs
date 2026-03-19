@@ -13,7 +13,7 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // await ProcessPendingJobsAsync();
+            await ProcessPendingJobsAsync();
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
