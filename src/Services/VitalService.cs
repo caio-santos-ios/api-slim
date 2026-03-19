@@ -369,6 +369,7 @@ namespace api_slim.src.Services
                 vital.ChekinISO = true;
                 vital.ChekinISOPoint = request.ChekinISOPoint;
                 vital.ChekinISOQuestion = request.ChekinISOQuestion;
+                vital.ChekinISOResponse = request.ChekinISOResponse;
 
                 ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
 

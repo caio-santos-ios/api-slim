@@ -20,7 +20,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await ProcessPushJobsAsync();
+            // await ProcessPushJobsAsync();
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }

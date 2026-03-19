@@ -51,5 +51,6 @@ namespace api_slim.src.Shared.DTOs
 
                 // ISO
                 public string ChekinISOQuestion { get; set; } = string.Empty;
+                public string ChekinISOResponse { get; set; } = string.Empty;
         }
 }

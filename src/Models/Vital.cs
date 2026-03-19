@@ -131,6 +131,9 @@ namespace api_slim.src.Models
         // ISO
         [BsonElement("chekinISOQuestion")]
         public string ChekinISOQuestion { get; set; } = string.Empty;
+        
+        [BsonElement("chekinISOResponse")]
+        public string ChekinISOResponse { get; set; } = string.Empty;
     }
 
     public class VitalMetric 

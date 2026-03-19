@@ -44,6 +44,7 @@ namespace api_slim.src.Shared.DTOs
         public string Id { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
+        public int BeneficiaryCount { get; set; }
         public DateTime? DueDate { get; set; }
         public DateTime? PaidAt { get; set; }
         public List<B2BInvoiceItem> Items { get; set; } = [];

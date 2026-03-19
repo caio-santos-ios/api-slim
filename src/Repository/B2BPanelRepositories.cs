@@ -59,7 +59,6 @@ namespace api_slim.src.Repository
             }
             catch { return new(null, 500, "Falha ao buscar Movimentação"); }
         }
-
         public async Task<int> GetCountDocumentsAsync(PaginationUtil<B2BMassMovement> pagination)
         {
             List<BsonDocument> pipeline =
@@ -162,6 +161,16 @@ namespace api_slim.src.Repository
                 return new(entity);
             }
             catch { return new(null, 500, "Falha ao buscar Fatura"); }
+        }
+        
+        public async Task<ResponseApi<B2BInvoice?>> GetByMonthAsync(int month)
+        {
+            try
+            {
+                B2BInvoice? entity = await context.B2BInvoices.Find(x => x.CreatedAt.Date.Month == month && !x.Deleted).FirstOrDefaultAsync();
+                return new(entity);
+            }
+            catch { return new(null, 500, "Falha ao buscar Movimentação"); }
         }
 
         public async Task<int> GetCountDocumentsAsync(PaginationUtil<B2BInvoice> pagination)

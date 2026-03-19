@@ -341,6 +341,30 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
+    public async Task<ResponseApi<List<CustomerRecipient>>> GetPeriodAsync(int month, int year, string contractorId)
+    {
+        try
+        {
+            List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.CreatedAt.Date.Month == month && x.CreatedAt.Date.Year == year && x.ContractorId == contractorId).ToListAsync();
+            return new(customerRecipients);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
+    public async Task<ResponseApi<List<CustomerRecipient>>> GetContractIdAsync(string contractorId)
+    {
+        try
+        {
+            List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.ContractorId == contractorId).ToListAsync();
+            return new(customerRecipients);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination)
     {
         List<BsonDocument> pipeline = new()

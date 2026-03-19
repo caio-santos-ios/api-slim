@@ -151,6 +151,7 @@ namespace api_slim.src.Services
                 existing.Data.Items = request.Items;
                 existing.Data.UpdatedAt = DateTime.Now;
                 existing.Data.UpdatedBy = request.UpdatedBy;
+                existing.Data.BeneficiaryCount = request.BeneficiaryCount;
 
                 ResponseApi<B2BInvoice?> response = await repository.UpdateAsync(existing.Data);
                 if (!response.IsSuccess) return new(null, 400, "Falha ao atualizar Fatura.");

@@ -20,6 +20,8 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> GetByPhoneAsync(string phone);
         Task<ResponseApi<CustomerRecipient?>> GetByEmailAsync(string email);
         Task<ResponseApi<CustomerRecipient?>> GetByCPFImportAsync(string cpf, string contractorId);
+        Task<ResponseApi<List<CustomerRecipient>>> GetPeriodAsync(int month, int year, string contractorId);
+        Task<ResponseApi<List<CustomerRecipient>>> GetContractIdAsync(string contractorId);
         Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination);
         Task<ResponseApi<CustomerRecipient?>> CreateAsync(CustomerRecipient address);
         Task<ResponseApi<CustomerRecipient?>> UpdateAsync(CustomerRecipient address);

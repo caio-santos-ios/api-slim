@@ -81,6 +81,7 @@ namespace api_slim.src.Controllers
         {
             if (dto == null) return BadRequest("Dados inválidos.");
             dto.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            dto.CustomerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             var response = await service.CreateAsync(dto);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
@@ -129,6 +130,7 @@ namespace api_slim.src.Controllers
         {
             if (dto == null) return BadRequest("Dados inválidos.");
             dto.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            dto.CustomerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             var response = await service.CreateAsync(dto);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
