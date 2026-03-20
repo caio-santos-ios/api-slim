@@ -33,7 +33,7 @@ namespace api_slim.src.Controllers
         public async Task<IActionResult> GetByBeneficiaryIdAsync(string period)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-
+            System.Console.WriteLine(userId);
             ResponseApi<Vital?> response = await service.GetByBeneficiaryIdAsync(userId, period);
             return StatusCode(response.StatusCode, new { response.Result });
         }

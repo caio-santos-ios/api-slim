@@ -49,9 +49,6 @@ namespace api_slim.src.Services
                     user = res.Data!;
                 }
 
-                Util.ConsoleLog(res.Data.Password);
-                System.Console.WriteLine(request.Password);
-
                 if(user is null) return new(null, 400, "Dados incorretos");
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if(!isValid) return new(null, 400, "Dados incorretos");
@@ -70,8 +67,9 @@ namespace api_slim.src.Services
 
                 return new(auth);
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
             }
         }
@@ -387,7 +385,6 @@ namespace api_slim.src.Services
                     if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
                     dynamic access = Util.GenerateCodeAccess();
-
                     if(user.Data.Role == Enums.User.RoleEnum.Manager)
                     {
                         if(authCustomer is not null)
@@ -395,9 +392,17 @@ namespace api_slim.src.Services
                             authCustomer.CodeAccess = access.CodeAccess;
                             authCustomer.CodeAccessExpiration = access.CodeAccessExpiration;
                             authCustomer.ValidatedAccess = false;
+
+                            user.Data.CodeAccess = access.CodeAccess;
+                            user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                            user.Data.ValidatedAccess = false;
                         
                             ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
                             if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                        else
+                        {
+                            return new(null, 400, "Falha ao redefinir senha");
                         }
                     }
                     else
