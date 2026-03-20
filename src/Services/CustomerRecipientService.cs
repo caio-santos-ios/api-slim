@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using ImageMagick;
+using ClosedXML.Excel;
 
 namespace api_slim.src.Services
 {
@@ -23,7 +24,11 @@ namespace api_slim.src.Services
         IMapper _mapper, 
         ILogRepository logRepository, 
         CloudinaryHandler cloudinaryHandler, 
-        MailHandler mailHandler
+        MailHandler mailHandler,
+        IAppointmentNotificationService appointmentNotificationService,
+        ITelemedicineHistoricRepository telemedicineHistoricRepository,
+        IVitalRepository vitalRepository,
+        IB2BInvoiceRepository b2BInvoiceRepository
     ) : ICustomerRecipientService
 {
     HttpClient client = new();
@@ -46,24 +51,71 @@ namespace api_slim.src.Services
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
+    public async Task<ResponseApi<List<dynamic>>> GetRankingAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> customers = await customerRepository.GetAllAsync(pagination);
+
+            List<dynamic> rankings = [];
+            if(customers.Data is not null)
+            {
+                foreach (var item in customers.Data)
+                {
+                    var dataDict = (IDictionary<string, object>)item;
+
+                    if(!dataDict.ContainsKey("rapidocId")) continue;
+                    if(string.IsNullOrEmpty(item.rapidocId)) continue;
+
+                    ResponseApi<TelemedicineHistoric?> res = await telemedicineHistoricRepository.GetByRecipientIdAsync(item.rapidocId);
+                    
+                    if(res.Data is null) 
+                    {
+                        ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(item.id);
+
+                        if(vital.Data is null) continue;
+                    } 
+
+                    rankings.Add(item);
+                }
+            }
+            return new(rankings);
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
     public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
     {
         try
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByIdAggregateAsync(id);
             if(customer.Data is null) return new(null, 404, "Beneficiário não encontrado");
-            string rapidocId = customer.Data.rapidocId;
+            string rapidocId = "";
 
-            if(string.IsNullOrEmpty(customer.Data.rapidocId))
+            var dataDict = (IDictionary<string, object>)customer.Data;
+            if (dataDict.ContainsKey("rapidocId")) 
+            {
+                rapidocId = dataDict["rapidocId"]?.ToString()!;
+            }
+
+            if(string.IsNullOrEmpty(rapidocId))
             {
                 ResponseApi<dynamic?> res = await GetByCPFAggregateAsync(customer.Data.cpf);
                 if(res.Data is not null)
                 {
-                    rapidocId = res.Data.RapidocId;
+                    var dataDict2 = (IDictionary<string, object>)customer.Data;
+                    
+                    if (dataDict2.ContainsKey("rapidocId"))
+                    {
+                        rapidocId = dataDict2["rapidocId"]?.ToString()!;
+                    } 
                 }
             };
 
-            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{customer.Data.rapidocId}/appointments");
+            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{rapidocId}/appointments");
             requestHeader.Headers.Add("Authorization", $"Bearer {token}");
             requestHeader.Headers.Add("clientId", clientId);
             
@@ -127,9 +179,9 @@ namespace api_slim.src.Services
 
             return new(customer.Data);
         }
-        catch
+        catch(Exception ex)
         {
-            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
         }
     }
     public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
@@ -181,10 +233,20 @@ namespace api_slim.src.Services
         try
         {
             ResponseApi<dynamic?> customer = await customerRepository.GetByCPFAggregateAsync(cpf);
+            var dataDict = (IDictionary<string, object>)customer.Data!;
 
             if(customer.Data is not null)
             {
-                string rapidocId = customer.Data.rapidocId;
+                string rapidocId = "";
+                if (dataDict.ContainsKey("rapidocId")) 
+                {
+                    rapidocId = dataDict["rapidocId"]?.ToString()!;
+                }
+                else if (dataDict.ContainsKey("RapidocId"))
+                {
+                    rapidocId = dataDict["RapidocId"]?.ToString()!;
+                }
+
                 if(string.IsNullOrEmpty(rapidocId))
                 {
                     var requestRapidoc = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{cpf.Replace(".", "").Replace("-", "")}");
@@ -294,6 +356,7 @@ namespace api_slim.src.Services
                                 var responseRapidoc = await client.SendAsync(requestRapidocPost);
                                 string jsonResponsePost = await responseRapidoc.Content.ReadAsStringAsync();
                                 dynamic? resultPost = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponsePost);
+                                Util.ConsoleLog(resultPost);
                                 if(resultPost is not null)
                                 {
                                     if(resultPost.success == "true")
@@ -335,6 +398,59 @@ namespace api_slim.src.Services
         {
             PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
             ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetSelectAsync(pagination);
+
+            return new(customerRecipient.Data);
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<List<dynamic>>> GetManagerPanelAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetManagerContractorIdAggregationAsync(pagination);
+
+            DateTime today = DateTime.UtcNow;
+            ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(today.Date.Month);
+            if(invoiceMonth.Data is null)
+            {
+                request.QueryParams.TryGetValue("contractorId", out string? contractorId);
+
+                ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
+                if(list.Data is not null)
+                {
+                    int count = list.Data.Where(x => x.Active).ToList().Count;
+                    decimal total = 0;
+                    foreach (CustomerRecipient item in list.Data)
+                    {
+                        if(!item.Active) continue;
+
+                        ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(item.PlanId);
+
+                        if(plan.Data is not null)
+                        {
+                            total += plan.Data.Price;
+                        }
+                    }
+
+                    await b2BInvoiceRepository.CreateAsync(new ()
+                    {
+                        CustomerId = contractorId!,
+                        ReferenceMonth = today.Date.AddMonths(-1).Month,
+                        ReferenceYear = today.Date.Year,
+                        CycleStart = today.Date.AddMonths(-1),
+                        CycleEnd = today.Date,
+                        TotalAmount = total,
+                        BeneficiaryCount = count,
+                        DueDate = today.Date.AddMonths(-1).AddDays(3),
+                        Items = [],
+                        Status = "Fechada"
+                    });
+                }
+            }
 
             return new(customerRecipient.Data);
         }
@@ -473,35 +589,137 @@ namespace api_slim.src.Services
             string htmlEmail = MailTemplate.GetPwaAccessTemplate(request.Name, request.Cpf, passowrd.Substring(0, 6), "pasbem.com.br/aplicativo", caminhoDoLogo);
             await mailHandler.SendMailAsync(request.Email, "Aplicativo Pasbem", htmlEmail);
 
-            // if(!string.IsNullOrEmpty(request.Whatsapp))
-            // {
-            //     List<NotificationJob> jobs = new()
-            //     {
-            //         new() {
-            //             Parent = "CustomerRecipient",
-            //             ParentId = response.Data.Id!,
-            //             Phone = request.Phone,
-            //             BeneficiaryName = request.Name,
-            //             BeneficiaryCPF = request.Cpf,
-            //             Message = WhatsAppTemplate.Welcome(request.Name),
-            //             SendDate = DateTime.UtcNow.AddSeconds(15),
-            //             Type = "Notification"
-            //         },
-            //         new() {
-            //             Parent = "CustomerRecipient",
-            //             ParentId = response.Data.Id!,
-            //             Phone = request.Phone,
-            //             BeneficiaryName = request.Name,
-            //             BeneficiaryCPF = request.Cpf,
-            //             Message = WhatsAppTemplate.AppDownloadInstructions(),
-            //             SendDate = DateTime.UtcNow.AddSeconds(30),
-            //             Type = "Notification"
-            //         },
-            //     };
-            //     await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
-            // }
+            if(!string.IsNullOrEmpty(request.Whatsapp))
+            {
+                List<NotificationJob> jobs = new()
+                {
+                    new() {
+                        Parent = "CustomerRecipient",
+                        ParentId = response.Data.Id!,
+                        Phone = request.Phone,
+                        BeneficiaryName = request.Name,
+                        BeneficiaryCPF = request.Cpf,
+                        BeneficiaryId = response.Data.Id,
+                        Message = WhatsAppTemplate.Welcome(request.Name),
+                        SendDate = DateTime.UtcNow.AddSeconds(15),
+                        Type = "Welcome",
+                        Origin = "WhatsApp",
+                        Title = "Boas Vindas"
+                    },
+                    new() {
+                        Parent = "CustomerRecipient",
+                        ParentId = response.Data.Id!,
+                        Phone = request.Phone,
+                        BeneficiaryName = request.Name,
+                        BeneficiaryCPF = request.Cpf,
+                        BeneficiaryId = response.Data.Id,
+                        Message = WhatsAppTemplate.AppDownloadInstructions(),
+                        SendDate = DateTime.UtcNow.AddSeconds(30),
+                        Type = "InstalationApp",
+                        Origin = "WhatsApp",
+                        Title = "Instruções pra instalar APP"
+                    },
+                };
+                await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
+            }
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
+        }
+        catch
+        { 
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> CreateRapidocAsync(CreateCustomerRecipientDTO request)
+    {
+        try
+        {
+            var requestRapidoc = new HttpRequestMessage(HttpMethod.Post, $"{uri}/beneficiaries");
+
+            requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
+            requestRapidoc.Headers.Add("clientId", clientId);
+            requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            string typePlan = "G";
+            bool psicologia = false;
+            bool especialista = false;
+
+            ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(request.PlanId);
+            if(plan.Data is not null)
+            {
+                foreach (string moduleId in plan.Data.ServiceModuleIds)
+                {
+                    ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+                    if(serviceModule.Data is not null) 
+                    {
+                        if(serviceModule.Data.Name.Equals("Bem + Cuidado"))
+                        {
+                            especialista = true;
+                        }
+
+                        if(serviceModule.Data.Name.Equals("Bem + Papo"))
+                        {
+                            psicologia = true;
+                        }
+                    }
+                }
+            }
+
+            if(psicologia || especialista) 
+            {
+                if(psicologia && especialista)
+                {
+                    typePlan = "GSP";
+                }
+                else 
+                {
+                    if(psicologia)
+                    {
+                        typePlan = "GP";
+                    }
+                    else 
+                    {
+                        typePlan = "GS";
+                    }
+                }
+            }
+            else
+            {
+                typePlan = "G";
+            };
+
+            var beneficiarios = new[]
+            {
+                new {
+                    name = request.Name,
+                    cpf = new string(request.Cpf.Where(char.IsDigit).ToArray()),
+                    birthday = request.DateOfBirth, 
+                    email = request.Email,
+                    zipCode = new string(request.Address.ZipCode.Where(char.IsDigit).ToArray()),
+                    address = $"{request.Address.Street}, {request.Address.Number}",
+                    city = request.Address.City,
+                    state = "",
+                    serviceType = typePlan
+                }
+            };
+
+            string jsonPayload = JsonSerializer.Serialize(beneficiarios);
+
+            var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/vnd.rapidoc.tema-v2+json");
+
+            content.Headers.ContentType!.CharSet = null; 
+
+            requestRapidoc.Content = content;
+
+            var responseRapidoc = await client.SendAsync(requestRapidoc);
+            responseRapidoc.EnsureSuccessStatusCode();
+            string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
+            dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+
+            return new(new() 
+            {
+                RapidocId = result is not null ? result.beneficiaries[0].uuid : ""
+            }, 201, "Beneficiário criado com sucesso.");
         }
         catch
         { 
@@ -747,19 +965,30 @@ namespace api_slim.src.Services
             // responseRapidoc.EnsureSuccessStatusCode();
             // Console.WriteLine(await responseRapidoc.Content.ReadAsStringAsync());
 
-            if(!string.IsNullOrEmpty(request.Address.Id))
-            {            
-                ResponseApi<Address?> addressResponse = await addressRepository.UpdateAsync(request.Address);
-                if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao atualizar.");
-            }
-            else
-            {
-                Address address = _mapper.Map<Address>(request.Address);
-                address.Parent = "customer-recipient";
-                address.ParentId = response.Data!.Id;
-                ResponseApi<Address?> addressResponse = await addressRepository.CreateAsync(address);
-                if(!addressResponse.IsSuccess) return new(null, 400, "Falha ao criar Item.");
-            };
+ResponseApi<Address?> existingAddress = await addressRepository.GetByParentIdAsync(response.Data!.Id, "customer-recipient");
+
+if(existingAddress.Data is not null)
+{
+    existingAddress.Data.Street = request.Address.Street;
+    existingAddress.Data.Number = request.Address.Number;
+    existingAddress.Data.Complement = request.Address.Complement;
+    existingAddress.Data.Neighborhood = request.Address.Neighborhood;
+    existingAddress.Data.City = request.Address.City;
+    existingAddress.Data.State = request.Address.State;
+    existingAddress.Data.ZipCode = request.Address.ZipCode;
+
+    ResponseApi<Address?> addressUpdateResponse = await addressRepository.UpdateAsync(existingAddress.Data);
+    if(!addressUpdateResponse.IsSuccess) return new(null, 400, "Falha ao atualizar endereço.");
+}
+else
+{
+    Address address = _mapper.Map<Address>(request.Address);
+    address.Parent = "customer-recipient";
+    address.ParentId = response.Data!.Id;
+
+    ResponseApi<Address?> addressCreateResponse = await addressRepository.CreateAsync(address);
+    if(!addressCreateResponse.IsSuccess) return new(null, 400, "Falha ao criar endereço.");
+};
 
             await logRepository.CreateAsync(new()
             {   
@@ -992,6 +1221,201 @@ namespace api_slim.src.Services
         }
         catch
         {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateSubNotificationAsync(PushSubscriptionRequest request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.UserId);
+            if(customerResponse.Data is not null)
+            {
+                customerResponse.Data.UpdatedAt = DateTime.UtcNow;
+                customerResponse.Data.UpdatedBy = request.UserId;
+                customerResponse.Data.SubNotification = new()
+                {
+                    Endpoint = request.Endpoint,
+                    ExpirationTime = request.ExpirationTime,
+                    UserId = request.UserId,
+                    Keys = new()
+                    {
+                        P256dh = request.Keys.P256dh,
+                        Auth = request.Keys.Auth
+                    }
+                };
+
+                ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
+            };
+            
+            return new(null, 200, "Alterado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> UpdateManagerPanelAsync(ImportCustomerRecipientDTO request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0) return new(null, 400, "Arquivo para importação é obrigatório.");
+
+            ResponseApi<Customer?> customerResponse = await customerRepository1.GetByIdAsync(request.ContractorId);
+            if(customerResponse.Data is not null)
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await request.File.CopyToAsync(stream);
+                    using (var workbook = new XLWorkbook(stream))
+                    {
+                        var worksheet = workbook.Worksheet("Beneficiários");
+                        var rows = worksheet.RangeUsed()!.RowsUsed().Skip(1); 
+                        foreach (var row in rows)
+                        {
+                            string name = row.Cell(1).GetValue<string>(); 
+                            string cpf = row.Cell(2).GetValue<string>();
+                            string active = row.Cell(3).GetValue<string>();
+                            string plan = row.Cell(4).GetValue<string>();
+                            string dateOfBirth = row.Cell(5).GetValue<string>();
+                            string email = row.Cell(6).GetValue<string>();
+                            string phone = row.Cell(7).GetValue<string>();
+                            string whatsapp = row.Cell(8).GetValue<string>();
+                            string department = row.Cell(9).GetValue<string>();
+                            string function = row.Cell(10).GetValue<string>();
+                            string bond = row.Cell(11).GetValue<string>();
+                            string zipcode = row.Cell(12).GetValue<string>();
+                            string number = row.Cell(13).GetValue<string>();
+                            string street = row.Cell(14).GetValue<string>();
+                            string complement = row.Cell(15).GetValue<string>();
+                            string neighborhood = row.Cell(16).GetValue<string>();
+                            string city = row.Cell(17).GetValue<string>();
+                            string state = row.Cell(18).GetValue<string>();
+
+                            ResponseApi<CustomerRecipient?> recipient = await customerRepository.GetByCPFAsync(cpf, request.ContractorId);
+                            if(recipient.Data is not null)
+                            {
+                                ResponseApi<Plan?> findPlan = await planRepository.GetByNameAsync(plan);
+
+                                if(findPlan.Data is not null)
+                                {
+                                    recipient.Data.PlanId = findPlan.Data.Id;
+                                }
+
+                                recipient.Data.Name = name;
+                                recipient.Data.Active = active.ToLower() == "ativo";
+                                recipient.Data.DateOfBirth = DateTime.TryParse(dateOfBirth, out var dob) ? dob : recipient.Data.DateOfBirth;
+                                recipient.Data.Email = email;
+                                recipient.Data.Phone = phone;
+                                recipient.Data.Whatsapp = whatsapp;
+
+                                recipient.Data.Department = department;
+                                recipient.Data.Function = function;
+                                recipient.Data.Bond = bond;
+
+                                await customerRepository.UpdateAsync(recipient.Data);
+
+                                ResponseApi<Address?> findAddress = await addressRepository.GetByParentIdAsync(recipient.Data.Id, "customer-recipient");
+                                Address address = new();
+
+                                if(findAddress.Data is null)
+                                {
+                                    address = new()
+                                    {
+                                        City = city,
+                                        Complement = complement,
+                                        Neighborhood = neighborhood,
+                                        Number = complement,
+                                        Parent = "customer-recipient",
+                                        ParentId = recipient.Data.Id,
+                                        State = state,
+                                        Street = street,
+                                        ZipCode = zipcode
+                                    };
+
+                                    await addressRepository.CreateAsync(address);
+                                }
+                                else 
+                                {
+                                    address = findAddress.Data;
+                                    address.City = city;
+                                    address.Complement = complement;
+                                    address.Neighborhood = neighborhood;
+                                    address.Number = complement;
+                                    address.State = state;
+                                    address.Street = street;
+                                    address.ZipCode = zipcode;                   
+                                    
+                                    await addressRepository.UpdateAsync(address);
+                                }
+                            }
+                            else
+                            {
+                                DateTime? DateOfBirth = DateTime.TryParse(dateOfBirth, out var dob) ? dob : null;
+                                ResponseApi<Plan?> findPlan = await planRepository.GetByNameAsync(plan);
+
+                                ResponseApi<CustomerRecipient?> created = await CreateRapidocAsync(new ()
+                                {   
+                                    Name = name,
+                                    Cpf = cpf,
+                                    DateOfBirth = DateOfBirth,
+                                    Email = email,
+                                    Address = new()
+                                    {
+                                        ZipCode = zipcode,
+                                        Street = street,
+                                        Number = number,
+                                        City = city,
+                                        State = state
+                                    },
+                                    PlanId = findPlan.Data is null ? "" : findPlan.Data.Id,
+                                });
+
+                                CreateCustomerRecipientDTO newCustomer = new ()
+                                {
+                                    Name = name,
+                                    DateOfBirth = DateOfBirth,
+                                    Email = email,
+                                    Phone = phone,
+                                    Whatsapp = whatsapp,
+                                    Department = department,
+                                    Function = function,
+                                    Bond = bond,
+                                    RapidocId = created.Data is not null ? created.Data.RapidocId : "",
+                                    ContractorId = request.ContractorId,
+                                    Cpf = cpf,
+                                    PlanId = findPlan.Data is null ? "" : findPlan.Data.Id
+                                };
+
+                                ResponseApi<CustomerRecipient?> customerRes = await CreateAsync(newCustomer);
+                                if(customerRes.Data is not null)
+                                {
+                                    Address address = new()
+                                    {
+                                        City = city,
+                                        Complement = complement,
+                                        Neighborhood = neighborhood,
+                                        Number = complement,
+                                        Parent = "customer-recipient",
+                                        ParentId = customerRes.Data.Id,
+                                        State = state,
+                                        Street = street,
+                                        ZipCode = zipcode
+                                    };
+
+                                    await addressRepository.CreateAsync(address);
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return new(null, 200, "Alterado com sucesso");
+        }
+        catch(Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }

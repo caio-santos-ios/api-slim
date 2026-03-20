@@ -64,10 +64,10 @@ public static class WhatsAppTemplate
     #endregion
     // ── CONSULTA TELEMEDICINA ─────────────────────────────────────────────────────────────
 
-    public static string AppointmentConfirmation(string name, string specialty, string professional, string date, string time, string link) =>
+    public static string AppointmentConfirmation(string name, string specialty, string professional, string date, string time, string link, string module) =>
         $"""
         Maravilhoso dia, Sr(a). *{name}*! Como você está hoje? 😊
-        Seu agendamento para o módulo *Bem + Cuidado / Bem + Papo* foi realizado com sucesso! Confira os detalhes:
+        Seu agendamento para o módulo *{module}* foi realizado com sucesso! Confira os detalhes:
 
         🏥 *Especialidade:* {specialty}
         👨‍⚕️ *Profissional:* {professional}

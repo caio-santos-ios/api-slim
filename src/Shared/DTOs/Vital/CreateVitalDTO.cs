@@ -32,5 +32,25 @@ namespace api_slim.src.Shared.DTOs
                 public int Dass7 { get; set; }
                 public int Dass8 { get; set; }
                 public int Dass9 { get; set; }
+
+                public bool ChekinIGS { get; set; }
+                public bool ChekinIGN { get; set; }
+
+                public bool ChekinIES { get; set; }
+
+                public bool ChekinISO { get; set; }
+                public int ChekinISOPoint { get; set; }
+        
+                public int ChekinIGSPoint { get; set; }
+                
+                public int ChekinIGNPoint { get; set; }
+                
+                public int ChekinIESPoint { get; set; }
+                
+                public int Level { get; set; }
+
+                // ISO
+                public string ChekinISOQuestion { get; set; } = string.Empty;
+                public string ChekinISOResponse { get; set; } = string.Empty;
         }
 }

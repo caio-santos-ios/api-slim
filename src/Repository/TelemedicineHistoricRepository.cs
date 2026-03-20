@@ -162,6 +162,18 @@ namespace api_slim.src.Repository
             List<BsonDocument> results = await context.TelemedicineHistorics.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
+        public async Task<ResponseApi<TelemedicineHistoric?>> GetByRecipientIdAsync(string recipientId)
+        {
+            try
+            {
+                TelemedicineHistoric? historic = await context.TelemedicineHistorics.Find(x => x.RecipientId == recipientId && !x.Deleted).FirstOrDefaultAsync();
+                return new(historic);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         #endregion
         
         #region CREATE

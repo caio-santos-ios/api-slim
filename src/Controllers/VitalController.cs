@@ -48,6 +48,15 @@ namespace api_slim.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("beneficiary")]
+        public async Task<IActionResult> GetByBeneficiaryAsync()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Vital?> response = await service.GetByBeneficiaryAsync(userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateVitalDTO vital)
         {
@@ -60,12 +69,35 @@ namespace api_slim.src.Controllers
         }
         
         [Authorize]
+        [HttpPost("iso")]
+        public async Task<IActionResult> CreateISO([FromBody] CreateVitalDTO vital)
+        {
+            if (vital == null) return BadRequest("Dados inválidos.");
+            vital.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            vital.BeneficiaryId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Vital?> response = await service.CreateISOAsync(vital);
+
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateVitalDTO vital)
         {
             if (vital == null) return BadRequest("Dados inválidos.");
             vital.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Vital?> response = await service.UpdateAsync(vital);
+
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
+        [HttpPut("iso")]
+        public async Task<IActionResult> UpdateISO([FromBody] UpdateVitalDTO vital)
+        {
+            if (vital == null) return BadRequest("Dados inválidos.");
+            vital.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Vital?> response = await service.UpdateISOAsync(vital);
 
             return StatusCode(response.StatusCode, new { response.Result });
         }

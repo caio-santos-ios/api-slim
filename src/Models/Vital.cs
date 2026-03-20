@@ -85,6 +85,55 @@ namespace api_slim.src.Models
         
         [BsonElement("weekMetrics")]
         public List<VitalMetric> WeekMetric { get; set; } = new();
+
+        [BsonElement("chekinIGS")]
+        public bool ChekinIGS { get; set; }
+        
+        [BsonElement("chekinIGN")]
+        public bool ChekinIGN { get; set; }
+
+        [BsonElement("chekinIES")]
+        public bool ChekinIES { get; set; }
+
+        [BsonElement("chekinISO")]
+        public bool ChekinISO { get; set; }
+        
+        [BsonElement("chekinIGSNotificated")]
+        public bool ChekinIGSNotificated { get; set; }
+        
+        [BsonElement("chekinIGNNotificated")]
+        public bool ChekinIGNNotificated { get; set; }
+
+        [BsonElement("chekinIESNotificated")]
+        public bool ChekinIESNotificated { get; set; }
+
+        [BsonElement("chekinISONotificated")]
+        public bool ChekinISONotificated { get; set; }
+        
+        [BsonElement("chekinISOPoint")]
+        public int ChekinISOPoint { get; set; }
+        
+        [BsonElement("chekinIGSPoint")]
+        public int ChekinIGSPoint { get; set; }
+        
+        [BsonElement("chekinIGNPoint")]
+        public int ChekinIGNPoint { get; set; }
+        
+        [BsonElement("chekinIESPoint")]
+        public int ChekinIESPoint { get; set; }
+        
+        [BsonElement("level")]
+        public int Level { get; set; }
+        
+        [BsonElement("extrasPoint")]
+        public int ExtrasPoint { get; set; }
+
+        // ISO
+        [BsonElement("chekinISOQuestion")]
+        public string ChekinISOQuestion { get; set; } = string.Empty;
+        
+        [BsonElement("chekinISOResponse")]
+        public string ChekinISOResponse { get; set; } = string.Empty;
     }
 
     public class VitalMetric 

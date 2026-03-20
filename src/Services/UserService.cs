@@ -74,7 +74,7 @@ namespace api_slim.src.Services
                 
                 await smsHandler.SendMessageAsync(request.Phone, messageCode);
                 
-                await mailHandler.SendMailAsync(request.Email, "Primeiro acesso", MailTemplate.FirstAccess(request.Email, access.CodeAccess));
+                await mailHandler.SendMailAsync(request.Email, "Primeiro acesso", MailTemplate.FirstAccess(request.Name, request.Email, access.CodeAccess, "/erp"));
 
                 return new(null, 201, "Conta criada com sucesso, foi enviado o código de verificação para seu celular e e-mail.");
             }

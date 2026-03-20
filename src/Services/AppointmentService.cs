@@ -264,10 +264,8 @@ namespace api_slim.src.Services
                     return new(null, 400, msg);
                 };
 
-                // responseRapidoc.EnsureSuccessStatusCode();
                 string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
                 dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-                
                 await telemedicineHistoricService.CreateAsync(new ()
                 {
                     Status = "Agendado",
@@ -280,14 +278,19 @@ namespace api_slim.src.Services
                     CreatedBy = request.CreatedBy,
                     Type = "Agendamento"
                 });
+                ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByRapidocIdAsync(request.BeneficiaryUuid);
+                if(request.Origin == "app")
+                {
+                    recipientResponse = await customerRecipientRepository.GetByIdAsync(request.CreatedBy);
+                }
 
-                ResponseApi<CustomerRecipient?> recipientResponse = await customerRecipientRepository.GetByIdAsync(request.BeneficiaryUuid);
                 if(recipientResponse.Data is not null && result is not null)
                 {
+                    string professionalName = result.professional.name;
                     if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
                     {
                         DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        var timeString = request.Time.Split("Até")[0].Trim();
+                        var timeString = request.Time.ToLower().Split("até")[0].Trim();
                         TimeSpan time = TimeSpan.Parse(timeString);
                         DateTime dateTime = date.Add(time);
 
@@ -299,9 +302,11 @@ namespace api_slim.src.Services
                                 Phone = recipientResponse.Data.Phone,
                                 BeneficiaryName = recipientResponse.Data.Name,
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, request.ProfessionalName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
                                 SendDate = DateTime.UtcNow.AddSeconds(30),
-                                Type = "Notification"
+                                Type = "WhatsApp",
+                                BeneficiaryId = recipientResponse.Data.Id,
+                                Title = "Confirmação do Agendamento"
                             },
                             new() {
                                 Parent = "Appointment",
@@ -311,7 +316,9 @@ namespace api_slim.src.Services
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
                                 Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
                                 SendDate = dateTime.AddDays(-1),
-                                Type = "Notification"
+                                Type = "WhatsApp",
+                                BeneficiaryId = recipientResponse.Data.Id,
+                                Title = "Lembrete 1 dia antes do Agendamento"
                             },
                             new() {
                                 Parent = "Appointment",
@@ -319,9 +326,11 @@ namespace api_slim.src.Services
                                 Phone = recipientResponse.Data.Phone,
                                 BeneficiaryName = recipientResponse.Data.Name,
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, request.ProfessionalName, request.Time, result.beneficiaryUrl.ToString()),
+                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
                                 SendDate = dateTime.AddHours(-1),
-                                Type = "Notification"
+                                Type = "WhatsApp",
+                                BeneficiaryId = recipientResponse.Data.Id,
+                                Title = "Lembrete 1 hora antes do Agendamento"
                             },
                             new() {
                                 Parent = "Appointment",
@@ -331,7 +340,9 @@ namespace api_slim.src.Services
                                 BeneficiaryCPF = recipientResponse.Data.Cpf,
                                 Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
                                 SendDate = dateTime.AddMinutes(-5),
-                                Type = "Notification"
+                                Type = "WhatsApp",
+                                BeneficiaryId = recipientResponse.Data.Id,
+                                Title = "Lembrete 5 minutos antes do Agendamento"
                             },
                             // Notificação de avaliação vou implementar depois.
                         };

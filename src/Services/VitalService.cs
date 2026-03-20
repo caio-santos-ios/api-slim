@@ -83,7 +83,12 @@ namespace api_slim.src.Services
                                     IES = CalcularIES(item, customer.Data.Patrology),
                                     IPV = CalcularIPV(item, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
                                     Day = $"{dayBr}, {dayNum} {monthBr}"
-                                }
+                                },
+                                ExtrasPoint = item.ExtrasPoint,
+                                ChekinIGS = item.ChekinIGS,
+                                ChekinIES = item.ChekinIES,
+                                ChekinIGN = item.ChekinIGN,
+                                CreatedAt = item.CreatedAt
                             });
                         };
                     };
@@ -98,7 +103,31 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<Vital?>> GetByBeneficiaryAsync(string beneficiaryId)
+        {
+            try
+            {
+                ResponseApi<Vital?> vital = await vitalRepository.GetByBeneficiaryIdAsync(beneficiaryId);
+                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
 
+                if(vital.Data is not null && customer.Data is not null)
+                {
+                    vital.Data.Metric = new ()
+                    {
+                        IGS = CalcularIGS(vital.Data, customer.Data.Patrology),
+                        IGN = CalcularIGN(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
+                        IES = CalcularIES(vital.Data, customer.Data.Patrology),
+                        IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology),
+                    };
+                }
+
+                return new(vital.Data);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         public async Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period)
         {
             try
@@ -129,20 +158,6 @@ namespace api_slim.src.Services
                 if(customer.Data is not null)
                 {
                     decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
-
-                    // if(vital.Data is not null)
-                    // {
-                    //     if(customer.Data is not null)
-                    //     {
-                    //         vital.Data.Metric = new ()
-                    //         {
-                    //             IGS = (int)Math.Round(CalcularIGS(vital.Data, customer.Data.Patrology)),
-                    //             IGN = (int)Math.Round(CalcularIGN(vital.Data, metaAgua, customer.Data.Patrology)),
-                    //             IES = (int)Math.Round(CalcularIES(vital.Data, customer.Data.Patrology)),
-                    //             IPV = CalcularIPV(vital.Data, CalcularMetaAgua(customer.Data.Weight), customer.Data.Patrology)
-                    //         };
-                    //     }
-                    // }
 
                     DateTime hoje = DateTime.Today;
                     DateTime dataInicio;
@@ -177,11 +192,6 @@ namespace api_slim.src.Services
                         
                         if(!new List<string> { "semana", "mes", "ano" }.Contains(period))
                         {
-                            // var dadosAgrupados = vitalWeek.Data
-                            //     .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
-                            //     .OrderBy(g => g.Key.Year)
-                            //     .ThenBy(g => g.Key.Month);
-
                             var dadosAgrupados = vitalWeek.Data
                             .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month, x.CreatedAt.Day })
                             .OrderBy(g => g.Key.Year)
@@ -195,7 +205,6 @@ namespace api_slim.src.Services
                                 var mediaIGN = grupo.Average(x => CalcularIGN(x, metaAgua, patrology));
                                 var mediaIES = grupo.Average(x => CalcularIES(x, patrology));
 
-                                // string labelTudo = $"{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
                                 string labelTudo = $"{grupo.Key.Day:00}/{grupo.Key.Month:00}/{grupo.Key.Year.ToString().Substring(2)}";
                                 
                                 weekMetrics.Add(new()
@@ -289,6 +298,9 @@ namespace api_slim.src.Services
                 return new(new Vital() {
                     Id = vital.Data is null ? "" : vital.Data.Id,
                     WeekMetric = weekMetrics,
+                    ChekinIGS = vital.Data is null ? false : vital.Data.ChekinIGS,
+                    ChekinIGN = vital.Data is null ? false : vital.Data.ChekinIGN,
+                    ChekinIES = vital.Data is null ? false : vital.Data.ChekinIES,
                     Metric = new () 
                         { 
                             IGS = qtd == 0 ? 0 : Math.Round(IGS / qtd), 
@@ -296,15 +308,6 @@ namespace api_slim.src.Services
                             IES = qtd == 0 ? 0 : Math.Round(IES / qtd), 
                             IPV = qtd == 0 ? 0 : Math.Round(IPV / qtd)
                         },
-                    // Dass1 = dass1 > 0 ? (int)dass1 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass2 = dass2 > 0 ? (int)dass2 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass3 = dass3 > 0 ? (int)dass3 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass4 = dass4 > 0 ? (int)dass4 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass5 = dass5 > 0 ? (int)dass5 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass6 = dass6 > 0 ? (int)dass6 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass7 = dass7 > 0 ? (int)dass7 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass8 = dass8 > 0 ? (int)dass8 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
-                    // Dass9 = dass9 > 0 ? (int)dass9 / weekMetrics.Where(x => x.IPV > 0).Count() : 0,
                     Dass1 = dass1 > 0 ? (int)dass1 / qtd : 0,
                     Dass2 = dass2 > 0 ? (int)dass2 / qtd : 0,
                     Dass3 = dass3 > 0 ? (int)dass3 / qtd : 0,
@@ -329,9 +332,48 @@ namespace api_slim.src.Services
             try
             {
                 Vital vital = _mapper.Map<Vital>(request);
+
+                ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(request.BeneficiaryId);
+
+                DateTime date = DateTime.UtcNow.AddDays(-1);
+                ResponseApi<Vital?> vitalsLast = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, date);
+
+                if(vitalsLast.Data is not null)
+                {
+                    vital.ExtrasPoint = 1;
+                }
+
+                int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
+                int pointIGN = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGNPoint);
+                int pointIES = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIESPoint);
+
+                int level = CurrentLevel(pointIGS + pointIGN + pointIES);
+                vital.Level = level;
+
                 ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
 
                 if(response.Data is null) return new(null, 400, "Falha ao criar salvar.");
+                
+                return new(response.Data, 201, "Salvo com sucesso.");
+            }
+            catch
+            { 
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+            }
+        }
+        public async Task<ResponseApi<Vital?>> CreateISOAsync(CreateVitalDTO request)
+        {
+            try
+            {
+                Vital vital = _mapper.Map<Vital>(request);
+                vital.ChekinISO = true;
+                vital.ChekinISOPoint = request.ChekinISOPoint;
+                vital.ChekinISOQuestion = request.ChekinISOQuestion;
+                vital.ChekinISOResponse = request.ChekinISOResponse;
+
+                ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
+
+                if(response.Data is null) return new(null, 400, "Falha ao salvar.");
                 
                 return new(response.Data, 201, "Salvo com sucesso.");
             }
@@ -350,10 +392,54 @@ namespace api_slim.src.Services
                 ResponseApi<Vital?> vitalResponse = await vitalRepository.GetByIdAsync(request.Id);
                 if(vitalResponse.Data is null) return new(null, 404, "Falha ao atualizar");
                 
+                ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(request.BeneficiaryId);
+                
+                DateTime date = DateTime.UtcNow.AddDays(-1);
+                ResponseApi<Vital?> vitalsLast = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, date);
+
+                if(vitalsLast.Data is not null)
+                {
+                    if(!vitalResponse.Data.ChekinIGS) 
+                    {
+                        vitalResponse.Data.ExtrasPoint = 3;
+                    }
+                    else 
+                    {
+                        vitalResponse.Data.ExtrasPoint += 2;
+                    }
+                }
+
+                int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
+                int pointIGN = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGNPoint);
+                int pointIES = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIESPoint);
+
+                int level = CurrentLevel(pointIGS + pointIGN + pointIES);
+                vitalResponse.Data.Level = level;
+
                 Vital vital = _mapper.Map<Vital>(request);
                 vital.UpdatedAt = DateTime.UtcNow;
 
                 ResponseApi<Vital?> response = await vitalRepository.UpdateAsync(vital);
+                if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
+
+                return new(response.Data, 201, "Atualizado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<Vital?>> UpdateISOAsync(UpdateVitalDTO request)
+        {
+            try
+            {
+                ResponseApi<Vital?> vitalResponse = await vitalRepository.GetByIdAsync(request.Id);
+                if(vitalResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+
+                vitalResponse.Data.ChekinISO = true;
+                vitalResponse.Data.ChekinISOQuestion = request.ChekinISOQuestion;
+                
+                ResponseApi<Vital?> response = await vitalRepository.UpdateAsync(vitalResponse.Data);
                 if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
                 return new(response.Data, 201, "Atualizado com sucesso");
@@ -538,6 +624,12 @@ namespace api_slim.src.Services
             }
 
             return 0;
+        }
+        public int CurrentLevel(int points)
+        {
+            if(points >= 0 && points <= 1000) return 1;
+            if(points > 1000 && points <= 2000) return 2;
+            return 3;
         }
         #endregion
     }

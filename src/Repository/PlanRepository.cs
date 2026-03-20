@@ -126,6 +126,18 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Plano");
         }
     }
+    public async Task<ResponseApi<Plan?>> GetByNameAsync(string name)
+    {
+        try
+        {
+            Plan? plan = await context.Plans.Find(x => x.Name == name && !x.Deleted).FirstOrDefaultAsync();
+            return new(plan);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Plano");
+        }
+    }
     
     public async Task<ResponseApi<long?>> GetNextCodeAsync()
     {

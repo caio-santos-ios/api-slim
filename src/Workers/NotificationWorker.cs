@@ -52,13 +52,12 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
 
     private static string BuildMessage(NotificationJob job)
     {
-        // var formattedDate = job.AppointmentDate.ToString("dd/MM/yyyy 'às' HH:mm");
-
         return job.Type switch
         {
             "Welcome"    => WhatsAppTemplate.Welcome(job.BeneficiaryName),
             "InstalationApp"    => WhatsAppTemplate.AppDownloadInstructions(),
             "Notification" => job.Message,
+            "WhatsApp" => job.Message,
             _ => ""
         };
     }

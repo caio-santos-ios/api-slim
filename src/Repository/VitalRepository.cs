@@ -18,10 +18,18 @@ namespace api_slim.src.Repository
         {
             List<BsonDocument> pipeline = new()
             {
-                new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
                 new("$skip", pagination.Skip),
                 new("$limit", pagination.Limit),
+
+                MongoUtil.Lookup("customer_recipients", ["$beneficiaryId"], ["$_id"], "_recipient", [["deleted", false]], 1),
+                new("$addFields", new BsonDocument
+                {
+                    {"contractorId", MongoUtil.First("_recipient.contractorId")},
+                    {"beneficiaryName", MongoUtil.First("_recipient.name")}
+                }),
+
+                new("$match", pagination.PipelineFilter),
 
                 new BsonDocument("$lookup", new BsonDocument
                 {
@@ -85,7 +93,8 @@ namespace api_slim.src.Repository
                 {
                     {"_id", 0}, 
                     {"_department", 0}, 
-                    {"_position", 0} 
+                    {"_position", 0},
+                    {"_recipient", 0}
                 }),
                 new("$sort", pagination.PipelineSort),
             };
@@ -262,13 +271,47 @@ List<Vital> vitals = await context.Vitals
             return new(null, 500, "Falha ao buscar Item");
         }
     }
+    public async Task<ResponseApi<List<Vital>>> GetBeneficiaryIAllAsync(string beneficiaryId)
+    {
+        try
+        {
+            List<Vital> vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && !x.Deleted).ToListAsync();
+            return new(vitals);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Item");
+        }
+    }
+    
+    public async Task<ResponseApi<Vital?>> GetToDateBeneficiaryAsync(string beneficiaryId, DateTime date)
+    {
+        try
+        {
+            Vital? vitals = await context.Vitals.Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt.Date == date.Date && !x.Deleted).FirstOrDefaultAsync();
+            return new(vitals);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Item");
+        }
+    }
     
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<Vital> pagination)
     {
         List<BsonDocument> pipeline = new()
         {
-            new("$match", pagination.PipelineFilter),
             new("$sort", pagination.PipelineSort),
+            
+            MongoUtil.Lookup("customer_recipients", ["$beneficiaryId"], ["$_id"], "_recipient", [["deleted", false]], 1),
+            new("$addFields", new BsonDocument
+            {
+                {"contractorId", MongoUtil.First("_recipient.contractorId")},
+                {"beneficiaryName", MongoUtil.First("_recipient.name")}
+            }),
+
+            new("$match", pagination.PipelineFilter),
+
             new("$addFields", new BsonDocument
             {
                 {"id", new BsonDocument("$toString", "$_id")},

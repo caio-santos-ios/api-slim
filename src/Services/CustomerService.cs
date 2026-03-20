@@ -1,13 +1,15 @@
+using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Templates;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper, ILogRepository logRepository) : ICustomerService
+    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper, ILogRepository logRepository, MailHandler mailHandler, IWebHostEnvironment env) : ICustomerService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -167,6 +169,32 @@ namespace api_slim.src.Services
             });
             
             return new(response.Data, 201, "Atualizado com sucesso");
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<Customer?>> UpdatePainelAccessAsync(UpdateCustomerDTO request)
+    {
+        try
+        {
+            ResponseApi<Customer?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+            if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+            {
+                dynamic access = Util.GenerateCodeAccess();
+                customerResponse.Data.Password = BCrypt.Net.BCrypt.HashPassword(access.CodeAccess);
+                
+                var response = await customerRepository.UpdateAsync(customerResponse.Data);
+
+                if(!response.IsSuccess) return new(null, 400, "Falha ao enviar acesso");
+                
+                string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
+                string htmlEmail = MailTemplate.FirstAccessPainel(customerResponse.Data.CorporateName, customerResponse.Data.Email, access.CodeAccess, "pasbem.com.br/erp");
+                await mailHandler.SendMailAsync(customerResponse.Data.Email, "Acesso ao Painel Gestor", htmlEmail);
+            }
+            
+            return new(null, 200, "Atualizado com sucesso");
         }
         catch
         {
