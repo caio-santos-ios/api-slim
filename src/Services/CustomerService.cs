@@ -190,7 +190,7 @@ namespace api_slim.src.Services
                 if(!response.IsSuccess) return new(null, 400, "Falha ao enviar acesso");
                 
                 string caminhoDoLogo = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logo", "logo.png");
-                string htmlEmail = MailTemplate.FirstAccessPainel(customerResponse.Data.CorporateName, customerResponse.Data.Email, access.CodeAccess, "pasbem.com.br/aplicativo", env.WebRootPath);
+                string htmlEmail = MailTemplate.FirstAccessPainel(customerResponse.Data.CorporateName, customerResponse.Data.Email, access.CodeAccess, "pasbem.com.br/erp");
                 await mailHandler.SendMailAsync(customerResponse.Data.Email, "Acesso ao Painel Gestor", htmlEmail);
             }
             

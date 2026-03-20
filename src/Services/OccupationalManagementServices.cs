@@ -184,7 +184,7 @@ namespace api_slim.src.Services
     // ═══════════════════════════════════════════════════════════════════════════
     // Occupational PGR
     // ═══════════════════════════════════════════════════════════════════════════
-    public class OccupationalPgrService(IOccupationalPgrRepository repository, IOccupationalMicroCheckinRepository checkinRepository, IOccupationalBemVitalRepository bemVitalRepository) : IOccupationalPgrService
+    public class OccupationalPgrService(IOccupationalPgrRepository repository, IOccupationalMicroCheckinRepository checkinRepository) : IOccupationalPgrService
     {
         #region READ
         public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
