@@ -125,6 +125,8 @@ namespace api_slim.src.Services
             try
             {
                 B2BInvoice entity = _mapper.Map<B2BInvoice>(request);
+                // ── Auto-calcula closingDate: último dia do mês de referência ──
+                entity.ClosingDate = request.GetClosingDate();
                 entity.CreatedAt = DateTime.Now;
                 entity.UpdatedAt = DateTime.Now;
 
