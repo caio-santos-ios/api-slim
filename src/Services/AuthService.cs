@@ -14,7 +14,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository, IPermissionProfileRepository permissionProfileRepository) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -28,7 +28,6 @@ namespace api_slim.src.Services
 
                 if(res.Data is null) 
                 {
-
                     ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
                     if(customer.Data is not null) 
                     {
@@ -40,7 +39,8 @@ namespace api_slim.src.Services
                             Modules = [],
                             Photo = "",
                             Password = customer.Data.Password,
-                            Role = Enums.User.RoleEnum.Manager
+                            Role = Enums.User.RoleEnum.Manager,
+                            PermissionProfile = customer.Data.Id
                         };
                     }
                 }
@@ -53,6 +53,8 @@ namespace api_slim.src.Services
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if(!isValid) return new(null, 400, "Dados incorretos");
 
+                ResponseApi<PermissionProfile?> profile = await permissionProfileRepository.GetByIdAsync(user.PermissionProfile);
+
                 AuthResponse auth = new ()
                 {
                     Token = GenerateJwtToken(user), 
@@ -62,14 +64,14 @@ namespace api_slim.src.Services
                     Admin = user.Admin, 
                     Modules = user.Modules, 
                     Photo = user.Photo,
-                    Role = user.Role.ToString()
+                    Role = user.Role.ToString(),
+                    PermissionProfileName = profile.Data is not null ? profile.Data.Name : ""
                 };
 
                 return new(auth);
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");            
             }
         }

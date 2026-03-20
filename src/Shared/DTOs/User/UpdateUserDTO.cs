@@ -11,5 +11,6 @@ namespace api_slim.src.Shared.DTOs
         public bool Blocked { get; set; } = false;
         public List<Module> Modules {get;set;} = [];
         public DateTime? EffectiveDate { get; set; }
+        public string PermissionProfile {get;set;} = string.Empty;
     }
 }

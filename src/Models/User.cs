@@ -53,6 +53,9 @@ namespace api_slim.src.Models
         
         [BsonElement("effectiveDate")]
         public DateTime? EffectiveDate { get; set; }
+
+        [BsonElement("permissionProfile")]
+        public string PermissionProfile {get;set;} = string.Empty;
     }
 
     public class Module 

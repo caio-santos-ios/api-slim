@@ -92,7 +92,7 @@ namespace api_slim.src.Configuration
             CreateMap<UpdateHistoricDTO, Historic>().ReverseMap();
             #endregion
 
-             // B2B PANEL
+            #region MANAGER
             CreateMap<CreateB2BMassMovementDTO, B2BMassMovement>().ReverseMap();
             CreateMap<UpdateB2BMassMovementDTO, B2BMassMovement>().ReverseMap();
             CreateMap<CreateB2BInvoiceDTO, B2BInvoice>().ReverseMap();
@@ -100,11 +100,16 @@ namespace api_slim.src.Configuration
             CreateMap<CreateB2BAttachmentDTO, B2BAttachment>().ReverseMap();
             CreateMap<UpdateB2BAttachmentDTO, B2BAttachment>().ReverseMap();
 
-            // OCCUPATIONAL MANAGEMENT
             CreateMap<CreateOccupationalMicroCheckinDTO, OccupationalMicroCheckin>().ReverseMap();
             CreateMap<UpdateOccupationalMicroCheckinDTO, OccupationalMicroCheckin>().ReverseMap();
             CreateMap<CreateOccupationalBemVitalDTO, OccupationalBemVital>().ReverseMap();
             CreateMap<UpdateOccupationalBemVitalDTO, OccupationalBemVital>().ReverseMap();
+            #endregion
+
+            #region SETTINGS
+            CreateMap<CreatePermissionProfileDTO, PermissionProfile>().ReverseMap();
+            CreateMap<UpdatePermissionProfileDTO, PermissionProfile>().ReverseMap();
+            #endregion
         }
     }
 }
