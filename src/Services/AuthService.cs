@@ -14,7 +14,7 @@ using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository, IPermissionProfileRepository permissionProfileRepository) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -28,7 +28,6 @@ namespace api_slim.src.Services
 
                 if(res.Data is null) 
                 {
-
                     ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
                     if(customer.Data is not null) 
                     {
@@ -40,7 +39,9 @@ namespace api_slim.src.Services
                             Modules = [],
                             Photo = "",
                             Password = customer.Data.Password,
-                            Role = Enums.User.RoleEnum.Manager
+                            Role = Enums.User.RoleEnum.Manager,
+                            PermissionProfile = customer.Data.Id,
+                            ContractorId = customer.Data.Id
                         };
                     }
                 }
@@ -49,12 +50,11 @@ namespace api_slim.src.Services
                     user = res.Data!;
                 }
 
-                Util.ConsoleLog(res.Data.Password);
-                System.Console.WriteLine(request.Password);
-
                 if(user is null) return new(null, 400, "Dados incorretos");
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if(!isValid) return new(null, 400, "Dados incorretos");
+
+                ResponseApi<PermissionProfile?> profile = await permissionProfileRepository.GetByIdAsync(user.PermissionProfile);
 
                 AuthResponse auth = new ()
                 {
@@ -65,7 +65,9 @@ namespace api_slim.src.Services
                     Admin = user.Admin, 
                     Modules = user.Modules, 
                     Photo = user.Photo,
-                    Role = user.Role.ToString()
+                    Role = user.Role.ToString(),
+                    PermissionProfileName = profile.Data is not null ? profile.Data.Name : "",
+                    ContractorId = user.ContractorId
                 };
 
                 return new(auth);
@@ -387,7 +389,6 @@ namespace api_slim.src.Services
                     if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
                     dynamic access = Util.GenerateCodeAccess();
-
                     if(user.Data.Role == Enums.User.RoleEnum.Manager)
                     {
                         if(authCustomer is not null)
@@ -395,9 +396,17 @@ namespace api_slim.src.Services
                             authCustomer.CodeAccess = access.CodeAccess;
                             authCustomer.CodeAccessExpiration = access.CodeAccessExpiration;
                             authCustomer.ValidatedAccess = false;
+
+                            user.Data.CodeAccess = access.CodeAccess;
+                            user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                            user.Data.ValidatedAccess = false;
                         
                             ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
                             if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                        else
+                        {
+                            return new(null, 400, "Falha ao redefinir senha");
                         }
                     }
                     else

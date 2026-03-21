@@ -184,5 +184,11 @@ namespace api_slim.src.Configuration
             get { return Database.GetCollection<OccupationalPgr>("occupational_pgrs"); }
         }
         #endregion
+        #region SETTINGS
+        public IMongoCollection<PermissionProfile> PermissionProfiles
+        {
+            get { return Database.GetCollection<PermissionProfile>("permission_profiles"); }
+        }
+        #endregion
     }
 }

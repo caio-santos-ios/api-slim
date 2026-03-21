@@ -9,7 +9,7 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper, ILogRepository logRepository, MailHandler mailHandler, IWebHostEnvironment env) : ICustomerService
+    public class CustomerService(ICustomerRepository customerRepository, IAddressRepository addressRepository, ICustomerRecipientService customerRecipientService, IMapper _mapper, ILogRepository logRepository, MailHandler mailHandler) : ICustomerService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -20,6 +20,19 @@ namespace api_slim.src.Services
             ResponseApi<List<dynamic>> customers = await customerRepository.GetAllAsync(pagination);
             int count = await customerRepository.GetCountDocumentsAsync(pagination);
             return new(customers.Data, count, pagination.PageNumber, pagination.PageSize);
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<Customer> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> customers = await customerRepository.GetSelectAsync(pagination);
+            return new(customers.Data);
         }
         catch
         {

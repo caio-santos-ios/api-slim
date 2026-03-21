@@ -156,6 +156,10 @@ namespace api_slim.src.Configuration
             builder.Services.AddTransient<ILogService, LogService>();
             builder.Services.AddTransient<ILogRepository, LogRepository>();
 
+            // SETTINGS
+            builder.Services.AddTransient<IPermissionProfileService, PermissionProfileService>();
+            builder.Services.AddTransient<IPermissionProfileRepository, PermissionProfileRepository>();
+
             // HANDLERS
             builder.Services.AddTransient<SmsHandler>();
             builder.Services.AddTransient<MailHandler>();
