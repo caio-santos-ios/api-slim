@@ -56,6 +56,12 @@ namespace api_slim.src.Models
 
         [BsonElement("permissionProfile")]
         public string PermissionProfile {get;set;} = string.Empty;
+
+        [BsonElement("type")]
+        public string Type {get;set;} = string.Empty;
+
+        [BsonElement("contractorId")]
+        public string ContractorId {get;set;} = string.Empty;
     }
 
     public class Module 

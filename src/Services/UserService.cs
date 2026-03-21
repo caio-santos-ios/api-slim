@@ -65,7 +65,9 @@ namespace api_slim.src.Services
                     Modules = modules,
                     Admin = request.Admin,
                     Blocked = request.Blocked,
-                    PermissionProfile = request.PermissionProfile
+                    PermissionProfile = request.PermissionProfile,
+                    Type = request.Type,
+                    ContractorId = request.ContractorId
                 };
 
                 ResponseApi<User?> response = await userRepository.CreateAsync(user);
@@ -156,6 +158,8 @@ namespace api_slim.src.Services
                 user.Data.Phone = request.Phone;
                 user.Data.Name = request.Name;
                 user.Data.PermissionProfile = request.PermissionProfile;
+                user.Data.Type = request.Type;
+                user.Data.ContractorId = request.ContractorId;
 
                 ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
@@ -209,6 +213,8 @@ namespace api_slim.src.Services
                 user.Data.Blocked = request.Blocked;
                 user.Data.Admin = request.Admin;
                 user.Data.PermissionProfile = request.PermissionProfile;
+                user.Data.Type = request.Type;
+                user.Data.ContractorId = request.ContractorId;
 
                 ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");

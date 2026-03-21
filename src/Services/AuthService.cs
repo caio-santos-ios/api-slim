@@ -40,7 +40,8 @@ namespace api_slim.src.Services
                             Photo = "",
                             Password = customer.Data.Password,
                             Role = Enums.User.RoleEnum.Manager,
-                            PermissionProfile = customer.Data.Id
+                            PermissionProfile = customer.Data.Id,
+                            ContractorId = customer.Data.Id
                         };
                     }
                 }
@@ -65,7 +66,8 @@ namespace api_slim.src.Services
                     Modules = user.Modules, 
                     Photo = user.Photo,
                     Role = user.Role.ToString(),
-                    PermissionProfileName = profile.Data is not null ? profile.Data.Name : ""
+                    PermissionProfileName = profile.Data is not null ? profile.Data.Name : "",
+                    ContractorId = user.ContractorId
                 };
 
                 return new(auth);
