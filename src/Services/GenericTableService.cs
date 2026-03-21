@@ -49,6 +49,18 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<List<dynamic>>> GetByTableAllAggregateAsync(string table)
+        {
+            try
+            {
+                ResponseApi<List<dynamic>> genericTable = await genericTableRepository.GetByTableAllAggregateAsync(table);
+                return new(genericTable.Data);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         #endregion
         #region CREATE
         public async Task<ResponseApi<GenericTable?>> CreateAsync(CreateGenericTableDTO request)

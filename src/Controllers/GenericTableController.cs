@@ -26,12 +26,21 @@ namespace api_slim.src.Controllers
             ResponseApi<dynamic?> response = await genericTableService.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
-       
+
         [Authorize]
         [HttpGet("table/{table}")]
         public async Task<IActionResult> GetByTableAsync(string table)
         {
             ResponseApi<List<dynamic>> response = await genericTableService.GetByTableAggregateAsync(table);
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+        }
+        
+        [Authorize]
+        [HttpGet("table/all/{table}")]
+        public async Task<IActionResult> GetByTableAllAsync(string table)
+        {
+            System.Console.WriteLine(table);
+            ResponseApi<List<dynamic>> response = await genericTableService.GetByTableAllAggregateAsync(table);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
         

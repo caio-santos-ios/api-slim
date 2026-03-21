@@ -118,7 +118,37 @@ namespace api_slim.src.Repository
                 BsonDocument[] pipeline = [
                     new("$match", new BsonDocument{
                         {"table", table},
-                        {"deleted", false},
+                        {"active", true},
+                        {"deleted", false}
+                    }),
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"code", 1},
+                        {"description", 1},
+                        {"active", 1},
+                        {"table", 1},
+                        {"deleted", 1}
+                    }),
+                ];
+
+                List<BsonDocument> results = await context.GenericTables.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Tabela Genérica"); ;
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetByTableAllAggregateAsync(string table)
+        {
+            try
+            {
+                BsonDocument[] pipeline = [
+                    new("$match", new BsonDocument{
+                        {"table", table},
                         {"active", true}
                     }),
                     new("$project", new BsonDocument
@@ -128,7 +158,8 @@ namespace api_slim.src.Repository
                         {"code", 1},
                         {"description", 1},
                         {"active", 1},
-                        {"table", 1}
+                        {"table", 1},
+                        {"deleted", 1}
                     }),
                 ];
 

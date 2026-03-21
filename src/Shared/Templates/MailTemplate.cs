@@ -200,7 +200,7 @@ namespace api_slim.src.Shared.Templates
 
                         <div class=""content"">
                             <p>Olá, <strong>{userName}</strong>,</p>
-                            <p>Seu primeir acesso está pronto! Siga as credenciais para acessar o ERP:</p>
+                            <p>Seu primeiro acesso está pronto! Siga as credenciais para acessar o ERP:</p>
 
                             <center>
                                 <a href=""{UiURI}{path}"" class=""button"">Acessar Agora</a>

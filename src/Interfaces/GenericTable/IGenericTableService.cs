@@ -9,6 +9,7 @@ namespace api_slim.src.Interfaces
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<List<dynamic>>> GetByTableAggregateAsync(string table);
+        Task<ResponseApi<List<dynamic>>> GetByTableAllAggregateAsync(string table);
         Task<ResponseApi<GenericTable?>> CreateAsync(CreateGenericTableDTO user);
         Task<ResponseApi<GenericTable?>> UpdateAsync(UpdateGenericTableDTO request);
         Task<ResponseApi<GenericTable>> DeleteAsync(string id);
