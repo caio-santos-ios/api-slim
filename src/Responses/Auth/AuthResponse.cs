@@ -15,5 +15,6 @@ namespace api_slim.src.Responses
         public DateTime Expires {get;set;}
         public string PermissionProfileName {get;set;} = string.Empty; 
         public string ContractorId {get;set;} = string.Empty; 
+        public string Type {get;set;} = string.Empty; 
     }
 }

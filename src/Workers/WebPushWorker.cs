@@ -34,7 +34,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    && c.SubNotification != null)
+                    && c.SubNotification != null && c.SubNotification.UserId != "")
             .ToListAsync();
 
         Customer? customer = await context.Customers.Find(x => !x.Deleted).FirstOrDefaultAsync();
