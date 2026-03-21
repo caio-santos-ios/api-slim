@@ -74,9 +74,7 @@ namespace api_slim.src.Repository
                     {"_user", 0}, 
                     {"_customer", 0} 
                 }),
-                new("$sort", pagination.PipelineSort),
-                // new("$skip", pagination.Skip),
-                // new("$limit", pagination.Limit)
+                new("$sort", pagination.PipelineSort)
             };
 
             List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
@@ -270,6 +268,7 @@ namespace api_slim.src.Repository
                     {"role", 1},
                     {"bond", 1},
                     {"serviceModuleIds", 1},
+                    {"function", 1},
                     {"address", new BsonDocument
                         {
                             {"id", MongoUtil.ToString("$addressId")},

@@ -25,6 +25,7 @@ namespace api_slim.src.Services
                 
                 ResponseApi<User?> res = await userRepository.GetByEmailAsync(request.Email);
                 User? user = null;
+                string type = "Interno";
 
                 if(res.Data is null) 
                 {
@@ -43,11 +44,14 @@ namespace api_slim.src.Services
                             PermissionProfile = customer.Data.Id,
                             ContractorId = customer.Data.Id
                         };
+
+                        type = "Externo";
                     }
                 }
                 else
                 {
                     user = res.Data!;
+                    type = res.Data.Type;
                 }
 
                 if(user is null) return new(null, 400, "Dados incorretos");
@@ -67,7 +71,8 @@ namespace api_slim.src.Services
                     Photo = user.Photo,
                     Role = user.Role.ToString(),
                     PermissionProfileName = profile.Data is not null ? profile.Data.Name : "",
-                    ContractorId = user.ContractorId
+                    ContractorId = user.ContractorId,
+                    Type = type
                 };
 
                 return new(auth);
@@ -181,8 +186,6 @@ namespace api_slim.src.Services
                 var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub || c.Type == ClaimTypes.NameIdentifier)?.Value;
                 
                 if (string.IsNullOrEmpty(userId)) return new(null, 401, "Usuário não encontrado no token.");
-                System.Console.WriteLine(tokenType);
-                System.Console.WriteLine(userId);
 
                 ResponseApi<User?> user = await userRepository.GetByIdAsync(userId);
                 if (user.Data is null) return new(null, 401, "Usuário não encontrado.");
@@ -464,8 +467,6 @@ namespace api_slim.src.Services
                     role = "user";
                 }
 
-                System.Console.WriteLine(DateTime.UtcNow);
-                System.Console.WriteLine(codeAccessExpiration);
                 if(codeAccessExpiration < DateTime.UtcNow) return new(null, 400, "Código já expirado");
                 
                 dynamic access = Util.GenerateCodeAccess();
@@ -497,7 +498,6 @@ namespace api_slim.src.Services
                 {
                     if(user.Data is not null)
                     {
-                        System.Console.WriteLine(request.NewPassword);
                         user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
                         user.Data.CodeAccess = "";
                         user.Data.CodeAccessExpiration = null;
