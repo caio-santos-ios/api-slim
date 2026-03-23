@@ -107,7 +107,10 @@ namespace api_slim.src.Repository
                         {"modules", 1},
                         {"admin", 1},
                         {"blocked", 1},
-                        {"photo", 1}
+                        {"photo", 1},
+                        {"type", 1},
+                        {"contractorId", 1},
+                        {"permissionProfile", 1}
                     }),
                 ];
 

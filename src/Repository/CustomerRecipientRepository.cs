@@ -74,9 +74,7 @@ namespace api_slim.src.Repository
                     {"_user", 0}, 
                     {"_customer", 0} 
                 }),
-                new("$sort", pagination.PipelineSort),
-                // new("$skip", pagination.Skip),
-                // new("$limit", pagination.Limit)
+                new("$sort", pagination.PipelineSort)
             };
 
             List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
@@ -254,11 +252,14 @@ namespace api_slim.src.Repository
                 {
                     {"_id", 0}, 
                     {"id", new BsonDocument("$toString", "$_id")},
+                    {"planId", 1},
                     {"planName", MongoUtil.First("_plan.name")},
                     {"name", 1},
                     {"createdAt", 1},
                     {"dateOfBirth", 1},
+                    {"effectiveDate", 1},
                     {"cpf", 1},
+                    {"gender", 1},
                     {"active", 1},
                     {"email", 1},
                     {"phone", 1},
@@ -266,6 +267,8 @@ namespace api_slim.src.Repository
                     {"department", 1},
                     {"role", 1},
                     {"bond", 1},
+                    {"serviceModuleIds", 1},
+                    {"function", 1},
                     {"address", new BsonDocument
                         {
                             {"id", MongoUtil.ToString("$addressId")},

@@ -128,6 +128,9 @@ namespace api_slim.src.Models
         [BsonElement("extrasPoint")]
         public int ExtrasPoint { get; set; }
 
+        [BsonElement("sequenceCheckIn")]
+        public int SequenceCheckIn { get; set; }
+
         // ISO
         [BsonElement("chekinISOQuestion")]
         public string ChekinISOQuestion { get; set; } = string.Empty;

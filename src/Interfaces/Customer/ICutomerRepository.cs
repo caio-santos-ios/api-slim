@@ -7,6 +7,7 @@ namespace api_slim.src.Interfaces
 public interface ICustomerRepository
 {
     Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Customer> pagination);
+    Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Customer> pagination);
     Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
     Task<ResponseApi<Customer?>> GetByIdAsync(string id);
     Task<ResponseApi<Customer?>> GetByEmailAsync(string email);

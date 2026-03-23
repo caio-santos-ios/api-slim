@@ -15,7 +15,7 @@ using MongoDB.Bson;
 
 namespace api_slim.src.Services
 {
-    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository) : IAuthService
+    public class AuthService(IUserRepository userRepository, ICustomerRecipientRepository customerRecipientRepository, IPlanRepository planRepository, IServiceModuleRepository serviceModuleRepository, MailHandler mailHandler, ICustomerRepository customerRepository, IPermissionProfileRepository permissionProfileRepository) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -25,12 +25,11 @@ namespace api_slim.src.Services
                 if (string.IsNullOrEmpty(request.Email)) return new(null, 400, "E-mail é obrigatório");
                 
                 ResponseApi<User?> res = await userRepository.GetByEmailAsync(request.Email);
-
                 User? user = null;
+                string type = "Interno";
 
                 if(res.Data is null) 
                 {
-
                     ResponseApi<Customer?> customer = await customerRepository.GetByEmailAsync(request.Email);
                     if(customer.Data is not null) 
                     {
@@ -42,19 +41,25 @@ namespace api_slim.src.Services
                             Modules = [],
                             Photo = "",
                             Password = customer.Data.Password,
-                            Role = Enums.User.RoleEnum.Manager
+                            Role = Enums.User.RoleEnum.Manager,
+                            PermissionProfile = customer.Data.Id,
+                            ContractorId = customer.Data.Id
                         };
+
+                        type = "Externo";
                     }
                 }
                 else
                 {
                     user = res.Data!;
+                    type = res.Data.Type;
                 }
-
 
                 if(user is null) return new(null, 400, "Dados incorretos");
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if(!isValid) return new(null, 400, "Dados incorretos");
+
+                ResponseApi<PermissionProfile?> profile = await permissionProfileRepository.GetByIdAsync(user.PermissionProfile);
 
                 AuthResponse auth = new ()
                 {
@@ -65,7 +70,10 @@ namespace api_slim.src.Services
                     Admin = user.Admin, 
                     Modules = user.Modules, 
                     Photo = user.Photo,
-                    Role = user.Role.ToString()
+                    Role = user.Role.ToString(),
+                    PermissionProfileName = profile.Data is not null ? profile.Data.Name : "",
+                    ContractorId = user.ContractorId,
+                    Type = type
                 };
 
                 return new(auth);
@@ -179,8 +187,6 @@ namespace api_slim.src.Services
                 var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub || c.Type == ClaimTypes.NameIdentifier)?.Value;
                 
                 if (string.IsNullOrEmpty(userId)) return new(null, 401, "Usuário não encontrado no token.");
-                System.Console.WriteLine(tokenType);
-                System.Console.WriteLine(userId);
 
                 ResponseApi<User?> user = await userRepository.GetByIdAsync(userId);
                 if (user.Data is null) return new(null, 401, "Usuário não encontrado.");
@@ -363,6 +369,7 @@ namespace api_slim.src.Services
                 else 
                 {
                     ResponseApi<User?> user = await userRepository.GetByEmailAsync(request.Email);
+
                     Customer? authCustomer = null;
                     if(user.Data is null)
                     {
@@ -386,7 +393,6 @@ namespace api_slim.src.Services
                     if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
                     dynamic access = Util.GenerateCodeAccess();
-
                     if(user.Data.Role == Enums.User.RoleEnum.Manager)
                     {
                         if(authCustomer is not null)
@@ -394,9 +400,17 @@ namespace api_slim.src.Services
                             authCustomer.CodeAccess = access.CodeAccess;
                             authCustomer.CodeAccessExpiration = access.CodeAccessExpiration;
                             authCustomer.ValidatedAccess = false;
+
+                            user.Data.CodeAccess = access.CodeAccess;
+                            user.Data.CodeAccessExpiration = access.CodeAccessExpiration;
+                            user.Data.ValidatedAccess = false;
                         
                             ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
                             if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
+                        }
+                        else
+                        {
+                            return new(null, 400, "Falha ao redefinir senha");
                         }
                     }
                     else
@@ -454,46 +468,46 @@ namespace api_slim.src.Services
                     role = "user";
                 }
 
-                if(DateTime.UtcNow > codeAccessExpiration) 
+                if(codeAccessExpiration < DateTime.UtcNow) return new(null, 400, "Código já expirado");
+                
+                dynamic access = Util.GenerateCodeAccess();
+                string template = "";
+                
+                if(request.Equals("app"))
                 {
-                    dynamic access = Util.GenerateCodeAccess();
-                    string template = "";
-                    if(request.Equals("app"))
-                    {
-                        template = MailTemplate.ForgotPasswordApp($"/api/auth/reset-password?codeAccess={user.Data!.CodeAccess}");
-                    }
-                    else
-                    {
-                        template = MailTemplate.ForgotPasswordWeb(name, $"/api/auth/reset-password?codeAccess={codeAccess}");
-                    };
+                    template = MailTemplate.ForgotPasswordApp($"/api/auth/reset-password?codeAccess={user.Data!.CodeAccess}");
+                }
+                else
+                {
+                    template = MailTemplate.ForgotPasswordWeb(name, $"/api/auth/reset-password?codeAccess={codeAccess}");
+                };
 
-                    if(role == "manager")
+                if(role == "manager")
+                {
+                    if(authCustomer is not null) 
                     {
-                        if(authCustomer is not null) 
-                        {
-                            authCustomer.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-                            authCustomer.CodeAccess = "";
-                            authCustomer.CodeAccessExpiration = null;
-                            authCustomer.ValidatedAccess = true;
+                        authCustomer.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                        authCustomer.CodeAccess = "";
+                        authCustomer.CodeAccessExpiration = null;
+                        authCustomer.ValidatedAccess = true;
 
-                            ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
-                            if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
-                        }
+                        ResponseApi<Customer?> response = await customerRepository.UpdateAsync(authCustomer);
+                        if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
                     }
-                    else
+                }
+                else
+                {
+                    if(user.Data is not null)
                     {
-                        if(user.Data is not null)
-                        {
-                            user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-                            user.Data.CodeAccess = "";
-                            user.Data.CodeAccessExpiration = null;
-                            user.Data.ValidatedAccess = true;
+                        user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                        user.Data.CodeAccess = "";
+                        user.Data.CodeAccessExpiration = null;
+                        user.Data.ValidatedAccess = true;
 
-                            ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
-                            if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
-                        }
+                        ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                        if(!response.IsSuccess) return new(null, 400, "Falha ao redefinir senha");
                     }
-                } 
+                }
 
                 return new(null, 200, "Senha alterada com sucesso");
             }

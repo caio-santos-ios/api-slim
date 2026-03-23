@@ -3,6 +3,7 @@ using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
+using api_slim.src.Shared.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,6 +37,18 @@ namespace api_slim.src.Controllers
             if (request == null) return BadRequest("Dados inválidos.");
             request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             ResponseApi<Attachment?> response = await attachmentService.CreateAsync(request);
+
+            return StatusCode(response.StatusCode, new { response.Message });
+        }
+        
+        [Authorize]
+        [HttpPost("all")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateAll([FromForm] CreateAttachmentAllDTO request)
+        {
+            if (request == null) return BadRequest("Dados inválidos.");
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            ResponseApi<Attachment?> response = await attachmentService.CreateAllAsync(request);
 
             return StatusCode(response.StatusCode, new { response.Message });
         }

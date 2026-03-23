@@ -21,6 +21,14 @@ public class CustomerController(ICustomerService customerService) : ControllerBa
     }
     
     [Authorize]
+    [HttpGet("select")]
+    public async Task<IActionResult> GetSelect()
+    {
+        ResponseApi<List<dynamic>> response = await customerService.GetSelectAsync(new(Request.Query));
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetByIdAsync(string id)
     {

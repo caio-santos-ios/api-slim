@@ -19,10 +19,10 @@ namespace api_slim.src.Models
         public string CustomerName { get; set; } = string.Empty;
 
         [BsonElement("type")]
-        public string Type { get; set; } = string.Empty; // Inclusao | Exclusao | UpgradePrograma | DowngradePrograma
+        public string Type { get; set; } = string.Empty;
 
         [BsonElement("status")]
-        public string Status { get; set; } = "Pendente"; // Pendente | Processado | Erro
+        public string Status { get; set; } = "Pendente";
 
         [BsonElement("programId")]
         public string ProgramId { get; set; } = string.Empty;
@@ -39,11 +39,9 @@ namespace api_slim.src.Models
         [BsonElement("processedBy")]
         public string ProcessedBy { get; set; } = string.Empty;
 
-        // Para inclusão: dados do beneficiário
         [BsonElement("beneficiary")]
         public B2BBeneficiaryData? Beneficiary { get; set; }
 
-        // Para inclusão via arquivo
         [BsonElement("fileUrl")]
         public string FileUrl { get; set; } = string.Empty;
 
@@ -102,19 +100,23 @@ namespace api_slim.src.Models
         public string CustomerName { get; set; } = string.Empty;
 
         [BsonElement("referenceMonth")]
-        public int ReferenceMonth { get; set; } // 1..12
+        public int ReferenceMonth { get; set; }
 
         [BsonElement("referenceYear")]
         public int ReferenceYear { get; set; }
 
         [BsonElement("cycleStart")]
-        public DateTime CycleStart { get; set; } // dia 01
+        public DateTime CycleStart { get; set; }
 
         [BsonElement("cycleEnd")]
-        public DateTime CycleEnd { get; set; }   // dia 31
+        public DateTime CycleEnd { get; set; }
+
+        // ── NOVO: data de corte/fechamento (último dia do mês de referência) ──
+        [BsonElement("closingDate")]
+        public DateTime? ClosingDate { get; set; }
 
         [BsonElement("status")]
-        public string Status { get; set; } = "Aberta"; // Aberta | Fechada | Paga | Cancelada
+        public string Status { get; set; } = "Aberta";
 
         [BsonElement("totalAmount")]
         public decimal TotalAmount { get; set; }
@@ -165,7 +167,7 @@ namespace api_slim.src.Models
         public string CustomerName { get; set; } = string.Empty;
 
         [BsonElement("name")]
-        public string Name { get; set; } = string.Empty; // obrigatório nomear
+        public string Name { get; set; } = string.Empty;
 
         [BsonElement("fileUrl")]
         public string FileUrl { get; set; } = string.Empty;
@@ -174,7 +176,7 @@ namespace api_slim.src.Models
         public string FileName { get; set; } = string.Empty;
 
         [BsonElement("fileType")]
-        public string FileType { get; set; } = string.Empty; // Excel | PDF | JPEG
+        public string FileType { get; set; } = string.Empty;
 
         [BsonElement("fileSize")]
         public long FileSize { get; set; }

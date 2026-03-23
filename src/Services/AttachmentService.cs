@@ -91,6 +91,63 @@ namespace api_slim.src.Services
             return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
         }
     }
+    public async Task<ResponseApi<Attachment?>> CreateAllAsync(CreateAttachmentAllDTO request)
+    {
+        try
+        {
+            if(request.Files is null) return new(null, 400, "Arquivo é obrigatório.");
+
+            string webRoot = env.WebRootPath;
+
+            if (string.IsNullOrEmpty(webRoot))
+            {
+                webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            };
+
+            string uploadPath = Path.Combine(webRoot, "uploads", request.Parent);
+
+            if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+
+            Attachment attachment = _mapper.Map<Attachment>(request);
+            
+            foreach (IFormFile file in request.Files)
+            {    
+                attachment.Id = "";
+                ResponseApi<Attachment?> response = await attachmentRepository.CreateAsync(attachment);
+
+                string fileName = $"{Guid.NewGuid()}{Path.GetExtension(file!.FileName)}";
+                string filePath = Path.Combine(uploadPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                attachment.Uri = Path.Combine("uploads", request.Parent, fileName);
+                await attachmentRepository.UpdateAsync(attachment);
+
+                if(response.Data is null) return new(null, 400, "Falha ao criar Anexo.");
+
+                await logRepository.CreateAsync(new()
+                {   
+                    Action = "Criação",
+                    Collection = "attachment",
+                    Description = $"Criação Anexo {response.Data.Description}",
+                    CreatedBy = request.CreatedBy,
+                    Parent = response.Data.Parent,
+                    ParentId = response.Data.ParentId                 
+                });
+            }
+
+
+            return new(new (), 201, "Anexo criado com sucesso.");
+        }
+        catch(Exception ex)
+        { 
+            System.Console.WriteLine(ex.Message);
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+        }
+    }
     #endregion
     
     #region UPDATE

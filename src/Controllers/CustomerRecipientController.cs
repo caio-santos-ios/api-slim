@@ -83,19 +83,19 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     [HttpGet("manager-panel")]
     public async Task<IActionResult> GetManagerPanelAsync()
     {
-        var sanitizedDict = Request.Query
-        .Where(kvp => kvp.Value != "undefined" && !string.IsNullOrWhiteSpace(kvp.Value))
-        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        // var sanitizedDict = Request.Query
+        // .Where(kvp => kvp.Value != "undefined" && !string.IsNullOrWhiteSpace(kvp.Value))
+        // .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userId)) 
-        {
-            sanitizedDict["contractorId"] = new StringValues(userId);
-        }
+        // string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        // if (!string.IsNullOrEmpty(userId)) 
+        // {
+        //     sanitizedDict["contractorId"] = new StringValues(userId);
+        // }
 
-        QueryCollection newQuery = new(sanitizedDict);
+        // QueryCollection newQuery = new(sanitizedDict);
 
-        ResponseApi<List<dynamic>> response = await service.GetManagerPanelAsync(new(newQuery));
+        ResponseApi<List<dynamic>> response = await service.GetManagerPanelAsync(new(Request.Query));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
     
