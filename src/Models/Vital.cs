@@ -128,6 +128,9 @@ namespace api_slim.src.Models
         [BsonElement("extrasPoint")]
         public int ExtrasPoint { get; set; }
 
+        [BsonIgnore]
+        public int IesBaixoConsec { get; set; }
+
         [BsonElement("sequenceCheckIn")]
         public int SequenceCheckIn { get; set; }
 
