@@ -414,15 +414,43 @@ namespace api_slim.src.Services
             ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetManagerContractorIdAggregationAsync(pagination);
 
             DateTime today = DateTime.UtcNow;
-            ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(today.Date.Month);
+            DateTime firstDayOfCurrentMonth = new(today.Year, today.Month, 1);
+            DateTime lastDayOfLastMonth = firstDayOfCurrentMonth.AddDays(-1);
+
+            request.QueryParams.TryGetValue("contractorId", out string? contractorId);
+            if(!string.IsNullOrEmpty(contractorId))
+            {
+                ResponseApi<Customer?> customer = await customerRepository1.GetByIdAsync(contractorId);
+                if(customer.Data is not null)
+                {
+                    DateTime? date = customer.Data.EffectiveDate;
+                    if (date is not null)
+                    {
+                        DateTime dataCorrente = date.Value;
+                        
+                        DateTime dataLimite = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+                        while (new DateTime(dataCorrente.Year, dataCorrente.Month, 1).Date <= dataLimite.Date)
+                        {
+                            ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
+                            if(findInvoice is not null)
+                            {
+                            }
+                            dataCorrente = dataCorrente.AddMonths(1);
+                        }
+                    }
+                    System.Console.WriteLine(customer.Data.EffectiveDate);
+                }
+            }
+
+            ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
             if(invoiceMonth.Data is null)
             {
-                request.QueryParams.TryGetValue("contractorId", out string? contractorId);
 
                 ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
                 if(list.Data is not null)
                 {
-                    int count = list.Data.Where(x => x.Active).ToList().Count;
+                    int activeRecipients = list.Data.Where(x => x.Active).Count();
                     decimal total = 0;
                     foreach (CustomerRecipient item in list.Data)
                     {
@@ -436,18 +464,20 @@ namespace api_slim.src.Services
                         }
                     }
 
-                    await b2BInvoiceRepository.CreateAsync(new ()
+                    await b2BInvoiceRepository.CreateAsync(new()
                     {
                         CustomerId = contractorId!,
-                        ReferenceMonth = today.Date.AddMonths(-1).Month,
-                        ReferenceYear = today.Date.Year,
-                        CycleStart = today.Date.AddMonths(-1),
-                        CycleEnd = today.Date,
+                        ReferenceMonth = lastDayOfLastMonth.Month,
+                        ReferenceYear = lastDayOfLastMonth.Year,
+                        CycleStart = new DateTime(lastDayOfLastMonth.Year, lastDayOfLastMonth.Month, 1),
+                        CycleEnd = lastDayOfLastMonth,
                         TotalAmount = total,
-                        BeneficiaryCount = count,
-                        DueDate = today.Date.AddMonths(-1).AddDays(3),
+                        BeneficiaryCount = activeRecipients,
+                        DueDate = lastDayOfLastMonth.AddDays(3),
                         Items = [],
-                        Status = "Fechada"
+                        Status = "Fechada",
+                        ClosingDate = lastDayOfLastMonth,
+                        CreatedAt = lastDayOfLastMonth
                     });
                 }
             }

@@ -6,6 +6,7 @@ using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
+using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
 
 namespace api_slim.src.Services
@@ -32,7 +33,6 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        
         public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
             try
@@ -63,7 +63,7 @@ namespace api_slim.src.Services
                 {
                     decimal metaAgua = CalcularMetaAgua(customer.Data.Weight);
                     
-                    if(vitalWeek.Data is not null)
+                    if(vitalWeek.Data is not null && metaAgua > 0)
                     {
                         foreach (var item in vitalWeek.Data)
                         {
@@ -98,8 +98,9 @@ namespace api_slim.src.Services
 
                 return new(list);
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -153,6 +154,9 @@ namespace api_slim.src.Services
                 double dass8 = 0;
                 double dass9 = 0;
                 int qtd = 0;
+                int qtdIGS = 0;
+                int qtdIGN = 0;
+                int qtdIES = 0;
 
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
@@ -306,7 +310,7 @@ namespace api_slim.src.Services
                             IGS = qtd == 0 ? 0 : Math.Round(IGS / qtd), 
                             IGN = qtd == 0 ? 0 : Math.Round(IGN / qtd), 
                             IES = qtd == 0 ? 0 : Math.Round(IES / qtd), 
-                            IPV = qtd == 0 ? 0 : Math.Round(IPV / qtd)
+                            IPV = qtd == 0 ? 0 : Math.Round(IPV / qtd),
                         },
                     Dass1 = dass1 > 0 ? (int)dass1 / qtd : 0,
                     Dass2 = dass2 > 0 ? (int)dass2 / qtd : 0,
@@ -343,6 +347,20 @@ namespace api_slim.src.Services
                 if(vitalsLast.Data is not null)
                 {
                     vital.ExtrasPoint = 1;
+
+                    ResponseApi<Vital?> lastVital = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, DateTime.UtcNow.AddDays(-1));
+                    if(lastVital.Data is not null) 
+                    {
+                        vital.SequenceCheckIn += lastVital.Data.SequenceCheckIn;
+                    }
+                    else
+                    {
+                        vital.SequenceCheckIn = 1;
+                    }
+                }
+                else
+                {
+                    vital.SequenceCheckIn = 0;
                 }
 
                 int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
@@ -473,6 +491,8 @@ namespace api_slim.src.Services
         #region  FUNCTIONS
         public double CalcularIGS(Vital vital, string patrology)
         {
+            if(!vital.ChekinIGS) return 0;
+
             double scoreDts = vital.SleepHours >= 8 ? 100 : (vital.SleepHours / 8.0) * 100;
 
             double scoreEs = (vital.SleepQuality / 5.0) * 100;
@@ -485,6 +505,8 @@ namespace api_slim.src.Services
 
         public double CalcularIGN(Vital vital, decimal metaHidratacao, string patrology)
         {
+            if(!vital.ChekinIGN) return 0;
+
             double scoreP1 = 100; 
             if (!string.IsNullOrEmpty(vital.LastMeal)) {
                 TimeSpan.TryParse(vital.LastMeal, out var lastMealTime);
@@ -510,20 +532,7 @@ namespace api_slim.src.Services
 
         public double CalcularIES(Vital vital, string patrology)
         {
-            // double scoreP1 = vital.Mood.ToLower() switch {
-            //     "excelente" => 100,
-            //     "bom" => 80,
-            //     "estável" => 70,
-            //     "ruim" => 30,
-            //     _ => 50
-            // };
-
-            // double scoreP2 = (double)(10 - vital.Stress) * 10;
-
-            // double scoreP3 = vital.Decompression.ToLower() == "sim" ? 100 : 0;
-
-            // return (scoreP1 * 0.4) + (scoreP2 * 0.4) + (scoreP3 * 0.2);
-
+            if(!vital.ChekinIES) return 0;
             int somaDass = vital.Dass1 + vital.Dass2 + vital.Dass3 + 
                             vital.Dass4 + vital.Dass5 + vital.Dass6 + 
                             vital.Dass7 + vital.Dass8 + vital.Dass9;

@@ -20,7 +20,7 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            //await ProcessPushJobsAsync();
+            await ProcessPushJobsAsync();
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
@@ -34,8 +34,10 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
         var recipients = await context.CustomerRecipients
             .Find(c => !c.Deleted
                     && c.Active
-                    && c.SubNotification != null)
+                    && c.SubNotification != null && c.SubNotification.UserId != "")
             .ToListAsync();
+
+        Customer? customer = await context.Customers.Find(x => !x.Deleted).FirstOrDefaultAsync();
 
         var current     = TimeOnly.FromDateTime(DateTime.UtcNow);
         var today      = DateTime.UtcNow.Date;
@@ -86,6 +88,27 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 Type = "NotificationApp",
                                 Link = "/aplicativo/home/check-in/"
                             });
+
+                            if(customer.Type == "B2B")
+                            {
+                                await context.NotificationJobs.InsertOneAsync(new () 
+                                {
+                                    BeneficiaryCPF = recipient.Cpf,
+                                    BeneficiaryId = recipient.Id,
+                                    BeneficiaryName = recipient.Name,
+                                    Title = "Micro Checkin ISO",
+                                    Message = "Registre seu checkin ocupacional do dia.",
+                                    Origin = "Vital",
+                                    Parent = "ISO",
+                                    ParentId = recipient.Id,
+                                    Phone = recipient.Whatsapp,
+                                    Read = false,
+                                    Sent = true,
+                                    SendDate = DateTime.UtcNow.AddMinutes(60),
+                                    Type = "NotificationApp",
+                                    Link = "/aplicativo/home/check-in-iso/"
+                                });
+                            }
                         }
                     }
                     continue; 
@@ -149,25 +172,34 @@ public class WebPushWorker(IServiceProvider serviceProvider, ILogger<WebPushWork
                                 SendDate = DateTime.UtcNow,
                                 Type = "NotificationApp",
                                 Link = "/aplicativo/home/check-in/"
-                            },
-                            new () 
-                            {
-                                BeneficiaryCPF = recipient.Cpf,
-                                BeneficiaryId = recipient.Id,
-                                BeneficiaryName = recipient.Name,
-                                Title = "Micro Checkin ISO",
-                                Message = "Registre seu checkin ocupacional do dia.",
-                                Origin = "Vital",
-                                Parent = "ISO",
-                                ParentId = recipient.Id,
-                                Phone = recipient.Whatsapp,
-                                Read = false,
-                                Sent = true,
-                                SendDate = DateTime.UtcNow.AddMinutes(60),
-                                Type = "NotificationApp",
-                                Link = "/aplicativo/home/check-in-iso/"
                             }
                         ]);
+
+                        if(customer.Type == "B2B")
+                        {
+                            Vital? vital = await context.Vitals.Find(x => !x.Deleted && x.BeneficiaryId == recipient.Id && !x.ChekinISO).FirstOrDefaultAsync();
+                            
+                            if(vital is not null) 
+                            {
+                                await context.NotificationJobs.InsertOneAsync(new () 
+                                {
+                                    BeneficiaryCPF = recipient.Cpf,
+                                    BeneficiaryId = recipient.Id,
+                                    BeneficiaryName = recipient.Name,
+                                    Title = "Micro Checkin ISO",
+                                    Message = "Registre seu checkin ocupacional do dia.",
+                                    Origin = "Vital",
+                                    Parent = "ISO",
+                                    ParentId = recipient.Id,
+                                    Phone = recipient.Whatsapp,
+                                    Read = false,
+                                    Sent = true,
+                                    SendDate = DateTime.UtcNow.AddMinutes(60),
+                                    Type = "NotificationApp",
+                                    Link = "/aplicativo/home/check-in-iso/"
+                                });
+                            }
+                        }
                     }
                 }
             }

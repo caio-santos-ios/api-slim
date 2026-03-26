@@ -12,29 +12,35 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class CustomerController(ICustomerService customerService) : ControllerBase
     {
-        [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            PaginationApi<List<dynamic>> response = await customerService.GetAllAsync(new(Request.Query));
-            return StatusCode(response.StatusCode, new { response.Message, response.Result });
-        }
-        
-        [Authorize]
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetByIdAsync(string id)
-        {
-            ResponseApi<dynamic?> response = await customerService.GetByIdAggregateAsync(id);
-            return StatusCode(response.StatusCode, new { response.Message, response.Result });
-        }
-        
-        [Authorize]
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateCustomerDTO customer)
-        {
-            if (customer == null) return BadRequest("Dados inválidos.");
-            customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-            ResponseApi<Customer?> response = await customerService.CreateAsync(customer);
+    public async Task<IActionResult> GetAll()
+    {
+        PaginationApi<List<dynamic>> response = await customerService.GetAllAsync(new(Request.Query));
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
+    [HttpGet("select")]
+    public async Task<IActionResult> GetSelect()
+    {
+        ResponseApi<List<dynamic>> response = await customerService.GetSelectAsync(new(Request.Query));
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetByIdAsync(string id)
+    {
+        ResponseApi<dynamic?> response = await customerService.GetByIdAggregateAsync(id);
+        return StatusCode(response.StatusCode, new { response.Message, response.Result });
+    }
+    
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateCustomerDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        ResponseApi<Customer?> response = await customerService.CreateAsync(customer);
 
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }

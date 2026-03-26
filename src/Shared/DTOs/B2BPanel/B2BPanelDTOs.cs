@@ -36,7 +36,15 @@ namespace api_slim.src.Shared.DTOs
         public decimal TotalAmount { get; set; }
         public int BeneficiaryCount { get; set; }
         public DateTime? DueDate { get; set; }
+        // ClosingDate é calculado automaticamente: último dia do mês de referência
         public List<B2BInvoiceItem> Items { get; set; } = [];
+
+        /// <summary>Retorna o último dia do mês de referência.</summary>
+        public DateTime GetClosingDate()
+        {
+            int lastDay = DateTime.DaysInMonth(ReferenceYear, ReferenceMonth);
+            return new DateTime(ReferenceYear, ReferenceMonth, lastDay);
+        }
     }
 
     public class UpdateB2BInvoiceDTO : Request
