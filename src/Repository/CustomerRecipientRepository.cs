@@ -219,7 +219,8 @@ namespace api_slim.src.Repository
                     {"name", 1},
                     {"createdAt", 1},
                     {"rapidocId", 1},
-                    {"cpf", 1}
+                    {"cpf", 1},
+                    {"bond", 1}
                 }),
                 new("$sort", pagination.PipelineSort),
             };
