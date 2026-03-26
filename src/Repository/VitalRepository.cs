@@ -297,6 +297,24 @@ List<Vital> vitals = await context.Vitals
         }
     }
     
+    // Pauta 11+12: busca vitais dos últimos N dias para calcular IES consecutivo baixo
+    public async Task<ResponseApi<List<Vital>>> GetRecentByBeneficiaryAsync(string beneficiaryId, int days)
+    {
+        try
+        {
+            DateTime desde = DateTime.UtcNow.Date.AddDays(-(days - 1));
+            List<Vital> vitals = await context.Vitals
+                .Find(x => x.BeneficiaryId == beneficiaryId && x.CreatedAt >= desde && !x.Deleted)
+                .SortByDescending(x => x.CreatedAt)
+                .ToListAsync();
+            return new(vitals);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Item");
+        }
+    }
+
     public async Task<int> GetCountDocumentsAsync(PaginationUtil<Vital> pagination)
     {
         List<BsonDocument> pipeline = new()

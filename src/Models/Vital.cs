@@ -128,6 +128,10 @@ namespace api_slim.src.Models
         [BsonElement("extrasPoint")]
         public int ExtrasPoint { get; set; }
 
+        // Pauta 11+12: campo calculado (não persistido) — dias consecutivos com IES < 50
+        [BsonIgnore]
+        public int IesBaixoConsec { get; set; }
+
         // ISO
         [BsonElement("chekinISOQuestion")]
         public string ChekinISOQuestion { get; set; } = string.Empty;
