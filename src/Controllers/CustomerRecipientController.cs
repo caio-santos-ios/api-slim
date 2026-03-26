@@ -83,18 +83,6 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     [HttpGet("manager-panel")]
     public async Task<IActionResult> GetManagerPanelAsync()
     {
-        // var sanitizedDict = Request.Query
-        // .Where(kvp => kvp.Value != "undefined" && !string.IsNullOrWhiteSpace(kvp.Value))
-        // .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-        // string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        // if (!string.IsNullOrEmpty(userId)) 
-        // {
-        //     sanitizedDict["contractorId"] = new StringValues(userId);
-        // }
-
-        // QueryCollection newQuery = new(sanitizedDict);
-
         ResponseApi<List<dynamic>> response = await service.GetManagerPanelAsync(new(Request.Query));
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }
@@ -111,7 +99,7 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         return StatusCode(response.StatusCode, new { response.Message });
     }
     
-    // [Authorize]
+    [Authorize]
     [HttpPost("email")]
     public async Task<IActionResult> Email([FromBody] CreateCustomerRecipientDTO customer)
     {

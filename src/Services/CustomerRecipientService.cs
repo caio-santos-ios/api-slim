@@ -412,14 +412,12 @@ namespace api_slim.src.Services
         {
             PaginationUtil<CustomerRecipient> pagination = new(request.QueryParams);
             ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetManagerContractorIdAggregationAsync(pagination);
-            // ResponseApi<Customer?> 
 
             DateTime today = DateTime.UtcNow;
             DateTime firstDayOfCurrentMonth = new(today.Year, today.Month, 1);
             DateTime lastDayOfLastMonth = firstDayOfCurrentMonth.AddDays(-1);
 
             request.QueryParams.TryGetValue("contractorId", out string? contractorId);
-            System.Console.WriteLine(contractorId);
             if(!string.IsNullOrEmpty(contractorId))
             {
                 ResponseApi<Customer?> customer = await customerRepository1.GetByIdAsync(contractorId);
@@ -429,17 +427,14 @@ namespace api_slim.src.Services
                     if (date is not null)
                     {
                         DateTime dataCorrente = date.Value;
-                        System.Console.WriteLine(dataCorrente.Date);
                         
                         DateTime dataLimite = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
                         while (new DateTime(dataCorrente.Year, dataCorrente.Month, 1).Date <= dataLimite.Date)
                         {
-                            Console.WriteLine($"Processando competência: {dataCorrente.ToString("MM/yyyy")}");
                             ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
                             if(findInvoice is not null)
                             {
-                                System.Console.WriteLine("cria invoice");
                             }
                             dataCorrente = dataCorrente.AddMonths(1);
                         }
