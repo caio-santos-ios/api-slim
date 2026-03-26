@@ -154,9 +154,6 @@ namespace api_slim.src.Services
                 double dass8 = 0;
                 double dass9 = 0;
                 int qtd = 0;
-                int qtdIGS = 0;
-                int qtdIGN = 0;
-                int qtdIES = 0;
 
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
