@@ -152,6 +152,9 @@ namespace api_slim.src.Models
 
         [BsonElement("IESNotification")]
         public DateTime IESNotification { get; set; }
+
+        [BsonElement("bondId")]
+        public string BondId { get; set; } = string.Empty;
     }
 
     public class Dass 

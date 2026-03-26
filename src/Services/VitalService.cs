@@ -318,6 +318,8 @@ namespace api_slim.src.Services
                     Dass7 = dass7 > 0 ? (int)dass7 / qtd : 0,
                     Dass8 = dass8 > 0 ? (int)dass8 / qtd : 0,
                     Dass9 = dass9 > 0 ? (int)dass9 / qtd : 0,
+                    // Pauta 11+12: calcular dias consecutivos com IES < 50
+                    IesBaixoConsec = await CalcularIesBaixoConsecAsync(beneficiaryId, customer.Data.Patrology, CalcularMetaAgua(customer.Data.Weight)),
                 });
             }
             catch
@@ -636,6 +638,46 @@ namespace api_slim.src.Services
             if(points >= 0 && points <= 1000) return 1;
             if(points > 1000 && points <= 2000) return 2;
             return 3;
+        }
+
+        // Pauta 11+12: calcula quantos dias consecutivos recentes o IES ficou abaixo de 50
+        private async Task<int> CalcularIesBaixoConsecAsync(string beneficiaryId, string patrology, decimal metaAgua)
+        {
+            // Busca vitais dos últimos 7 dias (suficiente para detectar 2 ou 3 dias consecutivos)
+            ResponseApi<List<Vital>> recentes = await vitalRepository.GetRecentByBeneficiaryAsync(beneficiaryId, 7);
+            if (recentes.Data is null || recentes.Data.Count == 0) return 0;
+
+            // Agrupa por dia (pode haver mais de 1 check-in/dia), pega IES médio por dia
+            var porDia = recentes.Data
+                .GroupBy(v => v.CreatedAt.Date)
+                .OrderByDescending(g => g.Key)
+                .Select(g => new {
+                    Date = g.Key,
+                    IES  = g.Average(v => CalcularIES(v, patrology))
+                })
+                .ToList();
+
+            // Conta quantos dias consecutivos (a partir de hoje/ontem) o IES ficou abaixo de 50
+            int consecutivos = 0;
+            DateTime referencia = DateTime.UtcNow.Date;
+
+            foreach (var dia in porDia)
+            {
+                // Aceita o dia de hoje ou dias imediatamente anteriores na sequência
+                int diff = (referencia - dia.Date).Days;
+                if (diff > 1) break; // quebrou a sequência
+                if (dia.IES < 50)
+                {
+                    consecutivos++;
+                    referencia = dia.Date;
+                }
+                else
+                {
+                    break; // sequência interrompida
+                }
+            }
+
+            return consecutivos;
         }
         #endregion
     }

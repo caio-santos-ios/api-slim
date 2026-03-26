@@ -43,5 +43,6 @@ namespace api_slim.src.Shared.DTOs
                 public string CatNumber { get; set; } = string.Empty;
                 public string CatCID { get; set; } = string.Empty;
                 public DateTime CatDate { get; set; }
+                public string BondId { get; set; } = string.Empty;
         }
 }
