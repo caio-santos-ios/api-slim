@@ -11,7 +11,9 @@ namespace api_slim.src.Controllers
     [Route("api/customers")]
     [ApiController]
     public class CustomerController(ICustomerService customerService) : ControllerBase
-    {
+{
+    [Authorize]
+    [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         PaginationApi<List<dynamic>> response = await customerService.GetAllAsync(new(Request.Query));

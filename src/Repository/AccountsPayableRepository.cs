@@ -189,7 +189,7 @@ namespace api_slim.src.Repository
                     {
                         {"_id", 0},
                     }),
-                ];
+                 ];
 
                 BsonDocument? response = await context.AccountsPayables.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
                 dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
@@ -315,3 +315,4 @@ namespace api_slim.src.Repository
         #endregion
     }
 }
+

@@ -195,6 +195,15 @@ namespace api_slim.src.Repository
             }
             catch { return new(null, 500, "Falha ao criar Fatura"); }
         }
+        public async Task<bool> ExistsAsync(int referenceMonth, int referenceYear, string customerId)
+        {
+            return await context.B2BInvoices
+                .Find(x => x.ReferenceMonth == referenceMonth
+                        && x.ReferenceYear == referenceYear
+                        && x.CustomerId == customerId
+                        && !x.Deleted)
+                .AnyAsync();
+        }
         #endregion
 
         #region UPDATE
