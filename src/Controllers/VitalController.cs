@@ -21,6 +21,14 @@ namespace api_slim.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("sync")]
+        public async Task<IActionResult> SyncVitals()
+        {
+            ResponseApi<dynamic?> response = await service.SyncVitalsAsync();
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {

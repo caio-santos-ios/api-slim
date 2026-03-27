@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -27,6 +26,35 @@ namespace api_slim.src.Services
                 ResponseApi<List<dynamic>> vitals = await vitalRepository.GetAllAsync(pagination);
                 int count = await vitalRepository.GetCountDocumentsAsync(pagination);
                 return new(vitals.Data, count, pagination.PageNumber, pagination.PageSize);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> SyncVitalsAsync()
+        {
+            try
+            {
+                ResponseApi<List<CustomerRecipient>> recipients = await customerRecipientRepository.GetAsync();
+                if(recipients.Data is not null)
+                {
+                    foreach (CustomerRecipient recipient in recipients.Data)
+                    {
+                        if(recipient.Cpf != "086.306.285-70") continue;
+
+                        ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(recipient.Id);
+
+                        if(vitals.Data is not null)
+                        {
+                            foreach (Vital vital in vitals.Data)
+                            {
+                                System.Console.WriteLine($"{vital.CreatedAt.ToString("dd/MM/yyyy")} - IGS: {vital.ChekinIGS} {vital.ChekinIGSPoint} - IGN: {vital.ChekinIGN} {vital.ChekinIGNPoint} - IES: {vital.ChekinIES} {vital.ChekinIGSPoint}");
+                            }
+                        }
+                    }
+                }
+                return new(null, 200, "Sincronizado com sucesso");
             }
             catch
             {

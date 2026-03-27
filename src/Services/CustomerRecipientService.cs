@@ -179,9 +179,9 @@ namespace api_slim.src.Services
 
             return new(customer.Data);
         }
-        catch(Exception ex)
+        catch
         {
-            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
         }
     }
     public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
@@ -356,7 +356,7 @@ namespace api_slim.src.Services
                                 var responseRapidoc = await client.SendAsync(requestRapidocPost);
                                 string jsonResponsePost = await responseRapidoc.Content.ReadAsStringAsync();
                                 dynamic? resultPost = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponsePost);
-                                Util.ConsoleLog(resultPost);
+
                                 if(resultPost is not null)
                                 {
                                     if(resultPost.success == "true")
@@ -439,7 +439,6 @@ namespace api_slim.src.Services
                             dataCorrente = dataCorrente.AddMonths(1);
                         }
                     }
-                    System.Console.WriteLine(customer.Data.EffectiveDate);
                 }
             }
 
@@ -988,12 +987,6 @@ namespace api_slim.src.Services
             var responseRapidoc = await client.SendAsync(requestRapidoc);
 
             await responseRapidoc.Content.ReadAsStringAsync();
-            // string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
-            // dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-            // Util.ConsoleLog(result);
-            // var response = await client.SendAsync(requestHeader);
-            // responseRapidoc.EnsureSuccessStatusCode();
-            // Console.WriteLine(await responseRapidoc.Content.ReadAsStringAsync());
 
 ResponseApi<Address?> existingAddress = await addressRepository.GetByParentIdAsync(response.Data!.Id, "customer-recipient");
 
@@ -1032,9 +1025,8 @@ else
             
             return new(response.Data, 201, "Atualizado com sucesso");
         }
-        catch(Exception ex)
+        catch
         {
-            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
@@ -1443,9 +1435,8 @@ else
             
             return new(null, 200, "Alterado com sucesso");
         }
-        catch(Exception ex)
+        catch
         {
-            System.Console.WriteLine(ex.Message);
             return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }

@@ -197,7 +197,9 @@ namespace api_slim.src.Services
             if(customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
             {
                 dynamic access = Util.GenerateCodeAccess();
+                System.Console.WriteLine(access.CodeAccess);
                 customerResponse.Data.Password = BCrypt.Net.BCrypt.HashPassword(access.CodeAccess);
+                System.Console.WriteLine(customerResponse.Data.Password);
                 
                 var response = await customerRepository.UpdateAsync(customerResponse.Data);
 
