@@ -414,72 +414,104 @@ namespace api_slim.src.Services
             ResponseApi<List<dynamic>> customerRecipient = await customerRepository.GetManagerContractorIdAggregationAsync(pagination);
 
             DateTime today = DateTime.UtcNow;
-            DateTime firstDayOfCurrentMonth = new(today.Year, today.Month, 1);
-            DateTime lastDayOfLastMonth = firstDayOfCurrentMonth.AddDays(-1);
+            DateTime currentMonthStart = new(today.Year, today.Month, 1);
 
             request.QueryParams.TryGetValue("contractorId", out string? contractorId);
-            if(!string.IsNullOrEmpty(contractorId))
+            if (!string.IsNullOrEmpty(contractorId))
             {
                 ResponseApi<Customer?> customer = await customerRepository1.GetByIdAsync(contractorId);
-                if(customer.Data is not null)
+                if (customer.Data is not null)
                 {
-                    DateTime? date = customer.Data.EffectiveDate;
-                    if (date is not null)
+                    DateTime? effectiveDate = customer.Data.EffectiveDate;
+                    if (effectiveDate is not null)
                     {
-                        DateTime dataCorrente = date.Value;
-                        
-                        DateTime dataLimite = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                        DateTime dataCorrente = new(effectiveDate.Value.Year, effectiveDate.Value.Month, 1);
 
-                        while (new DateTime(dataCorrente.Year, dataCorrente.Month, 1).Date <= dataLimite.Date)
+                        while (dataCorrente <= currentMonthStart)
                         {
-                            ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
-                            if(findInvoice is not null)
+                            bool isCurrentMonth = dataCorrente.Year == today.Year && dataCorrente.Month == today.Month;
+
+                            DateTime lastDayOfMonth = new DateTime(dataCorrente.Year, dataCorrente.Month, 1).AddMonths(1).AddDays(-1);
+
+                            string status = isCurrentMonth ? "Em Aberto" : "Fechada";
+
+                            ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(dataCorrente.Month, dataCorrente.Year);
+
+                            if (findInvoice?.Data is null)
                             {
+                                B2BInvoice newInvoice = new()
+                                {
+                                    CustomerId       = contractorId!,
+                                    ReferenceMonth   = dataCorrente.Month,
+                                    ReferenceYear    = dataCorrente.Year,
+                                    CycleStart       = dataCorrente,
+                                    CycleEnd         = isCurrentMonth ? null : lastDayOfMonth,
+                                    DueDate          = isCurrentMonth ? null : lastDayOfMonth.AddDays(3),
+                                    ClosingDate      = isCurrentMonth ? null : lastDayOfMonth,
+                                    Status           = status,
+                                    TotalAmount      = 0,       
+                                    BeneficiaryCount = 0,       
+                                    Items            = [],
+                                    CreatedAt        = dataCorrente,
+                                };
+
+                                await b2BInvoiceRepository.CreateAsync(newInvoice);
                             }
+                            else if (findInvoice.Data.Status != status)
+                            {
+                                // Dia 1: fecha o mês anterior que estava "Em Aberto"
+                                findInvoice.Data.Status      = "Fechada";
+                                findInvoice.Data.CycleEnd    = lastDayOfMonth;
+                                findInvoice.Data.DueDate     = lastDayOfMonth.AddDays(3);
+                                findInvoice.Data.ClosingDate = lastDayOfMonth;
+
+                                await b2BInvoiceRepository.UpdateAsync(findInvoice.Data);
+                            }
+
                             dataCorrente = dataCorrente.AddMonths(1);
                         }
                     }
                 }
             }
 
-            ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
-            if(invoiceMonth.Data is null)
-            {
+            // ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
+            // if(invoiceMonth.Data is null)
+            // {
 
-                ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
-                if(list.Data is not null)
-                {
-                    int activeRecipients = list.Data.Where(x => x.Active).Count();
-                    decimal total = 0;
-                    foreach (CustomerRecipient item in list.Data)
-                    {
-                        if(!item.Active) continue;
+            //     ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
+            //     if(list.Data is not null)
+            //     {
+            //         int activeRecipients = list.Data.Where(x => x.Active).Count();
+            //         decimal total = 0;
+            //         foreach (CustomerRecipient item in list.Data)
+            //         {
+            //             if(!item.Active) continue;
 
-                        ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(item.PlanId);
+            //             ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(item.PlanId);
 
-                        if(plan.Data is not null)
-                        {
-                            total += plan.Data.Price;
-                        }
-                    }
+            //             if(plan.Data is not null)
+            //             {
+            //                 total += plan.Data.Price;
+            //             }
+            //         }
 
-                    await b2BInvoiceRepository.CreateAsync(new()
-                    {
-                        CustomerId = contractorId!,
-                        ReferenceMonth = lastDayOfLastMonth.Month,
-                        ReferenceYear = lastDayOfLastMonth.Year,
-                        CycleStart = new DateTime(lastDayOfLastMonth.Year, lastDayOfLastMonth.Month, 1),
-                        CycleEnd = lastDayOfLastMonth,
-                        TotalAmount = total,
-                        BeneficiaryCount = activeRecipients,
-                        DueDate = lastDayOfLastMonth.AddDays(3),
-                        Items = [],
-                        Status = "Fechada",
-                        ClosingDate = lastDayOfLastMonth,
-                        CreatedAt = lastDayOfLastMonth
-                    });
-                }
-            }
+            //         await b2BInvoiceRepository.CreateAsync(new()
+            //         {
+            //             CustomerId = contractorId!,
+            //             ReferenceMonth = lastDayOfLastMonth.Month,
+            //             ReferenceYear = lastDayOfLastMonth.Year,
+            //             CycleStart = new DateTime(lastDayOfLastMonth.Year, lastDayOfLastMonth.Month, 1),
+            //             CycleEnd = lastDayOfLastMonth,
+            //             TotalAmount = total,
+            //             BeneficiaryCount = activeRecipients,
+            //             DueDate = lastDayOfLastMonth.AddDays(3),
+            //             Items = [],
+            //             Status = "Fechada",
+            //             ClosingDate = lastDayOfLastMonth,
+            //             CreatedAt = lastDayOfLastMonth
+            //         });
+            //     }
+            // }
 
             return new(customerRecipient.Data);
         }
