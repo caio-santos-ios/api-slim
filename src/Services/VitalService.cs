@@ -47,9 +47,39 @@ namespace api_slim.src.Services
 
                         if(vitals.Data is not null)
                         {
+                            DateTime? lasteDate = null;
                             foreach (Vital vital in vitals.Data)
                             {
-                                System.Console.WriteLine($"{vital.CreatedAt.ToString("dd/MM/yyyy")} - IGS: {vital.ChekinIGS} {vital.ChekinIGSPoint} - IGN: {vital.ChekinIGN} {vital.ChekinIGNPoint} - IES: {vital.ChekinIES} {vital.ChekinIGSPoint}");
+
+
+                                // sequence
+                                if(lasteDate is null)
+                                {
+                                    lasteDate = vital.CreatedAt.Date;
+                                } 
+                                else
+                                {
+                                    var diferenca = vital.CreatedAt.Date - lasteDate;
+
+                                    if (diferenca.HasValue && diferenca.Value.Days == 1)
+                                    {
+                                        // Sua lógica de sequência
+                                        System.Console.WriteLine(vital.CreatedAt.ToString("dd/MM/yyyy"));
+
+                                        vital.ExtrasPoint = 1;
+                                        vital.SequenceCheckIn =+ 1;
+                                    }
+                                    else
+                                    {
+                                        // Lógica para quando a sequência é quebrada
+                                        vital.SequenceCheckIn = 0;
+                                        System.Console.WriteLine("Sequência quebrada");
+                                    }
+
+                                    lasteDate = vital.CreatedAt.Date;
+
+                                    await vitalRepository.UpdateAsync(vital);
+                                }
                             }
                         }
                     }
@@ -444,14 +474,21 @@ namespace api_slim.src.Services
 
                 if(vitalsLast.Data is not null)
                 {
-                    if(!vitalResponse.Data.ChekinIGS) 
+                    vitalResponse.Data.ExtrasPoint = 1;
+
+                    ResponseApi<Vital?> lastVital = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, DateTime.UtcNow.AddDays(-1));
+                    if(lastVital.Data is not null) 
                     {
-                        vitalResponse.Data.ExtrasPoint = 3;
+                        vitalResponse.Data.SequenceCheckIn += lastVital.Data.SequenceCheckIn;
                     }
-                    else 
+                    else
                     {
-                        vitalResponse.Data.ExtrasPoint += 2;
+                        vitalResponse.Data.SequenceCheckIn = 1;
                     }
+                }
+                else
+                {
+                    vitalResponse.Data.SequenceCheckIn = 0;
                 }
 
                 int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
