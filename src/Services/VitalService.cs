@@ -64,8 +64,6 @@ namespace api_slim.src.Services
                                     if (diferenca.HasValue && diferenca.Value.Days == 1)
                                     {
                                         // Sua lógica de sequência
-                                        System.Console.WriteLine(vital.CreatedAt.ToString("dd/MM/yyyy"));
-
                                         vital.ExtrasPoint = 1;
                                         vital.SequenceCheckIn =+ 1;
                                     }
@@ -73,7 +71,6 @@ namespace api_slim.src.Services
                                     {
                                         // Lógica para quando a sequência é quebrada
                                         vital.SequenceCheckIn = 0;
-                                        System.Console.WriteLine("Sequência quebrada");
                                     }
 
                                     lasteDate = vital.CreatedAt.Date;
