@@ -124,6 +124,16 @@ namespace api_slim.src.Services
         {
             try
             {
+                bool exists = await repository.ExistsAsync(
+                request.ReferenceMonth,
+                request.ReferenceYear,
+                request.CustomerId
+        );
+
+        if (exists)
+        {
+            return new(null, 200, "Fatura já existente.");
+        }
                 B2BInvoice entity = _mapper.Map<B2BInvoice>(request);
                 // ── Auto-calcula closingDate: último dia do mês de referência ──
                 entity.ClosingDate = request.GetClosingDate();
@@ -212,7 +222,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                B2BAttachment entity = _mapper.Map<B2BAttachment>(request);
+              B2BAttachment entity = _mapper.Map<B2BAttachment>(request);
                 entity.CreatedAt = DateTime.Now;
                 entity.UpdatedAt = DateTime.Now;
 

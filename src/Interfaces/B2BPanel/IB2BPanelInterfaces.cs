@@ -46,6 +46,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<B2BInvoice?>> CreateAsync(B2BInvoice entity);
         Task<ResponseApi<B2BInvoice?>> UpdateAsync(B2BInvoice entity);
         Task<ResponseApi<B2BInvoice>> DeleteAsync(string id);
+         Task<bool> ExistsAsync(int referenceMonth, int referenceYear, string customerId);
     }
 
     // ─── Attachment ──────────────────────────────────────────────────────────────
