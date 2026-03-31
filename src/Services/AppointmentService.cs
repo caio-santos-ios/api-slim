@@ -287,67 +287,122 @@ namespace api_slim.src.Services
                 if(recipientResponse.Data is not null && result is not null)
                 {
                     string professionalName = result.professional.name;
+                    DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    var timeString = request.Time.ToLower().Split("até")[0].Trim();
+                    TimeSpan time = TimeSpan.Parse(timeString);
+                    DateTime dateTime = date.Add(time);
+
+                    List<NotificationJob> jobs = new()
+                    {
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
+                            SendDate = DateTime.UtcNow.AddSeconds(30),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Confirmação do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddDays(-1),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 dia antes do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddHours(-1),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 hora antes do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddMinutes(-5),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 5 minutos antes do Agendamento"
+                        },
+                        // Notificação de avaliação vou implementar depois.
+                    };
+
                     if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
                     {
-                        DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        var timeString = request.Time.ToLower().Split("até")[0].Trim();
-                        TimeSpan time = TimeSpan.Parse(timeString);
-                        DateTime dateTime = date.Add(time);
 
-                        List<NotificationJob> jobs = new()
-                        {
-                            new() {
-                                Parent = "Appointment",
-                                ParentId = result!.uuid.ToString(),
-                                Phone = recipientResponse.Data.Phone,
-                                BeneficiaryName = recipientResponse.Data.Name,
-                                BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
-                                SendDate = DateTime.UtcNow.AddSeconds(30),
-                                Type = "WhatsApp",
-                                BeneficiaryId = recipientResponse.Data.Id,
-                                Title = "Confirmação do Agendamento"
-                            },
-                            new() {
-                                Parent = "Appointment",
-                                ParentId = result!.uuid.ToString(),
-                                Phone = recipientResponse.Data.Phone,
-                                BeneficiaryName = recipientResponse.Data.Name,
-                                BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
-                                SendDate = dateTime.AddDays(-1),
-                                Type = "WhatsApp",
-                                BeneficiaryId = recipientResponse.Data.Id,
-                                Title = "Lembrete 1 dia antes do Agendamento"
-                            },
-                            new() {
-                                Parent = "Appointment",
-                                ParentId = result!.uuid.ToString(),
-                                Phone = recipientResponse.Data.Phone,
-                                BeneficiaryName = recipientResponse.Data.Name,
-                                BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
-                                SendDate = dateTime.AddHours(-1),
-                                Type = "WhatsApp",
-                                BeneficiaryId = recipientResponse.Data.Id,
-                                Title = "Lembrete 1 hora antes do Agendamento"
-                            },
-                            new() {
-                                Parent = "Appointment",
-                                ParentId = result!.uuid.ToString(),
-                                Phone = recipientResponse.Data.Phone,
-                                BeneficiaryName = recipientResponse.Data.Name,
-                                BeneficiaryCPF = recipientResponse.Data.Cpf,
-                                Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
-                                SendDate = dateTime.AddMinutes(-5),
-                                Type = "WhatsApp",
-                                BeneficiaryId = recipientResponse.Data.Id,
-                                Title = "Lembrete 5 minutos antes do Agendamento"
-                            },
-                            // Notificação de avaliação vou implementar depois.
-                        };
-                        await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
+                            SendDate = DateTime.UtcNow.AddSeconds(30),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Confirmação do Agendamento"
+                        });
+
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddDays(-1),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 dia antes do Agendamento"
+                        });
+
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddHours(-1),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 hora antes do Agendamento"
+                        });
+                        
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddMinutes(-5),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 5 minutos antes do Agendamento"
+                        });
+                        // Notificação de avaliação vou implementar depois.
                     }
+                    
+                    await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
                 };
                 
                 return new(null, 201, "Agendamento feito com sucesso");

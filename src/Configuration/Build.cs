@@ -170,6 +170,7 @@ namespace api_slim.src.Configuration
             builder.Services.AddHostedService<NotificationWorker>();
             builder.Services.AddHostedService<BirthdayNotificationWorker>();
             builder.Services.AddHostedService<WebPushWorker>();
+            builder.Services.AddHostedService<AppPushWorker>();
             
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }
