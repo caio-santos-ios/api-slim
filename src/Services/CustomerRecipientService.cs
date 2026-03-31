@@ -446,7 +446,7 @@ namespace api_slim.src.Services
             ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
             if(invoiceMonth.Data is null)
             {
-
+                 if(string.IsNullOrEmpty(contractorId)) return new(customerRecipient.Data);
                 ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
                 if(list.Data is not null)
                 {

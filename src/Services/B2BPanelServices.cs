@@ -124,6 +124,10 @@ namespace api_slim.src.Services
         {
             try
             {
+                if (string.IsNullOrEmpty(request.CustomerId))
+                {
+                    return new(null, 400, "CustomerId é obrigatório.");
+                }
                 bool exists = await repository.ExistsAsync(
                 request.ReferenceMonth,
                 request.ReferenceYear,

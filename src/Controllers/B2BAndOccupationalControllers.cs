@@ -14,21 +14,24 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class B2BMassMovementController(IB2BMassMovementService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateB2BMassMovementDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -37,7 +40,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPut]
+        [Authorize]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateB2BMassMovementDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -46,7 +50,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
@@ -62,31 +67,36 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class B2BInvoiceController(IB2BInvoiceService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateB2BInvoiceDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
             dto.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-            dto.CustomerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            if (string.IsNullOrEmpty(dto.CustomerId))
+                dto.CustomerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
             var response = await service.CreateAsync(dto);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPut]
+        [Authorize]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateB2BInvoiceDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -95,7 +105,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
@@ -111,21 +122,24 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class B2BAttachmentController(IB2BAttachmentService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateB2BAttachmentDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -135,7 +149,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPut]
+        [Authorize]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateB2BAttachmentDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -144,7 +159,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
@@ -160,21 +176,24 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class OccupationalMicroCheckinController(IOccupationalMicroCheckinService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateOccupationalMicroCheckinDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -183,7 +202,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPut]
+        [Authorize]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateOccupationalMicroCheckinDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -192,7 +212,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
@@ -208,21 +229,24 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class OccupationalBemVitalController(IOccupationalBemVitalService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateOccupationalBemVitalDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -231,7 +255,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPut]
+        [Authorize]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateOccupationalBemVitalDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -240,7 +265,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
@@ -256,21 +282,24 @@ namespace api_slim.src.Controllers
     [ApiController]
     public class OccupationalPgrController(IOccupationalPgrService service) : ControllerBase
     {
-        [Authorize][HttpGet]
+        [Authorize]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpPost("generate")]
+        [Authorize]
+        [HttpPost("generate")]
         public async Task<IActionResult> Generate([FromBody] GenerateOccupationalPgrDTO dto)
         {
             if (dto == null) return BadRequest("Dados inválidos.");
@@ -279,7 +308,8 @@ namespace api_slim.src.Controllers
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
 
-        [Authorize][HttpDelete("{id}")]
+        [Authorize]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;

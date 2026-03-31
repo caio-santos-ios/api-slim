@@ -31,6 +31,7 @@ namespace api_slim.src.Shared.DTOs
         public string CustomerId { get; set; } = string.Empty;
         public int ReferenceMonth { get; set; }
         public int ReferenceYear { get; set; }
+         public string Status { get; set; }
         public DateTime CycleStart { get; set; }
         public DateTime CycleEnd { get; set; }
         public decimal TotalAmount { get; set; }
