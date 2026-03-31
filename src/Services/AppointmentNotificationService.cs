@@ -51,4 +51,15 @@ public class AppointmentNotificationService(AppDbContext context) : IAppointment
         //     ));
         await context.NotificationJobs.InsertManyAsync(jobs);
     }
+
+    public async Task CancelNotificationsAsync(string parentId, string parent)
+    {
+        var filter = Builders<NotificationJob>.Filter.And(
+            Builders<NotificationJob>.Filter.Eq(j => j.ParentId, parentId),
+            Builders<NotificationJob>.Filter.Eq(j => j.Parent, parent),
+            Builders<NotificationJob>.Filter.Eq(j => j.Sent, false)
+        );
+
+        await context.NotificationJobs.DeleteManyAsync(filter);
+    }
 }

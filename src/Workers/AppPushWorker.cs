@@ -48,25 +48,15 @@ public class AppPushWorker(IServiceProvider serviceProvider, ILogger<AppPushWork
 
                     await pushHandler.SendPushAsync(
                         subDto : recipients.SubNotification!,
-                        title  : "Notificação Importante",
+                        title  : notification.Title,
                         message: $"Olá, {recipients.Name.Split(" ")[0]}! Você tem uma nova notificação importante.",
-                        url    : "/aplicativo/notifications/",
+                        url    : "/aplicativo/home/",
                         tag    : "important-notification"
                     );
 
-                    // var update = Builders<NotificationJob>.Update.Set(j => j.Sent, true);
-                    // await context.NotificationJobs.UpdateOneAsync(j => j.Id == notification.Id, update);
+                    var update = Builders<NotificationJob>.Update.Set(j => j.Sent, true);
+                    await context.NotificationJobs.UpdateOneAsync(j => j.Id == notification.Id, update);
                 }
-
-                // logger.LogInformation("Enviando IGS (manhã) para {Name}", recipient.Name);
-
-                // await pushHandler.SendPushAsync(
-                //     subDto : recipient.SubNotification!,
-                //     title  : "☀️ Check-in da Manhã",
-                //     message: $"Bom dia, {recipient.Name.Split(" ")[0]}! Registre seu sono e comece o dia bem.",
-                //     url    : "/aplicativo/home/check-in/",
-                //     tag    : "checkin-igs"
-                // );
             }
             catch (Exception ex)
             {

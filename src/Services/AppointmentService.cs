@@ -459,6 +459,8 @@ namespace api_slim.src.Services
                     Type = type
                 });
 
+                await appointmentNotificationService.CancelNotificationsAsync(request.Id, "Appointment");
+
                 return new(null, 204, "Cancelado com sucesso");
             }
             catch
