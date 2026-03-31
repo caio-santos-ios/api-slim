@@ -178,6 +178,18 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Beneficiário");
         }
     }
+    public async Task<ResponseApi<List<CustomerRecipient>>> GetAsync()
+    {
+        try
+        {
+            List<CustomerRecipient> recipients = await context.CustomerRecipients.Find(x => !x.Deleted).ToListAsync();
+            return new(recipients);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Beneficiário");
+        }
+    }
     public async Task<ResponseApi<CustomerRecipient?>> GetByCodeAccessAsync(string codeAccess)
     {
         try

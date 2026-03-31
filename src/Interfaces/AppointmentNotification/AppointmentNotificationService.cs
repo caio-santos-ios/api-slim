@@ -6,5 +6,6 @@ namespace api_slim.src.Interfaces
     {
         Task ScheduleNotificationsAsync(string phone, string beneficiaryName, DateTime appointmentDate);
         Task CreateNotificationsAsync(List<NotificationJob> jobs, string phone);
+        Task CancelNotificationsAsync(string parentId, string parent);
     }
 }

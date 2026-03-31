@@ -7,6 +7,7 @@ namespace api_slim.src.Interfaces
     public interface IVitalService
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<dynamic?>> SyncVitalsAsync();
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<List<Vital>>> GetByBeneficiaryAllAsync(string beneficiaryId, string startDate, string endDate);
         Task<ResponseApi<Vital?>> GetByBeneficiaryIdAsync(string beneficiaryId, string period);

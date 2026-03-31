@@ -109,7 +109,7 @@ namespace api_slim.src.Models
         public DateTime CycleStart { get; set; }
 
         [BsonElement("cycleEnd")]
-        public DateTime CycleEnd { get; set; }
+        public DateTime? CycleEnd { get; set; }
 
         // ── NOVO: data de corte/fechamento (último dia do mês de referência) ──
         [BsonElement("closingDate")]

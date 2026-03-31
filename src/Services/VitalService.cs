@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using api_slim.src.Interfaces;
 using api_slim.src.Models;
 using api_slim.src.Models.Base;
@@ -27,6 +26,62 @@ namespace api_slim.src.Services
                 ResponseApi<List<dynamic>> vitals = await vitalRepository.GetAllAsync(pagination);
                 int count = await vitalRepository.GetCountDocumentsAsync(pagination);
                 return new(vitals.Data, count, pagination.PageNumber, pagination.PageSize);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> SyncVitalsAsync()
+        {
+            try
+            {
+                ResponseApi<List<CustomerRecipient>> recipients = await customerRecipientRepository.GetAsync();
+                if(recipients.Data is not null)
+                {
+                    foreach (CustomerRecipient recipient in recipients.Data)
+                    {
+                        if(recipient.Cpf != "086.306.285-70") continue;
+
+                        ResponseApi<List<Vital>> vitals = await vitalRepository.GetBeneficiaryIAllAsync(recipient.Id);
+
+                        if(vitals.Data is not null)
+                        {
+                            DateTime? lasteDate = null;
+                            foreach (Vital vital in vitals.Data)
+                            {
+
+
+                                // sequence
+                                if(lasteDate is null)
+                                {
+                                    lasteDate = vital.CreatedAt.Date;
+                                } 
+                                else
+                                {
+                                    var diferenca = vital.CreatedAt.Date - lasteDate;
+
+                                    if (diferenca.HasValue && diferenca.Value.Days == 1)
+                                    {
+                                        // Sua lógica de sequência
+                                        vital.ExtrasPoint = 1;
+                                        vital.SequenceCheckIn =+ 1;
+                                    }
+                                    else
+                                    {
+                                        // Lógica para quando a sequência é quebrada
+                                        vital.SequenceCheckIn = 0;
+                                    }
+
+                                    lasteDate = vital.CreatedAt.Date;
+
+                                    await vitalRepository.UpdateAsync(vital);
+                                }
+                            }
+                        }
+                    }
+                }
+                return new(null, 200, "Sincronizado com sucesso");
             }
             catch
             {
@@ -154,9 +209,6 @@ namespace api_slim.src.Services
                 double dass8 = 0;
                 double dass9 = 0;
                 int qtd = 0;
-                int qtdIGS = 0;
-                int qtdIGN = 0;
-                int qtdIES = 0;
 
                 ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(beneficiaryId);
                 if(customer.Data is not null)
@@ -419,14 +471,21 @@ namespace api_slim.src.Services
 
                 if(vitalsLast.Data is not null)
                 {
-                    if(!vitalResponse.Data.ChekinIGS) 
+                    vitalResponse.Data.ExtrasPoint = 1;
+
+                    ResponseApi<Vital?> lastVital = await vitalRepository.GetToDateBeneficiaryAsync(request.BeneficiaryId, DateTime.UtcNow.AddDays(-1));
+                    if(lastVital.Data is not null) 
                     {
-                        vitalResponse.Data.ExtrasPoint = 3;
+                        vitalResponse.Data.SequenceCheckIn += lastVital.Data.SequenceCheckIn;
                     }
-                    else 
+                    else
                     {
-                        vitalResponse.Data.ExtrasPoint += 2;
+                        vitalResponse.Data.SequenceCheckIn = 1;
                     }
+                }
+                else
+                {
+                    vitalResponse.Data.SequenceCheckIn = 0;
                 }
 
                 int pointIGS = vitals.Data is null ? 0 : vitals.Data.Sum(x => x.ChekinIGSPoint);
