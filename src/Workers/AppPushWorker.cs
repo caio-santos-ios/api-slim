@@ -26,8 +26,8 @@ public class AppPushWorker(IServiceProvider serviceProvider, ILogger<AppPushWork
 
         List<NotificationJob> notifications = await context.NotificationJobs
             .Find(n => 
-                n.Type == "AppPush" //&& 
-                // !n.Sent && 
+                n.Type == "AppPush" && 
+                !n.Sent //&& 
                 // n.SendDate <= DateTime.UtcNow
             ).ToListAsync();
 
