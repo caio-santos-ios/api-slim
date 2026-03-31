@@ -1,6 +1,7 @@
 using System.Text;
 using api_slim.src.Handlers;
 using api_slim.src.Interfaces;
+using api_slim.src.Interfaces.Metrics;
 using api_slim.src.Repository;
 using api_slim.src.Services;
 using api_slim.src.Workers;
@@ -159,6 +160,10 @@ namespace api_slim.src.Configuration
             // SETTINGS
             builder.Services.AddTransient<IPermissionProfileService, PermissionProfileService>();
             builder.Services.AddTransient<IPermissionProfileRepository, PermissionProfileRepository>();
+
+            // METRICS
+            builder.Services.AddTransient<IMetricsService, MetricsService>();
+            builder.Services.AddTransient<IMetricsRepository, MetricsRepository>();
 
             // HANDLERS
             builder.Services.AddTransient<SmsHandler>();
