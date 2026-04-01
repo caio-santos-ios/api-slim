@@ -156,6 +156,8 @@ namespace api_slim.src.Configuration
             // CONFIGURATION
             builder.Services.AddTransient<ILogService, LogService>();
             builder.Services.AddTransient<ILogRepository, LogRepository>();
+            builder.Services.AddTransient<IMetricAppService, MetricAppService>();
+            builder.Services.AddTransient<IMetricAppRepository, MetricAppRepository>();
 
             // SETTINGS
             builder.Services.AddTransient<IPermissionProfileService, PermissionProfileService>();

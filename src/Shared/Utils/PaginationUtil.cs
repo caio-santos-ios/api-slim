@@ -120,9 +120,9 @@ namespace api_slim.src.Shared.Utils
                                 if (logic == "and")
                                 {
                                     if (pipelineFilter.Contains(field))
-                                    {
-                                        pipelineFilter[field].AsBsonDocument.Add(valueDt);
-                                    }
+                                        {
+                                            pipelineFilter[field].AsBsonDocument.AddRange(valueDt);
+                                        }
                                     else
                                     {
                                         pipelineFilter.Add(field, valueDt);

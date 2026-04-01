@@ -373,8 +373,8 @@ namespace api_slim.src.Services
                     Dass7 = dass7 > 0 ? (int)dass7 / qtd : 0,
                     Dass8 = dass8 > 0 ? (int)dass8 / qtd : 0,
                     Dass9 = dass9 > 0 ? (int)dass9 / qtd : 0,
-                    // Pauta 11+12: calcular dias consecutivos com IES < 50
-                    IesBaixoConsec = await CalcularIesBaixoConsecAsync(beneficiaryId, customer.Data.Patrology, CalcularMetaAgua(customer.Data.Weight)),
+                    
+                    IesBaixoConsec = await CalcularIesBaixoConsecAsync(beneficiaryId, customer.Data!.Patrology, CalcularMetaAgua(customer.Data.Weight)),
                 });
             }
             catch

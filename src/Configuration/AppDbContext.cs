@@ -148,6 +148,10 @@ namespace api_slim.src.Configuration
         {
             get { return Database.GetCollection<Log>("logs"); }
         }
+        public IMongoCollection<MetricApp> MetricApps
+        {
+            get { return Database.GetCollection<MetricApp>("metric_apps"); }
+        }
         #endregion
         #region NOTIFICATIONS
         public IMongoCollection<NotificationJob> NotificationJobs

@@ -12,7 +12,7 @@ namespace api_slim.src.Controllers
 {
 [Route("api/customer-recipients")]
 [ApiController]
-public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository, ILogService logService) : ControllerBase
+public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository, ILogService logService, IMetricAppService metricAppService) : ControllerBase
 {
     [Authorize]
     [HttpGet]
@@ -69,14 +69,9 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(userId!);
 
-        await logService.CreateAsync(new  ()
+        await metricAppService.CreateAsync(new CreateMetricAppDTO
         {
-            Action = "Acessou perfil",
-            Collection = "CustomerRecipient",
-            Description = $"O usuário acessou seu perfil. ID: {userId}",
-            Parent = "CustomerRecipient",
-            ParentId = userId!,
-            
+            Description = $"Usuário {response.Data?.Name} acessou seus dados."
         });
 
         return StatusCode(response.StatusCode, new { response.Message, response.Result });

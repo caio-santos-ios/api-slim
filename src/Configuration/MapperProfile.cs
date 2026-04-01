@@ -111,6 +111,8 @@ namespace api_slim.src.Configuration
             #region SETTINGS
             CreateMap<CreatePermissionProfileDTO, PermissionProfile>().ReverseMap();
             CreateMap<UpdatePermissionProfileDTO, PermissionProfile>().ReverseMap();
+
+            CreateMap<CreateMetricAppDTO, MetricApp>().ReverseMap();
             #endregion
         }
     }
