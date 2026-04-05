@@ -6,13 +6,12 @@ using api_slim.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ClosedXML.Excel;
-using Microsoft.Extensions.Primitives;
 
 namespace api_slim.src.Controllers
 {
 [Route("api/customer-recipients")]
 [ApiController]
-public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository, ILogService logService, IMetricAppService metricAppService) : ControllerBase
+public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository, IMetricAppService metricAppService) : ControllerBase
 {
     [Authorize]
     [HttpGet]
@@ -68,11 +67,6 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(userId!);
-
-        await metricAppService.CreateAsync(new CreateMetricAppDTO
-        {
-            Description = $"Usuário {response.Data?.Name} acessou seus dados."
-        });
 
         return StatusCode(response.StatusCode, new { response.Message, response.Result });
     }

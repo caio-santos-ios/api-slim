@@ -59,16 +59,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: ProductionCorsPolicy, policy =>
     {
-        // policy.AllowAnyOrigin()
-        policy.WithOrigins("https://pasbem.com.br")
+        policy.AllowAnyOrigin()
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
 
     options.AddPolicy(name: DevelopmentCorsPolicy, policy  =>
     {
-        // policy.AllowAnyOrigin()
-        policy.WithOrigins("https://pasbem.com.br")
+        policy.AllowAnyOrigin()
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
