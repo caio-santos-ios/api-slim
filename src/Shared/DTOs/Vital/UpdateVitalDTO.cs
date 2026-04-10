@@ -17,5 +17,6 @@ namespace api_slim.src.Shared.DTOs
                 public int ChekinIESPoint { get; set; }
                 public int Level { get; set; }
                 public string ChekinISOQuestion { get; set; } = string.Empty;
+                public string ChekinISOResponse { get; set; } = string.Empty;
         }
 }

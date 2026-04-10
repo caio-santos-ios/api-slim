@@ -155,6 +155,9 @@ namespace api_slim.src.Models
 
         [BsonElement("bondId")]
         public string BondId { get; set; } = string.Empty;
+        
+        [BsonElement("holderCpf")]
+        public string HolderCpf { get; set; } = string.Empty;
     }
 
     public class Dass 

@@ -1338,13 +1338,15 @@ else
                             string department = row.Cell(9).GetValue<string>();
                             string function = row.Cell(10).GetValue<string>();
                             string bond = row.Cell(11).GetValue<string>();
-                            string zipcode = row.Cell(12).GetValue<string>();
-                            string number = row.Cell(13).GetValue<string>();
-                            string street = row.Cell(14).GetValue<string>();
-                            string complement = row.Cell(15).GetValue<string>();
-                            string neighborhood = row.Cell(16).GetValue<string>();
-                            string city = row.Cell(17).GetValue<string>();
-                            string state = row.Cell(18).GetValue<string>();
+                            string holderCpf = row.Cell(12).GetValue<string>();
+
+                            string zipcode = row.Cell(13).GetValue<string>();
+                            string number = row.Cell(14).GetValue<string>();
+                            string street = row.Cell(15).GetValue<string>();
+                            string complement = row.Cell(16).GetValue<string>();
+                            string neighborhood = row.Cell(17).GetValue<string>();
+                            string city = row.Cell(18).GetValue<string>();
+                            string state = row.Cell(19).GetValue<string>();
 
                             ResponseApi<CustomerRecipient?> recipient = await customerRepository.GetByCPFAsync(cpf, request.ContractorId);
                             if(recipient.Data is not null)
@@ -1366,6 +1368,7 @@ else
                                 recipient.Data.Department = department;
                                 recipient.Data.Function = function;
                                 recipient.Data.Bond = bond;
+                                recipient.Data.HolderCpf = holderCpf;
 
                                 await customerRepository.UpdateAsync(recipient.Data);
 
@@ -1438,7 +1441,8 @@ else
                                     RapidocId = created.Data is not null ? created.Data.RapidocId : "",
                                     ContractorId = request.ContractorId,
                                     Cpf = cpf,
-                                    PlanId = findPlan.Data is null ? "" : findPlan.Data.Id
+                                    PlanId = findPlan.Data is null ? "" : findPlan.Data.Id,
+                                    HolderCpf = holderCpf
                                 };
 
                                 ResponseApi<CustomerRecipient?> customerRes = await CreateAsync(newCustomer);
@@ -1465,7 +1469,7 @@ else
                 }
             }
             
-            return new(null, 200, "Alterado com sucesso");
+            return new(null, 200, "Importação feita com sucesso");
         }
         catch
         {

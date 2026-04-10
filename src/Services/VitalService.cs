@@ -517,6 +517,8 @@ namespace api_slim.src.Services
 
                 vitalResponse.Data.ChekinISO = true;
                 vitalResponse.Data.ChekinISOQuestion = request.ChekinISOQuestion;
+                vitalResponse.Data.ChekinISOResponse = request.ChekinISOResponse;
+                vitalResponse.Data.ChekinISOPoint    = request.ChekinISOPoint;
                 
                 ResponseApi<Vital?> response = await vitalRepository.UpdateAsync(vitalResponse.Data);
                 if(!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");

@@ -9,7 +9,7 @@ namespace api_slim.src.Controllers
 {
     [Route("api/smclick")]
     [ApiController]
-    public class SmClickController(ISmClickService service) : ControllerBase
+    public class SmClickController : ControllerBase
     {
         // [Authorize]
         [HttpGet]

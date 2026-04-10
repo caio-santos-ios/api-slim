@@ -11,7 +11,7 @@ namespace api_slim.src.Controllers
 {
 [Route("api/customer-recipients")]
 [ApiController]
-public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository, IMetricAppService metricAppService) : ControllerBase
+public class CustomerRecipientController(ICustomerRecipientService service, ICustomerRecipientRepository repository) : ControllerBase
 {
     [Authorize]
     [HttpGet]
