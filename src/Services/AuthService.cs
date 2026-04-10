@@ -138,6 +138,8 @@ namespace api_slim.src.Services
                     if(!isValid) return new(null, 400, "Dados incorretos");
                 }
 
+                ResponseApi<Customer?> contractor = await customerRepository.GetByIdAsync(customer.ContractorId);
+
                 AuthAppResponse data = new() 
                 {
                     Token = GenerateJwtToken(user, false, true), 
@@ -148,7 +150,8 @@ namespace api_slim.src.Services
                     RapidocId = customer.RapidocId, 
                     FirstAccess = customer.FirstAccess,
                     ModulesIdentifications = listModules,
-                    CPF = customer.Cpf
+                    CPF = customer.Cpf,
+                    TypeContractor = contractor.Data is null ? "" : contractor.Data.Type
                 };
 
                 return new(data);

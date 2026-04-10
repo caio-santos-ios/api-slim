@@ -8,6 +8,7 @@ namespace api_slim.src.Responses
         public string Photo {get;set;} = string.Empty; 
         public string RapidocId {get;set;} = string.Empty; 
         public string CPF {get;set;} = string.Empty; 
+        public string TypeContractor {get;set;} = string.Empty; 
         public bool FirstAccess {get;set;}
         public List<string> ModulesIdentifications {get;set;} = [];
         public DateTime Expires {get;set;}        
