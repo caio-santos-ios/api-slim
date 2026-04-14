@@ -133,7 +133,10 @@ namespace api_slim.src.Services
             {
                 foreach (dynamic item in result)
                 {
-                    if(item.status != "SCHEDULED") continue;
+                    var element = item is Newtonsoft.Json.Linq.JProperty jProp ? jProp.Value : item;
+
+                    if (element["status"]?.ToString() != "SCHEDULED") continue;
+                    // if(item.status != "SCHEDULED") continue;
 
                     DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
 
