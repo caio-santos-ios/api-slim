@@ -133,9 +133,12 @@ namespace api_slim.src.Services
             {
                 foreach (dynamic item in result)
                 {
-                    var element = item is Newtonsoft.Json.Linq.JProperty jProp ? jProp.Value : item;
+                    var element = item is Newtonsoft.Json.Linq.JProperty jProp ? jProp.Value : (Newtonsoft.Json.Linq.JToken)item;
 
-                    if (element["status"]?.ToString() != "SCHEDULED") continue;
+                    if (element.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
+
+                    var status = element["status"]?.ToString();
+                    if (status != "SCHEDULED") continue;
                     // if(item.status != "SCHEDULED") continue;
 
                     DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
