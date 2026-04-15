@@ -122,7 +122,6 @@ namespace api_slim.src.Repository
             }
             catch(Exception ex)
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Falha ao buscar usuários mais ativos.");
             }
         }

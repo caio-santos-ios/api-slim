@@ -443,7 +443,7 @@ namespace api_slim.src.Services
 
                             string status = isCurrentMonth ? "Em Aberto" : "Fechada";
 
-                            ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(dataCorrente.Month, dataCorrente.Year);
+                            ResponseApi<B2BInvoice?> findInvoice = await b2BInvoiceRepository.GetByMonthAsync(dataCorrente.Month, dataCorrente.Year, contractorId);
 
                             if (findInvoice?.Data is null)
                             {
@@ -481,45 +481,6 @@ namespace api_slim.src.Services
                     }
                 }
             }
-
-            // ResponseApi<B2BInvoice?> invoiceMonth = await b2BInvoiceRepository.GetByMonthAsync(lastDayOfLastMonth.Month, lastDayOfLastMonth.Year);
-            // if(invoiceMonth.Data is null)
-            // {
-
-            //     ResponseApi<List<CustomerRecipient>> list = await customerRepository.GetContractIdAsync(contractorId!);
-            //     if(list.Data is not null)
-            //     {
-            //         int activeRecipients = list.Data.Where(x => x.Active).Count();
-            //         decimal total = 0;
-            //         foreach (CustomerRecipient item in list.Data)
-            //         {
-            //             if(!item.Active) continue;
-
-            //             ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(item.PlanId);
-
-            //             if(plan.Data is not null)
-            //             {
-            //                 total += plan.Data.Price;
-            //             }
-            //         }
-
-            //         await b2BInvoiceRepository.CreateAsync(new()
-            //         {
-            //             CustomerId = contractorId!,
-            //             ReferenceMonth = lastDayOfLastMonth.Month,
-            //             ReferenceYear = lastDayOfLastMonth.Year,
-            //             CycleStart = new DateTime(lastDayOfLastMonth.Year, lastDayOfLastMonth.Month, 1),
-            //             CycleEnd = lastDayOfLastMonth,
-            //             TotalAmount = total,
-            //             BeneficiaryCount = activeRecipients,
-            //             DueDate = lastDayOfLastMonth.AddDays(3),
-            //             Items = [],
-            //             Status = "Fechada",
-            //             ClosingDate = lastDayOfLastMonth,
-            //             CreatedAt = lastDayOfLastMonth
-            //         });
-            //     }
-            // }
 
             return new(customerRecipient.Data);
         }
@@ -693,6 +654,47 @@ namespace api_slim.src.Services
             }
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
+        }
+        catch
+        { 
+            return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+        }
+    }
+    public async Task<ResponseApi<CustomerRecipient?>> CreatePanelManagerAsync(CreateCustomerRecipientDTO request)
+    {
+        try
+        {
+            ResponseApi<CustomerRecipient?> response = await CreateAsync(request);
+            DateTime today = DateTime.UtcNow;
+            
+            var invoice = await b2BInvoiceRepository.GetByMonthAsync(today.Month - 1, today.Year, request.ContractorId);
+            
+            if(invoice.Data is not null)
+            {
+                if(!string.IsNullOrEmpty(request.PlanId))
+                {
+                    var plan = await planRepository.GetByIdAsync(request.PlanId);
+                    if(plan.Data is not null)
+                    {
+                        invoice.Data.TotalAmount += plan.Data.Price;
+                        invoice.Data.BeneficiaryCount += 1;
+                    }
+                }
+
+                foreach (string serviceModuleId in request.ServiceModuleIds)
+                {
+                    var modules = await serviceModuleRepository.GetByIdAsync(serviceModuleId);
+
+                    if(modules.Data is not null)
+                    {
+                        invoice.Data.TotalAmount += modules.Data.Price;
+                    }
+                }
+
+                await b2BInvoiceRepository.UpdateAsync(invoice.Data);
+            }
+
+            return new(new(), 400, "Beneficiário criado com sucesso.");
         }
         catch
         { 

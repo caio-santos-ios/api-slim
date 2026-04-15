@@ -28,7 +28,6 @@ namespace api_slim.src.Services
                 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
                 // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
-                System.Console.WriteLine(query);
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);

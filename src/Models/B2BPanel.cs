@@ -93,7 +93,6 @@ namespace api_slim.src.Models
         public string Id { get; set; } = string.Empty;
 
         [BsonElement("customerId")]
-        [BsonRepresentation(BsonType.ObjectId)]
         public string CustomerId { get; set; } = string.Empty;
 
         [BsonElement("customerName")]

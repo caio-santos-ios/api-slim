@@ -19,14 +19,15 @@ namespace api_slim.src.Repository
             List<BsonDocument> pipeline = new()
             {
                 new("$sort", pagination.PipelineSort),
-                // new("$skip", pagination.Skip),
-                // new("$limit", pagination.Limit),
 
                 MongoUtil.Lookup("customer_recipients", ["$beneficiaryId"], ["$_id"], "_recipient", [["deleted", false]], 1),
                 new("$addFields", new BsonDocument
                 {
                     {"contractorId", MongoUtil.First("_recipient.contractorId")},
-                    {"beneficiaryName", MongoUtil.First("_recipient.name")}
+                    {"beneficiaryName", MongoUtil.First("_recipient.name")},
+                    {"branch", MongoUtil.First("_recipient.branch")},
+                    {"department", MongoUtil.First("_recipient.department")},
+                    {"function", MongoUtil.First("_recipient.function")},
                 }),
 
                 new("$match", pagination.PipelineFilter),
@@ -297,7 +298,6 @@ List<Vital> vitals = await context.Vitals
         }
     }
     
-    // Pauta 11+12: busca vitais dos últimos N dias para calcular IES consecutivo baixo
     public async Task<ResponseApi<List<Vital>>> GetRecentByBeneficiaryAsync(string beneficiaryId, int days)
     {
         try

@@ -100,6 +100,18 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpPost("invoice")]
+    public async Task<IActionResult> CreatePanelManager([FromBody] CreateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        customer.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        System.Console.WriteLine(customer.ContractorId);
+        ResponseApi<CustomerRecipient?> response = await service.CreatePanelManagerAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
     [HttpPost("email")]
     public async Task<IActionResult> Email([FromBody] CreateCustomerRecipientDTO customer)
     {

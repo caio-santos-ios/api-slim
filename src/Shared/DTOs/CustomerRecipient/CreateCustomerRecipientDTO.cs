@@ -36,5 +36,6 @@ namespace api_slim.src.Shared.DTOs
                 public string RapidocId { get; set; } = string.Empty;
                 public string BondId { get; set; } = string.Empty;
                 public string HolderCpf { get; set; } = string.Empty;
+                public List<string> ServiceModuleIds { get; set; } = [];
         }
 }

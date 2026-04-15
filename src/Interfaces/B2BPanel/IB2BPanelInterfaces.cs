@@ -41,12 +41,13 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<B2BInvoice> pagination);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<B2BInvoice?>> GetByIdAsync(string id);
-        Task<ResponseApi<B2BInvoice?>> GetByMonthAsync(int month, int year);
+        Task<ResponseApi<B2BInvoice?>> GetByMonthAsync(int month, int year, string contractorId);
+        Task<ResponseApi<B2BInvoice?>> GetByMonthYearAsync(int month, int year, string contractorId);
         Task<int> GetCountDocumentsAsync(PaginationUtil<B2BInvoice> pagination);
         Task<ResponseApi<B2BInvoice?>> CreateAsync(B2BInvoice entity);
         Task<ResponseApi<B2BInvoice?>> UpdateAsync(B2BInvoice entity);
         Task<ResponseApi<B2BInvoice>> DeleteAsync(string id);
-         Task<bool> ExistsAsync(int referenceMonth, int referenceYear, string customerId);
+        Task<bool> ExistsAsync(int referenceMonth, int referenceYear, string customerId);
     }
 
     // ─── Attachment ──────────────────────────────────────────────────────────────

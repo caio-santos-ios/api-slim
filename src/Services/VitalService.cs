@@ -50,9 +50,27 @@ namespace api_slim.src.Services
                             DateTime? lasteDate = null;
                             foreach (Vital vital in vitals.Data)
                             {
+                                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(vital.BeneficiaryId);
+                                string patrology = customer.Data is null ? "" : customer.Data.Patrology;
+                                decimal goalWater = customer.Data is null ? 0 : CalcularMetaAgua(customer.Data.Weight);
 
+                                if(vital.ChekinIGS)
+                                {
+                                    vital.Metric.IGS = CalcularIGS(vital, patrology);
+                                }
 
-                                // sequence
+                                if(vital.ChekinIGN)
+                                {
+                                    vital.Metric.IGN = CalcularIGN(vital, goalWater, patrology);
+                                }
+
+                                if(vital.ChekinIES)
+                                {
+                                    vital.Metric.IES = CalcularIES(vital, patrology);
+                                }
+
+                                vital.Metric.IPV = CalcularIPVV2(vital, goalWater, patrology);
+
                                 if(lasteDate is null)
                                 {
                                     lasteDate = vital.CreatedAt.Date;
@@ -63,13 +81,11 @@ namespace api_slim.src.Services
 
                                     if (diferenca.HasValue && diferenca.Value.Days == 1)
                                     {
-                                        // Sua lógica de sequência
                                         vital.ExtrasPoint = 1;
                                         vital.SequenceCheckIn =+ 1;
                                     }
                                     else
                                     {
-                                        // Lógica para quando a sequência é quebrada
                                         vital.SequenceCheckIn = 0;
                                     }
 
@@ -153,9 +169,8 @@ namespace api_slim.src.Services
 
                 return new(list);
             }
-            catch(Exception ex)
+            catch
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -421,6 +436,26 @@ namespace api_slim.src.Services
 
                 int level = CurrentLevel(pointIGS + pointIGN + pointIES);
                 vital.Level = level;
+                ResponseApi<CustomerRecipient?> customer = await customerRecipientRepository.GetByIdAsync(vital.BeneficiaryId);
+                string patrology = customer.Data is null ? "" : customer.Data.Patrology;
+                decimal goalWater = customer.Data is null ? 0 : CalcularMetaAgua(customer.Data.Weight);
+
+                if(request.ChekinIGS)
+                {
+                    vital.Metric.IGS = CalcularIGS(vital, patrology);
+                }
+
+                if(request.ChekinIGN)
+                {
+                    vital.Metric.IGN = CalcularIGN(vital, goalWater, patrology);
+                }
+
+                if(request.ChekinIES)
+                {
+                    vital.Metric.IES = CalcularIES(vital, patrology);
+                }
+
+                vital.Metric.IPV = CalcularIPVV2(vital, goalWater, patrology);
 
                 ResponseApi<Vital?> response = await vitalRepository.CreateAsync(vital);
 
@@ -612,6 +647,23 @@ namespace api_slim.src.Services
             double resultado = (igs + ign + ies) / 3;
 
             return Math.Round(resultado, 2);
+        }
+        
+        public double CalcularIPVV2(Vital vital, decimal goalWater, string patrology)
+        {
+            int count = 0;
+
+            if(vital.ChekinIGS) count += 1;
+            if(vital.ChekinIGN) count += 1;
+            if(vital.ChekinIES) count += 1;
+
+            double igs = CalcularIGS(vital, patrology);
+            double ign = CalcularIGN(vital, goalWater, patrology);
+            double ies = CalcularIES(vital, patrology);
+
+            double result = (igs + ign + ies) / count;
+
+            return Math.Round(result, 2);
         }
 
         public static decimal CalcularMetaAgua(decimal peso)
