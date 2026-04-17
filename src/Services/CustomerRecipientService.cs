@@ -115,54 +115,39 @@ namespace api_slim.src.Services
                 }
             };
 
-            var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{rapidocId}/appointments");
-            requestHeader.Headers.Add("Authorization", $"Bearer {token}");
-            requestHeader.Headers.Add("clientId", clientId);
-            
-            var content = new StringContent(string.Empty);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
-            requestHeader.Content = content;
-            var response = await client.SendAsync(requestHeader);
-            
-            string jsonResponse = await response.Content.ReadAsStringAsync();
-
-            dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
-            DateTime? nextDate = null;
-            dynamic telemedicine = new {};
-            if(result is not null)
+            if(!string.IsNullOrEmpty(rapidocId))
             {
-                foreach (dynamic item in result)
+                var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiaries/{rapidocId}/appointments");
+                requestHeader.Headers.Add("Authorization", $"Bearer {token}");
+                requestHeader.Headers.Add("clientId", clientId);
+                
+                var content = new StringContent(string.Empty);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.rapidoc.tema-v2+json");
+                requestHeader.Content = content;
+                var response = await client.SendAsync(requestHeader);
+                
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+
+                dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+                DateTime? nextDate = null;
+                dynamic telemedicine = new {};
+                if(result is not null)
                 {
-                    var element = item is Newtonsoft.Json.Linq.JProperty jProp ? jProp.Value : (Newtonsoft.Json.Linq.JToken)item;
-
-                    if (element.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
-
-                    var status = element["status"]?.ToString();
-                    if (status != "SCHEDULED") continue;
-                    // if(item.status != "SCHEDULED") continue;
-
-                    DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
-
-                    if(date.Date < DateTime.UtcNow.Date) continue;
-
-                    if(nextDate is null)
+                    foreach (dynamic item in result)
                     {
-                        nextDate = date.Date;
+                        var element = item is Newtonsoft.Json.Linq.JProperty jProp ? jProp.Value : (Newtonsoft.Json.Linq.JToken)item;
 
-                        telemedicine = new 
-                        { 
-                            isToDay = nextDate == DateTime.UtcNow.Date,
-                            date = nextDate, 
-                            professional = item.professional.name.ToString(),
-                            specialty = item.specialty.name.ToString(),
-                            beneficiaryUrl = item.beneficiaryUrl.ToString(),
-                            from = item.detail.from.ToString(),
-                            to = item.detail.to.ToString(),
-                        };
-                    }
-                    else 
-                    {
-                        if(nextDate > date.Date)
+                        if (element.Type != Newtonsoft.Json.Linq.JTokenType.Object) continue;
+
+                        var status = element["status"]?.ToString();
+                        if (status != "SCHEDULED") continue;
+                        // if(item.status != "SCHEDULED") continue;
+
+                        DateTime date = DateTime.Parse(item.detail.date.ToString(), new CultureInfo("pt-BR"));
+
+                        if(date.Date < DateTime.UtcNow.Date) continue;
+
+                        if(nextDate is null)
                         {
                             nextDate = date.Date;
 
@@ -177,19 +162,35 @@ namespace api_slim.src.Services
                                 to = item.detail.to.ToString(),
                             };
                         }
-                    }                    
-                };
-            };
+                        else 
+                        {
+                            if(nextDate > date.Date)
+                            {
+                                nextDate = date.Date;
 
-            customer.Data.telemedicine = telemedicine;
+                                telemedicine = new 
+                                { 
+                                    isToDay = nextDate == DateTime.UtcNow.Date,
+                                    date = nextDate, 
+                                    professional = item.professional.name.ToString(),
+                                    specialty = item.specialty.name.ToString(),
+                                    beneficiaryUrl = item.beneficiaryUrl.ToString(),
+                                    from = item.detail.from.ToString(),
+                                    to = item.detail.to.ToString(),
+                                };
+                            }
+                        }                    
+                    };
+                };
+
+                customer.Data.telemedicine = telemedicine;
+            }
 
             return new(customer.Data);
         }
-        catch (Exception ex)
+        catch
         {
-            // LOGUE O ERRO REAL ANTES DE RETORNAR 500
-            Console.WriteLine($"Erro no GetByIdAggregate: {ex.Message}");
-            return new(null, 500, "Erro ao processar telemedicina.");
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
         }
     }
     public async Task<ResponseApi<dynamic?>> GetAtendimentoAsync(string id)
@@ -347,7 +348,7 @@ namespace api_slim.src.Services
                                     new {
                                         name = res.Data.Name,
                                         cpf = new string(res.Data.Cpf.Where(char.IsDigit).ToArray()),
-                                        birthday = res.Data.DateOfBirth, 
+                                        birthday = res.Data.DateOfBirth is null ? DateTime.UtcNow : res.Data.DateOfBirth, 
                                         email = res.Data.Email,
                                         zipCode = new string(address.Data is null ? "" : address.Data.ZipCode.Where(char.IsDigit).ToArray()),
                                         address = address.Data is null ? "" : $"{address.Data.Street}, {address.Data.Number}",
@@ -364,7 +365,6 @@ namespace api_slim.src.Services
                                 var responseRapidoc = await client.SendAsync(requestRapidocPost);
                                 string jsonResponsePost = await responseRapidoc.Content.ReadAsStringAsync();
                                 dynamic? resultPost = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponsePost);
-
                                 if(resultPost is not null)
                                 {
                                     if(resultPost.success == "true")
