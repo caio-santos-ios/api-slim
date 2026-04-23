@@ -36,6 +36,9 @@ namespace api_slim.src.Models
         [BsonElement("admin")]
         public bool Admin {get;set;} = false;
         
+        [BsonElement("master")]
+        public bool Master {get;set;} = false;
+        
         [BsonElement("codeAccess")]
         public string CodeAccess {get;set;} = string.Empty;
 

@@ -12,6 +12,7 @@ using api_slim.src.Shared.Templates;
 using api_slim.src.Shared.Validators;
 using api_slim.src.Shared.Utils;
 using MongoDB.Bson;
+using System.Text.Json;
 
 namespace api_slim.src.Services
 {
@@ -534,7 +535,17 @@ namespace api_slim.src.Services
                 new Claim(JwtRegisteredClaimNames.Nickname, user.UserName),
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("type", refresh ? "refresh" : "access")
+                new Claim("type", refresh ? "refresh" : "access"),
+                new Claim("photo", user.Photo),
+                new Claim("name", user.Name),
+                new Claim("master", user.Master.ToString()),
+                new Claim("admin", user.Admin.ToString()),
+                new Claim("blocked", user.Blocked.ToString()),
+                // new Claim("modules", JsonSerializer.Serialize(user.Modules)),
+                new Claim("modules", JsonSerializer.Serialize(user.Modules, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                }))
             ];
 
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
