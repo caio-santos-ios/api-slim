@@ -74,7 +74,12 @@ namespace api_slim.src.Repository
                 {
                     {"_id", 0},
                     {"id", new BsonDocument("$toString", "$_id")},
+                    {"code", 1},
                     {"name", 1},
+                    {"notes", 1},
+                    {"serviceModuleId", 1},
+                    {"externalCodes", 1},
+                    {"active", 1},
                     {"description", 1}
                 }),
             ];

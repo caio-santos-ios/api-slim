@@ -621,36 +621,36 @@ namespace api_slim.src.Services
 
             if(!string.IsNullOrEmpty(request.Whatsapp))
             {
-                List<NotificationJob> jobs = new()
-                {
-                    new() {
-                        Parent = "CustomerRecipient",
-                        ParentId = response.Data.Id!,
-                        Phone = request.Phone,
-                        BeneficiaryName = request.Name,
-                        BeneficiaryCPF = request.Cpf,
-                        BeneficiaryId = response.Data.Id,
-                        Message = WhatsAppTemplate.Welcome(request.Name),
-                        SendDate = DateTime.UtcNow.AddSeconds(15),
-                        Type = "Welcome",
-                        Origin = "WhatsApp",
-                        Title = "Boas Vindas"
-                    },
-                    new() {
-                        Parent = "CustomerRecipient",
-                        ParentId = response.Data.Id!,
-                        Phone = request.Phone,
-                        BeneficiaryName = request.Name,
-                        BeneficiaryCPF = request.Cpf,
-                        BeneficiaryId = response.Data.Id,
-                        Message = WhatsAppTemplate.AppDownloadInstructions(),
-                        SendDate = DateTime.UtcNow.AddSeconds(30),
-                        Type = "InstalationApp",
-                        Origin = "WhatsApp",
-                        Title = "Instruções pra instalar APP"
-                    },
-                };
-                await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
+                // List<NotificationJob> jobs = new()
+                // {
+                //     new() {
+                //         Parent = "CustomerRecipient",
+                //         ParentId = response.Data.Id!,
+                //         Phone = request.Phone,
+                //         BeneficiaryName = request.Name,
+                //         BeneficiaryCPF = request.Cpf,
+                //         BeneficiaryId = response.Data.Id,
+                //         Message = WhatsAppTemplate.Welcome(request.Name),
+                //         SendDate = DateTime.UtcNow.AddSeconds(15),
+                //         Type = "Welcome",
+                //         Origin = "WhatsApp",
+                //         Title = "Boas Vindas"
+                //     },
+                //     new() {
+                //         Parent = "CustomerRecipient",
+                //         ParentId = response.Data.Id!,
+                //         Phone = request.Phone,
+                //         BeneficiaryName = request.Name,
+                //         BeneficiaryCPF = request.Cpf,
+                //         BeneficiaryId = response.Data.Id,
+                //         Message = WhatsAppTemplate.AppDownloadInstructions(),
+                //         SendDate = DateTime.UtcNow.AddSeconds(30),
+                //         Type = "InstalationApp",
+                //         Origin = "WhatsApp",
+                //         Title = "Instruções pra instalar APP"
+                //     },
+                // };
+                // await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(request.Whatsapp));
             }
 
             return new(response.Data, 201, "Beneficiário criado com sucesso.");
