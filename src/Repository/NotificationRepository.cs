@@ -32,7 +32,9 @@ namespace api_slim.src.Repository
                         {"title", 1},
                         {"link", 1},
                         {"read", 1},
-                        {"origin", 1}
+                        {"origin", 1},
+                        {"parent", 1},
+                        {"parentId", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -52,6 +54,18 @@ namespace api_slim.src.Repository
             {
                 NotificationJob? notification = await context.NotificationJobs.Find(x => x.Id == id).FirstOrDefaultAsync();
                 return new(notification);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Notificação");
+            }
+        }
+        public async Task<ResponseApi<List<NotificationJob>>> GetByParentIdAsync(string parentId, string parent)
+        {
+            try
+            {
+                List<NotificationJob> notifications = await context.NotificationJobs.Find(x => x.ParentId == parentId && x.Parent == parent && !x.Deleted).ToListAsync();
+                return new(notifications);
             }
             catch
             {

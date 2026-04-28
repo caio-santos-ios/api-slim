@@ -20,6 +20,14 @@ namespace api_slim.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("total")]
+        public async Task<IActionResult> GetTotal()
+        {
+            ResponseApi<List<dynamic>> response = await service.GetTotalAsync(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+        }
+        
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {

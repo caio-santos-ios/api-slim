@@ -28,7 +28,7 @@ namespace api_slim.src.Repository
                     }),
                     new("$project", new BsonDocument
                     {
-                        {"_id", 0}, 
+                        {"_id", 0},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -42,70 +42,48 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Fornecedores");
             }
         }
-        
+
         public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
             try
             {
                 BsonDocument[] pipeline = [
-                    new("$match", new BsonDocument{
+                    new("$match", new BsonDocument
+                    {
                         {"_id", new ObjectId(id)},
                         {"deleted", false}
                     }),
 
-                    new BsonDocument("$lookup", new BsonDocument
+                    MongoUtil.LookupV2("addresses", ["$_id"], ["$parentId"], "_address", [["deleted", false], ["parent", "supplier"]], 1),
+
+                    new("$addFields", new BsonDocument
                     {
-                        { "from", "addresses" },
-
-                        { "let", new BsonDocument("id", new BsonDocument("$toString", "$_id")) },
-
-                        { "pipeline", new BsonArray
-                            {
-                                new BsonDocument("$match", new BsonDocument
-                                {
-                                    { "$expr", new BsonDocument("$and", new BsonArray
-                                        {
-                                            new BsonDocument("$eq", new BsonArray
-                                            {
-                                                "$parentId",
-                                                "$$id"
-                                            }),
-
-                                            new BsonDocument("$eq", new BsonArray
-                                            {
-                                                "$parent",
-                                                "supplier"
-                                            })
-                                        })
-                                    }
-                                })
-                            }
-                        },
-
-                        { "as", "_address" }
+                        {"addressId", MongoUtil.First("_address._id")},
                     }),
-                    
-                    new("$addFields", new BsonDocument {
-                        {"id", new BsonDocument("$toString", "$_id")},
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"id", MongoUtil.ToString("$_id")},
                         {"address", new BsonDocument
                             {
-                                {"id", new BsonDocument("$toString", new BsonDocument("$first", "$_address._id"))},
-                                {"street", new BsonDocument("$first", "$_address.street")},
-                                {"number", new BsonDocument("$first", "$_address.number")},
-                                {"complement", new BsonDocument("$first", "$_address.complement")},
-                                {"neighborhood", new BsonDocument("$first", "$_address.neighborhood")},
-                                {"city", new BsonDocument("$first", "$_address.city")},
-                                {"state", new BsonDocument("$first", "$_address.state")},
-                                {"zipCode", new BsonDocument("$first", "$_address.zipCode")},
-                                {"parent", new BsonDocument("$first", "$_address.parent")},
-                                {"parentId", new BsonDocument("$first", "$_address.parentId")},
+                                {"id", MongoUtil.ToString("$addressId")},
+                                {"street", MongoUtil.First("_address.street")},
+                                {"number", MongoUtil.First("_address.number")},
+                                {"complement", MongoUtil.First("_address.complement")},
+                                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                                {"city", MongoUtil.First("_address.city")},
+                                {"state", MongoUtil.First("_address.state")},
+                                {"zipCode", MongoUtil.First("_address.zipCode")},
+                                {"parent", MongoUtil.First("_address.parent")},
+                                {"parentId", MongoUtil.First("_address.parentId")},
                             }
-                        }
+                        },
                     }),
 
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
+                        {"_address", 0},
                     }),
                 ];
 
@@ -118,7 +96,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Fornecedor");
             }
         }
-        
+
         public async Task<ResponseApi<Supplier?>> GetByIdAsync(string id)
         {
             try
@@ -131,7 +109,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Fornecedor");
             }
         }
-        
+
         public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Supplier> pagination)
         {
             try
@@ -144,7 +122,7 @@ namespace api_slim.src.Repository
                     new("$limit", pagination.Limit),
                     new("$project", new BsonDocument
                     {
-                        {"_id", 0}, 
+                        {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"tradeName", 1},
                         {"corporateName", 1},
@@ -182,7 +160,7 @@ namespace api_slim.src.Repository
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
-        
+
         #region CREATE
         public async Task<ResponseApi<Supplier?>> CreateAsync(Supplier billing)
         {
@@ -194,11 +172,11 @@ namespace api_slim.src.Repository
             }
             catch
             {
-                return new(null, 500, "Falha ao criar Fornecedor");  
+                return new(null, 500, "Falha ao criar Fornecedor");
             }
         }
         #endregion
-        
+
         #region UPDATE
         public async Task<ResponseApi<Supplier?>> UpdateAsync(Supplier billing)
         {
@@ -214,14 +192,14 @@ namespace api_slim.src.Repository
             }
         }
         #endregion
-        
+
         #region DELETE
         public async Task<ResponseApi<Supplier>> DeleteAsync(string id)
         {
             try
             {
                 Supplier? billing = await context.Suppliers.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                if(billing is null) return new(null, 404, "Fornecedor não encontrado");
+                if (billing is null) return new(null, 404, "Fornecedor não encontrado");
                 billing.Deleted = true;
                 billing.DeletedAt = DateTime.UtcNow;
 

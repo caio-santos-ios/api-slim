@@ -10,17 +10,17 @@ using MongoDB.Driver;
 namespace api_slim.src.Repository
 {
     public class CustomerRecipientRepository(AppDbContext context) : ICustomerRecipientRepository
-{
-    #region READ
-    public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<CustomerRecipient> pagination)
     {
-        try
+        #region READ
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<CustomerRecipient> pagination)
         {
-            List<BsonDocument> pipeline = new()
+            try
             {
-                new("$sort", pagination.PipelineSort),  
+                List<BsonDocument> pipeline = new()
+            {
+                new("$sort", pagination.PipelineSort),
 
-                
+
                 new("$addFields", new BsonDocument
                 {
                     {"id", new BsonDocument("$toString", "$_id")},
@@ -29,9 +29,9 @@ namespace api_slim.src.Repository
                 MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
                 MongoUtil.Lookup("customers", ["$contractorId"], ["$_id"], "_customer", [["deleted", false]], 1),
                 MongoUtil.Lookup("plans", ["$planId"], ["$_id"], "_plan", [["deleted", false]], 1),
-                
+
                 new("$match", pagination.PipelineFilter),
-                
+
                 MongoUtil.Lookup("generic_tables", ["$gender"], ["$code"], "_gender", [["deleted", false], ["table", "genero"]], 1),
 
                 new("$addFields", new BsonDocument
@@ -41,6 +41,8 @@ namespace api_slim.src.Repository
 
                 MongoUtil.Lookup("users", ["$updatedBy"], ["$_id"], "_user", [["deleted", false]], 1),
 
+                MongoUtil.LookupV2("customer_recipients", ["$bondId"], ["$_id"], "_bond", [["deleted", false]], 1),
+
                 new("$addFields", new BsonDocument
                 {
                     {"addressId", MongoUtil.ToString("$addressId")},
@@ -48,8 +50,11 @@ namespace api_slim.src.Repository
                     {"userName", MongoUtil.First("_user.name")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
                     {"customerDocument", MongoUtil.First("_customer.document")},
+                    {"customerName", MongoUtil.First("_customer.corporateName")},
                     {"genderDescription", MongoUtil.First("_gender.description")},
                     {"planName", MongoUtil.First("_plan.name")},
+                    {"bondName", MongoUtil.First("_bond.name")},
+                    {"bondCpf", MongoUtil.First("_bond.cpf")},
                     {"address", new BsonDocument
                         {
                             {"id", MongoUtil.ToString("$addressId")},
@@ -67,83 +72,84 @@ namespace api_slim.src.Repository
                 }),
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
-                    {"_address", 0}, 
-                    {"_gender", 0}, 
-                    {"_plan", 0}, 
-                    {"_user", 0}, 
-                    {"_customer", 0} 
+                    {"_id", 0},
+                    {"_address", 0},
+                    {"_gender", 0},
+                    {"_plan", 0},
+                    {"_user", 0},
+                    {"_customer", 0}
                 }),
                 new("$sort", pagination.PipelineSort)
             };
 
-            List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
-    {
-        try
-        {
-            BsonDocument[] pipeline = [
-    new("$match", new BsonDocument{
-        {"_id", new ObjectId(id)},
-        {"deleted", false}
-    }),
-    new("$addFields", new BsonDocument
-    {
-        {"id", new BsonDocument("$toString", "$_id")},
-    }),
-    MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
-    new("$addFields", new BsonDocument
-    {
-        {"addressId", MongoUtil.First("_address._id")},
-    }),
-    new("$addFields", new BsonDocument
-    {
-        {"addressId", MongoUtil.ToString("$addressId")},
-        {"address", new BsonDocument
+                List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
             {
-                {"id", MongoUtil.ToString("$addressId")},
-                {"street", MongoUtil.First("_address.street")},
-                {"number", MongoUtil.First("_address.number")},
-                {"complement", MongoUtil.First("_address.complement")},
-                {"neighborhood", MongoUtil.First("_address.neighborhood")},
-                {"city", MongoUtil.First("_address.city")},
-                {"state", MongoUtil.First("_address.state")},
-                {"zipCode", MongoUtil.First("_address.zipCode")},
-                {"parent", MongoUtil.First("_address.parent")},
-                {"parentId", MongoUtil.First("_address.parentId")},
+                return new(null, 500, "Falha ao buscar Beneficiário");
             }
         }
-    }),
-    new("$project", new BsonDocument
-    {
-        {"_id", 0},
-        {"_address", 0},
-    }),
-];
+        public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
+        {
+            try
+            {
+                BsonDocument[] pipeline = [
+                    new("$match", new BsonDocument
+                    {
+                        {"_id", new ObjectId(id)},
+                        {"deleted", false}
+                    }),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"id", new BsonDocument("$toString", "$_id")},
+                    }),
+                    MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"addressId", MongoUtil.First("_address._id")},
+                    }),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"addressId", MongoUtil.ToString("$addressId")},
+                        {"address", new BsonDocument
+                            {
+                                {"id", MongoUtil.ToString("$addressId")},
+                                {"street", MongoUtil.First("_address.street")},
+                                {"number", MongoUtil.First("_address.number")},
+                                {"complement", MongoUtil.First("_address.complement")},
+                                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                                {"city", MongoUtil.First("_address.city")},
+                                {"state", MongoUtil.First("_address.state")},
+                                {"zipCode", MongoUtil.First("_address.zipCode")},
+                                {"parent", MongoUtil.First("_address.parent")},
+                                {"parentId", MongoUtil.First("_address.parentId")},
+                            }
+                        }
+                    }),
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"_address", 0},
+                    }),
+                ];
 
-            BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
-            dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-            return result is null ? new(null, 404, "Beneficiário não encontrado") : new(result);
+                BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+                return result is null ? new(null, 404, "Beneficiário não encontrado") : new(result);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<dynamic?>> GetByCPFAggregateAsync(string cpf)
-    {
-        try
-        {
-            BsonDocument[] pipeline = [
-                new("$match", new BsonDocument{
+            try
+            {
+                BsonDocument[] pipeline = [
+                    new("$match", new BsonDocument{
                     {"cpf", cpf},
                     {"deleted", false}
                 }),
@@ -157,74 +163,74 @@ namespace api_slim.src.Repository
                 }),
             ];
 
-            BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
-            dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-            return result is null ? new(null, 404, "Beneficiário não encontrado") : new(result);
+                BsonDocument? response = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+                return result is null ? new(null, 404, "Beneficiário não encontrado") : new(result);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<CustomerRecipient?>> GetByIdAsync(string id)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByIdAsync(string id)
-    {
-        try
+        public async Task<ResponseApi<List<CustomerRecipient>>> GetAsync()
         {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
+            try
+            {
+                List<CustomerRecipient> recipients = await context.CustomerRecipients.Find(x => !x.Deleted).ToListAsync();
+                return new(recipients);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<CustomerRecipient?>> GetByCodeAccessAsync(string codeAccess)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.CodeAccess == codeAccess && !x.ValidatedAccess && x.CodeAccessExpiration > DateTime.UtcNow && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-    }
-    public async Task<ResponseApi<List<CustomerRecipient>>> GetAsync()
-    {
-        try
+        public async Task<ResponseApi<CustomerRecipient?>> GetByRapidocIdAsync(string rapidoc)
         {
-            List<CustomerRecipient> recipients = await context.CustomerRecipients.Find(x => !x.Deleted).ToListAsync();
-            return new(recipients);
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.RapidocId == rapidoc && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByCodeAccessAsync(string codeAccess)
-    {
-        try
-        {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.CodeAccess == codeAccess && !x.ValidatedAccess && x.CodeAccessExpiration > DateTime.UtcNow && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByRapidocIdAsync(string rapidoc)
-    {
-        try
-        {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.RapidocId == rapidoc && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomerRecipient> pagination)
-    {
-        try
-        {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
+                    {"_id", 0},
                     {"id", new BsonDocument("$toString", "$_id")},
                     {"name", 1},
                     {"createdAt", 1},
@@ -235,24 +241,24 @@ namespace api_slim.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Items");
+            }
         }
-        catch
+        public async Task<ResponseApi<List<dynamic>>> GetManagerContractorIdAggregationAsync(PaginationUtil<CustomerRecipient> pagination)
         {
-            return new(null, 500, "Falha ao buscar Items");
-        }
-    }
-    public async Task<ResponseApi<List<dynamic>>> GetManagerContractorIdAggregationAsync(PaginationUtil<CustomerRecipient> pagination)
-    {
-        try
-        {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
-                
+
                 MongoUtil.Lookup("plans", ["$planId"], ["$_id"], "_plan", [["deleted", false]], 1),
                 MongoUtil.Lookup("addresses", ["$id"], ["$parentId"], "_address", [["deleted", false]], 1),
 
@@ -263,7 +269,7 @@ namespace api_slim.src.Repository
 
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
+                    {"_id", 0},
                     {"id", new BsonDocument("$toString", "$_id")},
                     {"planId", 1},
                     {"planName", MongoUtil.First("_plan.name")},
@@ -300,114 +306,114 @@ namespace api_slim.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiários");
+            }
         }
-        catch
+        public async Task<ResponseApi<long?>> GetNextCodeAsync()
         {
-            return new(null, 500, "Falha ao buscar Beneficiários");
+            try
+            {
+                long code = await context.CustomerRecipients.Find(x => true).CountDocumentsAsync() + 1;
+                return new(code);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Items");
+            }
         }
-    }
-    public async Task<ResponseApi<long?>> GetNextCodeAsync()
-    {
-        try
+        public async Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId)
         {
-            long code = await context.CustomerRecipients.Find(x => true).CountDocumentsAsync() + 1;
-            return new(code);
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<CustomerRecipient?>> GetByPhoneAsync(string phone)
         {
-            return new(null, 500, "Falha ao buscar Items");
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Phone == phone && x.Active && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByCPFAsync(string cpf, string contractorId)
-    {
-        try
+        public async Task<ResponseApi<CustomerRecipient?>> GetByEmailAsync(string email)
         {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Email == email && x.Active && !x.Deleted).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<CustomerRecipient?>> GetByDocumentAsync(string cpf)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && !x.Deleted && x.Active).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByPhoneAsync(string phone)
-    {
-        try
+        public async Task<ResponseApi<CustomerRecipient?>> GetByCPFImportAsync(string cpf, string contractorId)
         {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Phone == phone && x.Active && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId).FirstOrDefaultAsync();
+                return new(customerRecipient);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<ResponseApi<List<CustomerRecipient>>> GetPeriodAsync(int month, int year, string contractorId)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
+            try
+            {
+                List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.CreatedAt.Date.Month == month && x.CreatedAt.Date.Year == year && x.ContractorId == contractorId).ToListAsync();
+                return new(customerRecipients);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByEmailAsync(string email)
-    {
-        try
+        public async Task<ResponseApi<List<CustomerRecipient>>> GetContractIdAsync(string contractorId)
         {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Email == email && x.Active && !x.Deleted).FirstOrDefaultAsync();
-            return new(customerRecipient);
+            try
+            {
+                List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.ContractorId == contractorId).ToListAsync();
+                return new(customerRecipients);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Beneficiário");
+            }
         }
-        catch
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination)
         {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByDocumentAsync(string cpf)
-    {
-        try
-        {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && !x.Deleted && x.Active).FirstOrDefaultAsync();
-            return new(customerRecipient);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<CustomerRecipient?>> GetByCPFImportAsync(string cpf, string contractorId)
-    {
-        try
-        {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Cpf == cpf && x.ContractorId == contractorId).FirstOrDefaultAsync();
-            return new(customerRecipient);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<List<CustomerRecipient>>> GetPeriodAsync(int month, int year, string contractorId)
-    {
-        try
-        {
-            List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.CreatedAt.Date.Month == month && x.CreatedAt.Date.Year == year && x.ContractorId == contractorId).ToListAsync();
-            return new(customerRecipients);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<ResponseApi<List<CustomerRecipient>>> GetContractIdAsync(string contractorId)
-    {
-        try
-        {
-            List<CustomerRecipient> customerRecipients = await context.CustomerRecipients.Find(x => x.ContractorId == contractorId).ToListAsync();
-            return new(customerRecipients);
-        }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Beneficiário");
-        }
-    }
-    public async Task<int> GetCountDocumentsAsync(PaginationUtil<CustomerRecipient> pagination)
-    {
-        List<BsonDocument> pipeline = new()
+            List<BsonDocument> pipeline = new()
         {
             new("$match", pagination.PipelineFilter),
             new("$sort", pagination.PipelineSort),
@@ -422,62 +428,62 @@ namespace api_slim.src.Repository
             new("$sort", pagination.PipelineSort),
         };
 
-        List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
-        return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
-    }
-    #endregion
-    
-    #region CREATE
-    public async Task<ResponseApi<CustomerRecipient?>> CreateAsync(CustomerRecipient customerRecipient)
-    {
-        try
-        {
-            await context.CustomerRecipients.InsertOneAsync(customerRecipient);
+            List<BsonDocument> results = await context.CustomerRecipients.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
+        }
+        #endregion
 
-            return new(customerRecipient, 201, "Beneficiário criado com sucesso");
-        }
-        catch
+        #region CREATE
+        public async Task<ResponseApi<CustomerRecipient?>> CreateAsync(CustomerRecipient customerRecipient)
         {
-            return new(null, 500, "Falha ao criar Beneficiário");  
-        }
-    }
-    #endregion
-    
-    #region UPDATE
-    public async Task<ResponseApi<CustomerRecipient?>> UpdateAsync(CustomerRecipient customerRecipient)
-    {
-        try
-        {
-            await context.CustomerRecipients.ReplaceOneAsync(x => x.Id == customerRecipient.Id, customerRecipient);
+            try
+            {
+                await context.CustomerRecipients.InsertOneAsync(customerRecipient);
 
-            return new(customerRecipient, 201, "Beneficiário atualizado com sucesso");
+                return new(customerRecipient, 201, "Beneficiário criado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao criar Beneficiário");
+            }
         }
-        catch
-        {
-            return new(null, 500, "Falha ao atualizar Beneficiário");
-        }
-    }
-    #endregion
-    
-    #region DELETE
-    public async Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id)
-    {
-        try
-        {
-            CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            if(customerRecipient is null) return new(null, 404, "Beneficiário não encontrado");
-            customerRecipient.Deleted = true;
-            customerRecipient.DeletedAt = DateTime.UtcNow;
+        #endregion
 
-            await context.CustomerRecipients.ReplaceOneAsync(x => x.Id == id, customerRecipient);
-
-            return new(customerRecipient, 204, "Beneficiário excluído com sucesso");
-        }
-        catch
+        #region UPDATE
+        public async Task<ResponseApi<CustomerRecipient?>> UpdateAsync(CustomerRecipient customerRecipient)
         {
-            return new(null, 500, "Falha ao excluír Beneficiário");
+            try
+            {
+                await context.CustomerRecipients.ReplaceOneAsync(x => x.Id == customerRecipient.Id, customerRecipient);
+
+                return new(customerRecipient, 201, "Beneficiário atualizado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao atualizar Beneficiário");
+            }
         }
+        #endregion
+
+        #region DELETE
+        public async Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id)
+        {
+            try
+            {
+                CustomerRecipient? customerRecipient = await context.CustomerRecipients.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                if (customerRecipient is null) return new(null, 404, "Beneficiário não encontrado");
+                customerRecipient.Deleted = true;
+                customerRecipient.DeletedAt = DateTime.UtcNow;
+
+                await context.CustomerRecipients.ReplaceOneAsync(x => x.Id == id, customerRecipient);
+
+                return new(customerRecipient, 204, "Beneficiário excluído com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao excluír Beneficiário");
+            }
+        }
+        #endregion
     }
-    #endregion
-}
 }

@@ -1,5 +1,4 @@
 using api_slim.src.Models.Base;
-using api_slim.src.Shared.DTOs;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -28,10 +27,10 @@ namespace api_slim.src.Models
         
         [BsonElement("specialty")]
         public string Specialty { get; set; } = string.Empty;
-       
+
         [BsonElement("registration")]
         public string Registration { get; set; } = string.Empty;
-     
+
         [BsonElement("number")]
         public string Number { get; set; } = string.Empty;
         

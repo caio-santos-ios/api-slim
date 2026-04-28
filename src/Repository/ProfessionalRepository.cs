@@ -10,22 +10,22 @@ using MongoDB.Driver;
 namespace api_slim.src.Repository
 {
     public class ProfessionalRepository(AppDbContext context) : IProfessionalRepository
-{
-    #region READ
-    public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Professional> pagination)
     {
-        try
+        #region READ
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Professional> pagination)
         {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
                 new("$skip", pagination.Skip),
-                new("$limit", pagination.Limit),               
-                
+                new("$limit", pagination.Limit),
+
                 new BsonDocument("$lookup", new BsonDocument
                 {
-                    { "from", "generic_tables" }, 
+                    { "from", "generic_tables" },
                     { "let", new BsonDocument("type", "$type") },
                     { "pipeline", new BsonArray
                         {
@@ -40,12 +40,12 @@ namespace api_slim.src.Repository
                             })
                         }
                     },
-                    { "as", "_type" } 
+                    { "as", "_type" }
                 }),
 
                 new BsonDocument("$lookup", new BsonDocument
                 {
-                    { "from", "generic_tables" }, 
+                    { "from", "generic_tables" },
                     { "let", new BsonDocument("specialty", "$specialty") },
                     { "pipeline", new BsonArray
                         {
@@ -55,12 +55,12 @@ namespace api_slim.src.Repository
                             })
                         }
                     },
-                    { "as", "_specialty" } 
+                    { "as", "_specialty" }
                 }),
 
                 new BsonDocument("$lookup", new BsonDocument
                 {
-                    { "from", "generic_tables" }, 
+                    { "from", "generic_tables" },
                     { "let", new BsonDocument("registration", "$registration") },
                     { "pipeline", new BsonArray
                         {
@@ -70,9 +70,9 @@ namespace api_slim.src.Repository
                             })
                         }
                     },
-                    { "as", "_registration" } 
+                    { "as", "_registration" }
                 }),
-                
+
                 new BsonDocument("$lookup", new BsonDocument
                 {
                     { "from", "addresses" },
@@ -88,7 +88,7 @@ namespace api_slim.src.Repository
                                         new BsonArray
                                         {
                                             "$parentId",
-                                            "$$profId"                                     
+                                            "$$profId"
                                         }
                                     )
                                 }
@@ -104,7 +104,7 @@ namespace api_slim.src.Repository
                     { "path", "$_address" },
                     { "preserveNullAndEmptyArrays", true }
                 }),
-                
+
                 new("$addFields", new BsonDocument
                 {
                     {"id", new BsonDocument("$toString", "$_id")},
@@ -129,37 +129,37 @@ namespace api_slim.src.Repository
 
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
-                    {"_specialty", 0}, 
-                    {"_address", 0}, 
-                    {"_type", 0}, 
+                    {"_id", 0},
+                    {"_specialty", 0},
+                    {"_address", 0},
+                    {"_type", 0},
                     {"_registration", 0},
                 }),
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Profissionais");
+            }
         }
-        catch
+
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Professional> pagination)
         {
-            return new(null, 500, "Falha ao buscar Profissionais");
-        }
-    }
-    
-    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Professional> pagination)
-    {
-        try
-        {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
 
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
+                    {"_id", 0},
                     {"id", MongoUtil.ToString("$_id")},
                     {"name", 1}
 
@@ -167,61 +167,86 @@ namespace api_slim.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Profissionais");
+            }
         }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Profissionais");
-        }
-    }
-    
-    public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
-    {
-        try
-        {
-            BsonDocument[] pipeline = [
-                new("$match", new BsonDocument{
-                    {"_id", new ObjectId(id)},
-                    {"deleted", false}
-                }),
-             
-                new("$project", new BsonDocument
-                {
-                    {"_id", 0},
-                    {"id", new BsonDocument("$toString", "$_id")},
-                    {"name", 1},
-                    {"email", 1},
-                }),
-            ];
 
-            BsonDocument? response = await context.Professionals.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
-            dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-            return result is null ? new(null, 404, "Profissional não encontrado") : new(result);
-        }
-        catch
+        public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
-            return new(null, 500, "Falha ao buscar Profissional");
+            try
+            {
+                BsonDocument[] pipeline = [
+                    new("$match", new BsonDocument
+                    {
+                        {"_id", new ObjectId(id)},
+                        {"deleted", false}
+                    }),
+
+                    MongoUtil.LookupV2("addresses", ["$_id"], ["$parentId"], "_address", [["deleted", false], ["parent", "professional"]], 1),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"addressId", MongoUtil.First("_address._id")},
+                    }),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"id", MongoUtil.ToString("$_id")},
+                        {"address", new BsonDocument
+                            {
+                                {"id", MongoUtil.ToString("$addressId")},
+                                {"street", MongoUtil.First("_address.street")},
+                                {"number", MongoUtil.First("_address.number")},
+                                {"complement", MongoUtil.First("_address.complement")},
+                                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                                {"city", MongoUtil.First("_address.city")},
+                                {"state", MongoUtil.First("_address.state")},
+                                {"zipCode", MongoUtil.First("_address.zipCode")},
+                                {"parent", MongoUtil.First("_address.parent")},
+                                {"parentId", MongoUtil.First("_address.parentId")},
+                            }
+                        },
+                    }),
+
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"_address", 0},
+                    }),
+                ];
+
+                BsonDocument? response = await context.Professionals.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+                return result is null ? new(null, 404, "Profissional não encontrado") : new(result);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Profissional");
+            }
         }
-    }
-    
-    public async Task<ResponseApi<Professional?>> GetByIdAsync(string id)
-    {
-        try
+
+        public async Task<ResponseApi<Professional?>> GetByIdAsync(string id)
         {
-            Professional? professional = await context.Professionals.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            return new(professional);
+            try
+            {
+                Professional? professional = await context.Professionals.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(professional);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Profissional");
+            }
         }
-        catch
+
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Professional> pagination)
         {
-            return new(null, 500, "Falha ao buscar Profissional");
-        }
-    }
-    
-    public async Task<int> GetCountDocumentsAsync(PaginationUtil<Professional> pagination)
-    {
-        List<BsonDocument> pipeline = new()
+            List<BsonDocument> pipeline = new()
         {
             new("$match", pagination.PipelineFilter),
             new("$sort", pagination.PipelineSort),
@@ -236,62 +261,62 @@ namespace api_slim.src.Repository
             new("$sort", pagination.PipelineSort),
         };
 
-        List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
-        return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
-    }
-    #endregion
-    
-    #region CREATE
-    public async Task<ResponseApi<Professional?>> CreateAsync(Professional professional)
-    {
-        try
-        {
-            await context.Professionals.InsertOneAsync(professional);
+            List<BsonDocument> results = await context.Professionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
+        }
+        #endregion
 
-            return new(professional, 201, "Profissional criado com sucesso");
-        }
-        catch
+        #region CREATE
+        public async Task<ResponseApi<Professional?>> CreateAsync(Professional professional)
         {
-            return new(null, 500, "Falha ao criar Profissional");  
-        }
-    }
-    #endregion
-    
-    #region UPDATE
-    public async Task<ResponseApi<Professional?>> UpdateAsync(Professional professional)
-    {
-        try
-        {
-            await context.Professionals.ReplaceOneAsync(x => x.Id == professional.Id, professional);
+            try
+            {
+                await context.Professionals.InsertOneAsync(professional);
 
-            return new(professional, 201, "Profissional atualizado com sucesso");
+                return new(professional, 201, "Profissional criado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao criar Profissional");
+            }
         }
-        catch
-        {
-            return new(null, 500, "Falha ao atualizar Profissional");
-        }
-    }
-    #endregion
-    
-    #region DELETE
-    public async Task<ResponseApi<Professional>> DeleteAsync(string id)
-    {
-        try
-        {
-            Professional? professional = await context.Professionals.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            if(professional is null) return new(null, 404, "Profissional não encontrado");
-            professional.Deleted = true;
-            professional.DeletedAt = DateTime.UtcNow;
+        #endregion
 
-            await context.Professionals.ReplaceOneAsync(x => x.Id == id, professional);
-
-            return new(professional, 204, "Profissional excluído com sucesso");
-        }
-        catch
+        #region UPDATE
+        public async Task<ResponseApi<Professional?>> UpdateAsync(Professional professional)
         {
-            return new(null, 500, "Falha ao excluír Profissional");
+            try
+            {
+                await context.Professionals.ReplaceOneAsync(x => x.Id == professional.Id, professional);
+
+                return new(professional, 201, "Profissional atualizado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao atualizar Profissional");
+            }
         }
+        #endregion
+
+        #region DELETE
+        public async Task<ResponseApi<Professional>> DeleteAsync(string id)
+        {
+            try
+            {
+                Professional? professional = await context.Professionals.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                if (professional is null) return new(null, 404, "Profissional não encontrado");
+                professional.Deleted = true;
+                professional.DeletedAt = DateTime.UtcNow;
+
+                await context.Professionals.ReplaceOneAsync(x => x.Id == id, professional);
+
+                return new(professional, 204, "Profissional excluído com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao excluír Profissional");
+            }
+        }
+        #endregion
     }
-    #endregion
-}
 }

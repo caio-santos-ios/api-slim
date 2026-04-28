@@ -7,6 +7,7 @@ namespace api_slim.src.Interfaces
     public interface IInPersonService
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<List<dynamic>>> GetTotalAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<InPerson?>> CreateAsync(CreateInPersonDTO user);
         Task<ResponseApi<InPerson?>> UpdateAsync(UpdateInPersonDTO request);

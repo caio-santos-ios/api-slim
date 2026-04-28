@@ -10,13 +10,13 @@ using MongoDB.Driver;
 namespace api_slim.src.Repository
 {
     public class SellerRepository(AppDbContext context) : ISellerRepository
-{
-    #region READ
-    public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Seller> pagination)
     {
-        try
+        #region READ
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Seller> pagination)
         {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
@@ -43,8 +43,8 @@ namespace api_slim.src.Repository
                                         new BsonArray
                                         {
                                             // new BsonDocument("$toObjectId", "$parentId"),
-                                            "$parentId", 
-                                            "$$profId"                                     
+                                            "$parentId",
+                                            "$$profId"
                                         }
                                     )
                                 }
@@ -76,68 +76,93 @@ namespace api_slim.src.Repository
                 }),
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
-                    {"_address", 0}, 
+                    {"_id", 0},
+                    {"_address", 0},
                 }),
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Vendedores");
+            }
         }
-        catch
-        {
-            return new(null, 500, "Falha ao buscar Vendedores");
-        }
-    }
-    
-    public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
-    {
-        try
-        {
-            BsonDocument[] pipeline = [
-                new("$match", new BsonDocument{
-                    {"_id", new ObjectId(id)},
-                    {"deleted", false}
-                }),
-                new("$project", new BsonDocument
-                {
-                    {"_id", 0},
-                    {"id", new BsonDocument("$toString", "$_id")},
-                    {"name", 1},
-                    {"email", 1}
-                }),
-            ];
 
-            BsonDocument? response = await context.Sellers.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
-            dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-            return result is null ? new(null, 404, "Vendedor não encontrado") : new(result);
-        }
-        catch
+        public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
-            return new(null, 500, "Falha ao buscar Vendedor");
+            try
+            {
+                BsonDocument[] pipeline = [
+                        new("$match", new BsonDocument{
+                        {"_id", new ObjectId(id)},
+                        {"deleted", false}
+                    }),
+
+                    MongoUtil.LookupV2("addresses", ["$_id"], ["$parentId"], "_address", [["deleted", false], ["parent", "seller"]], 1),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"addressId", MongoUtil.First("_address._id")},
+                    }),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"id", MongoUtil.ToString("$_id")},
+                        {"address", new BsonDocument
+                            {
+                                {"id", MongoUtil.ToString("$addressId")},
+                                {"street", MongoUtil.First("_address.street")},
+                                {"number", MongoUtil.First("_address.number")},
+                                {"complement", MongoUtil.First("_address.complement")},
+                                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                                {"city", MongoUtil.First("_address.city")},
+                                {"state", MongoUtil.First("_address.state")},
+                                {"zipCode", MongoUtil.First("_address.zipCode")},
+                                {"parent", MongoUtil.First("_address.parent")},
+                                {"parentId", MongoUtil.First("_address.parentId")},
+                            }
+                        },
+                    }),
+
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"_address", 0},
+                    }),
+                ];
+
+                BsonDocument? response = await context.Sellers.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+                return result is null ? new(null, 404, "Vendedor não encontrado") : new(result);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Vendedor");
+            }
         }
-    }
-    
-    public async Task<ResponseApi<Seller?>> GetByIdAsync(string id)
-    {
-        try
+
+        public async Task<ResponseApi<Seller?>> GetByIdAsync(string id)
         {
-            Seller? seller = await context.Sellers.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            return new(seller);
+            try
+            {
+                Seller? seller = await context.Sellers.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(seller);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Vendedor");
+            }
         }
-        catch
+
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Seller> pagination)
         {
-            return new(null, 500, "Falha ao buscar Vendedor");
-        }
-    }
-    
-    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Seller> pagination)
-    {
-        try
-        {
-            List<BsonDocument> pipeline = new()
+            try
+            {
+                List<BsonDocument> pipeline = new()
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
@@ -146,28 +171,28 @@ namespace api_slim.src.Repository
                 }),
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0}, 
+                    {"_id", 0},
                     {"id", MongoUtil.ToString("$_id")},
-                    {"name", 1},                    
-                    {"createdAt", 1},                    
-                    {"deleted", 1},                    
+                    {"name", 1},
+                    {"createdAt", 1},
+                    {"deleted", 1},
                 }),
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
-            return new(list);
+                List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Vendedores");
+            }
         }
-        catch
+
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Seller> pagination)
         {
-            return new(null, 500, "Falha ao buscar Vendedores");
-        }
-    }
-    
-    public async Task<int> GetCountDocumentsAsync(PaginationUtil<Seller> pagination)
-    {
-        List<BsonDocument> pipeline = new()
+            List<BsonDocument> pipeline = new()
         {
             new("$match", pagination.PipelineFilter),
             new("$sort", pagination.PipelineSort),
@@ -182,62 +207,62 @@ namespace api_slim.src.Repository
             new("$sort", pagination.PipelineSort),
         };
 
-        List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
-        return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
-    }
-    #endregion
-    
-    #region CREATE
-    public async Task<ResponseApi<Seller?>> CreateAsync(Seller seller)
-    {
-        try
-        {
-            await context.Sellers.InsertOneAsync(seller);
+            List<BsonDocument> results = await context.Sellers.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
+        }
+        #endregion
 
-            return new(seller, 201, "Vendedor criado com sucesso");
-        }
-        catch
+        #region CREATE
+        public async Task<ResponseApi<Seller?>> CreateAsync(Seller seller)
         {
-            return new(null, 500, "Falha ao criar Vendedor");  
-        }
-    }
-    #endregion
-    
-    #region UPDATE
-    public async Task<ResponseApi<Seller?>> UpdateAsync(Seller seller)
-    {
-        try
-        {
-            await context.Sellers.ReplaceOneAsync(x => x.Id == seller.Id, seller);
+            try
+            {
+                await context.Sellers.InsertOneAsync(seller);
 
-            return new(seller, 201, "Vendedor atualizado com sucesso");
+                return new(seller, 201, "Vendedor criado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao criar Vendedor");
+            }
         }
-        catch
-        {
-            return new(null, 500, "Falha ao atualizar Vendedor");
-        }
-    }
-    #endregion
-    
-    #region DELETE
-    public async Task<ResponseApi<Seller>> DeleteAsync(string id)
-    {
-        try
-        {
-            Seller? seller = await context.Sellers.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-            if(seller is null) return new(null, 404, "Vendedor não encontrado");
-            seller.Deleted = true;
-            seller.DeletedAt = DateTime.UtcNow;
+        #endregion
 
-            await context.Sellers.ReplaceOneAsync(x => x.Id == id, seller);
-
-            return new(seller, 204, "Vendedor excluído com sucesso");
-        }
-        catch
+        #region UPDATE
+        public async Task<ResponseApi<Seller?>> UpdateAsync(Seller seller)
         {
-            return new(null, 500, "Falha ao excluír Vendedor");
+            try
+            {
+                await context.Sellers.ReplaceOneAsync(x => x.Id == seller.Id, seller);
+
+                return new(seller, 201, "Vendedor atualizado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao atualizar Vendedor");
+            }
         }
+        #endregion
+
+        #region DELETE
+        public async Task<ResponseApi<Seller>> DeleteAsync(string id)
+        {
+            try
+            {
+                Seller? seller = await context.Sellers.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                if (seller is null) return new(null, 404, "Vendedor não encontrado");
+                seller.Deleted = true;
+                seller.DeletedAt = DateTime.UtcNow;
+
+                await context.Sellers.ReplaceOneAsync(x => x.Id == id, seller);
+
+                return new(seller, 204, "Vendedor excluído com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao excluír Vendedor");
+            }
+        }
+        #endregion
     }
-    #endregion
-}
 }

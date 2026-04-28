@@ -186,6 +186,19 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpPut("whatsapp")]
+    public async Task<IActionResult> UpdateWhatsApp([FromBody] UpdateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+        ResponseApi<CustomerRecipient?> response = await service.UpdateWhatsAppAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Message });
+    }
+    
+    [Authorize]
     [HttpPut("convert-contractor")]
     public async Task<IActionResult> UpdateConvertOrContractor([FromBody] UpdateCustomerRecipientDTO customer)
     {

@@ -28,7 +28,7 @@ namespace api_slim.src.Repository
                     }),
                     new("$project", new BsonDocument
                     {
-                        {"_id", 0}, 
+                        {"_id", 0},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -42,7 +42,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Items");
             }
         }
-        
+
         public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
             try
@@ -51,6 +51,15 @@ namespace api_slim.src.Repository
                     new("$match", new BsonDocument{
                         {"_id", new ObjectId(id)},
                         {"deleted", false}
+                    }),
+
+                    MongoUtil.LookupV2("addresses", ["$_id"], ["$parentId"], "_address", [["deleted", false], ["parent", "accredited-network"]], 1),
+                    MongoUtil.LookupV2("addresses", ["$_id"], ["$parentId"], "_address_responsible", [["deleted", false], ["parent", "accredited-network-responsible"]], 1),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"addressId", MongoUtil.First("_address._id")},
+                        {"addressResponsibleId", MongoUtil.First("_address_responsible._id")},
                     }),
 
                     new BsonDocument("$lookup", new BsonDocument
@@ -84,7 +93,7 @@ namespace api_slim.src.Repository
 
                         { "as", "_address" }
                     }),
-                    
+
                     new BsonDocument("$lookup", new BsonDocument
                     {
                         { "from", "addresses" },
@@ -116,35 +125,35 @@ namespace api_slim.src.Repository
 
                         { "as", "_address_responsible" }
                     }),
-                    
+
                     new("$addFields", new BsonDocument {
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"address", new BsonDocument
                             {
-                                {"id", new BsonDocument("$toString", new BsonDocument("$first", "$_address._id"))},
-                                {"street", new BsonDocument("$first", "$_address.street")},
-                                {"number", new BsonDocument("$first", "$_address.number")},
-                                {"complement", new BsonDocument("$first", "$_address.complement")},
-                                {"neighborhood", new BsonDocument("$first", "$_address.neighborhood")},
-                                {"city", new BsonDocument("$first", "$_address.city")},
-                                {"state", new BsonDocument("$first", "$_address.state")},
-                                {"zipCode", new BsonDocument("$first", "$_address.zipCode")},
-                                {"parent", new BsonDocument("$first", "$_address.parent")},
-                                {"parentId", new BsonDocument("$first", "$_address.parentId")},
+                                {"id", MongoUtil.ToString("$addressId")},
+                                {"street", MongoUtil.First("_address.street")},
+                                {"number", MongoUtil.First("_address.number")},
+                                {"complement", MongoUtil.First("_address.complement")},
+                                {"neighborhood", MongoUtil.First("_address.neighborhood")},
+                                {"city", MongoUtil.First("_address.city")},
+                                {"state", MongoUtil.First("_address.state")},
+                                {"zipCode", MongoUtil.First("_address.zipCode")},
+                                {"parent", MongoUtil.First("_address.parent")},
+                                {"parentId", MongoUtil.First("_address.parentId")},
                             }
                         },
-                        {
-                            "responsible.address", new BsonDocument {
-                                {"id", new BsonDocument("$toString", new BsonDocument("$first", "$_address_responsible._id"))},
-                                {"street", new BsonDocument("$first", "$_address_responsible.street")},
-                                {"number", new BsonDocument("$first", "$_address_responsible.number")},
-                                {"complement", new BsonDocument("$first", "$_address_responsible.complement")},
-                                {"neighborhood", new BsonDocument("$first", "$_address_responsible.neighborhood")},
-                                {"city", new BsonDocument("$first", "$_address_responsible.city")},
-                                {"state", new BsonDocument("$first", "$_address_responsible.state")},
-                                {"zipCode", new BsonDocument("$first", "$_address_responsible.zipCode")},
-                                {"parent", new BsonDocument("$first", "$_address_responsible.parent")},
-                                {"parentId", new BsonDocument("$first", "$_address_responsible.parentId")},
+                        {"responsible.address", new BsonDocument
+                            {
+                                {"id", MongoUtil.ToString("$addressResponsibleId")},
+                                {"street", MongoUtil.First("_address_responsible.street")},
+                                {"number", MongoUtil.First("_address_responsible.number")},
+                                {"complement", MongoUtil.First("_address_responsible.complement")},
+                                {"neighborhood", MongoUtil.First("_address_responsible.neighborhood")},
+                                {"city", MongoUtil.First("_address_responsible.city")},
+                                {"state", MongoUtil.First("_address_responsible.state")},
+                                {"zipCode", MongoUtil.First("_address_responsible.zipCode")},
+                                {"parent", MongoUtil.First("_address_responsible.parent")},
+                                {"parentId", MongoUtil.First("_address_responsible.parentId")},
                             }
                         }
                     }),
@@ -164,7 +173,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Item");
             }
         }
-        
+
         public async Task<ResponseApi<AccreditedNetwork?>> GetByIdAsync(string id)
         {
             try
@@ -202,7 +211,7 @@ namespace api_slim.src.Repository
 
                     new("$project", new BsonDocument
                     {
-                        {"_id", 0}, 
+                        {"_id", 0},
                         {"id", 1},
                         {"corporateName", 1},
                         {"tradingTableItems", MongoUtil.First("_trading_table.items")},
@@ -220,7 +229,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Items");
             }
         }
-        
+
         public async Task<ResponseApi<long?>> GetNextCodeAsync()
         {
             try
@@ -254,7 +263,7 @@ namespace api_slim.src.Repository
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
-        
+
         #region CREATE
         public async Task<ResponseApi<AccreditedNetwork?>> CreateAsync(AccreditedNetwork billing)
         {
@@ -266,11 +275,11 @@ namespace api_slim.src.Repository
             }
             catch
             {
-                return new(null, 500, "Falha ao criar Item");  
+                return new(null, 500, "Falha ao criar Item");
             }
         }
         #endregion
-        
+
         #region UPDATE
         public async Task<ResponseApi<AccreditedNetwork?>> UpdateAsync(AccreditedNetwork billing)
         {
@@ -286,14 +295,14 @@ namespace api_slim.src.Repository
             }
         }
         #endregion
-        
+
         #region DELETE
         public async Task<ResponseApi<AccreditedNetwork>> DeleteAsync(string id)
         {
             try
             {
                 AccreditedNetwork? billing = await context.AccreditedNetworks.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                if(billing is null) return new(null, 404, "Item não encontrado");
+                if (billing is null) return new(null, 404, "Item não encontrado");
                 billing.Deleted = true;
                 billing.DeletedAt = DateTime.UtcNow;
 

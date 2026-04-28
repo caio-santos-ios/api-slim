@@ -8,7 +8,12 @@ using AutoMapper;
 
 namespace api_slim.src.Services
 {
-    public class InPersonService(IInPersonRepository repository, IMapper _mapper, IAppointmentNotificationService appointmentNotificationService, ICustomerRecipientRepository customerRecipientRepository) : IInPersonService
+    public class InPersonService(
+        IInPersonRepository repository, 
+        IMapper _mapper, 
+        IAppointmentNotificationService appointmentNotificationService, 
+        ICustomerRecipientRepository customerRecipientRepository
+    ) : IInPersonService
 {
     #region READ
     public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -19,6 +24,20 @@ namespace api_slim.src.Services
             ResponseApi<List<dynamic>> inPersons = await repository.GetAllAsync(pagination);
             int count = await repository.GetCountDocumentsAsync(pagination);
             return new(inPersons.Data, count, pagination.PageNumber, pagination.PageSize);
+        }
+        catch
+        {
+            return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+        }
+    }
+    
+    public async Task<ResponseApi<List<dynamic>>> GetTotalAsync(GetAllDTO request)
+    {
+        try
+        {
+            PaginationUtil<InPerson> pagination = new(request.QueryParams);
+            ResponseApi<List<dynamic>> inPersons = await repository.GetTotalAsync(pagination);
+            return new(inPersons.Data);
         }
         catch
         {
