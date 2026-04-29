@@ -18,8 +18,58 @@ namespace api_slim.src.Repository
             {
                 List<BsonDocument> pipeline = new()
                 {
+                    new("$sort", pagination.PipelineSort),
+
+                    MongoUtil.Lookup("customer_recipients", ["$beneficiaryCPF"], ["$cpf"], "_recipient", [["deleted", false]], 1),
+
+                    new("$addFields", new BsonDocument 
+                    {
+                        {"beneficiaryName", MongoUtil.First("_recipient.name")},
+                    }),
+
+                    new("$match", pagination.PipelineFilter),
+                    
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"phone", 1},
+                        {"message", 1},
+                        {"sendDate", 1},
+                        {"sent", 1},
+                        {"type", 1},
+                        {"title", 1},
+                        {"link", 1},
+                        {"read", 1},
+                        {"origin", 1},
+                        {"parent", 1},
+                        {"parentId", 1},
+                        {"beneficiaryName", 1},
+                        {"beneficiaryCPF", 1},
+                    }),
+                    new("$sort", pagination.PipelineSort),
+                    new("$skip", pagination.Skip),
+                    new("$limit", pagination.Limit),
+                };
+
+                List<BsonDocument> results = await context.NotificationJobs.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Falha ao buscar Notificações");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetListAsync(PaginationUtil<NotificationJob> pagination)
+        {
+            try
+            {
+                List<BsonDocument> pipeline = new()
+                {
                     new("$match", pagination.PipelineFilter),
                     new("$sort", pagination.PipelineSort),
+
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -83,6 +133,26 @@ namespace api_slim.src.Repository
             {
                 return new(null, 500, "Falha ao buscar Notificação");
             }
+        }
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<NotificationJob> pagination)
+        {
+            List<BsonDocument> pipeline = new()
+            {
+                new("$match", pagination.PipelineFilter),
+                new("$sort", pagination.PipelineSort),
+                new("$addFields", new BsonDocument
+                {
+                    {"id", new BsonDocument("$toString", "$_id")},
+                }),
+                new("$project", new BsonDocument
+                {
+                    {"_id", 0},
+                }),
+                new("$sort", pagination.PipelineSort),
+            };
+
+            List<BsonDocument> results = await context.NotificationJobs.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
         #region CREATE

@@ -10,13 +10,27 @@ namespace api_slim.src.Services
     public class NotificationService(INotificationRepository repository, ICustomerRecipientRepository customerRecipientRepository, SmClickHandler smClickHandler) : INotificationService
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
+        public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
         {
             try
             {
                 PaginationUtil<NotificationJob> pagination = new(request.QueryParams);
 
                 ResponseApi<List<dynamic>> notifications = await repository.GetAllAsync(pagination);
+                int count = await repository.GetCountDocumentsAsync(pagination);
+                return new(notifications.Data, count, pagination.PageNumber, pagination.PageSize);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetListAsync(GetAllDTO request)
+        {
+            try
+            {
+                PaginationUtil<NotificationJob> pagination = new(request.QueryParams);
+                ResponseApi<List<dynamic>> notifications = await repository.GetListAsync(pagination);
                 return new(notifications.Data);
             }
             catch

@@ -12,10 +12,18 @@ namespace api_slim.src.Controllers
     public class NotificationController(INotificationService service) : ControllerBase
     {
         [Authorize]
-        [HttpGet]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
-            ResponseApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
+            PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetList()
+        {
+            ResponseApi<List<dynamic>> response = await service.GetListAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
