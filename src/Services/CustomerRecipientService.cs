@@ -1255,10 +1255,10 @@ namespace api_slim.src.Services
                 ResponseApi<CustomerRecipient?> response = await customerRepository.UpdateAsync(customerResponse.Data);
                 if (!response.IsSuccess || response.Data is null) return new(null, 400, "Falha ao atualizar");
 
-                ResponseApi<List<NotificationJob>> notifications = await notificationRepository.GetByParentIdAsync(request.ParentId, "InPerson");
+                ResponseApi<List<Notification>> notifications = await notificationRepository.GetByParentIdAsync(request.ParentId, "InPerson");
                 if (notifications.Data is not null)
                 {
-                    foreach (NotificationJob notification in notifications.Data)
+                    foreach (Notification notification in notifications.Data)
                     {
                         notification.Phone = request.Whatsapp;
 

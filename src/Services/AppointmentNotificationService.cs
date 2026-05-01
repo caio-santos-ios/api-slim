@@ -9,7 +9,7 @@ public class AppointmentNotificationService(AppDbContext context) : IAppointment
 {
     public async Task ScheduleNotificationsAsync(string phone, string beneficiaryName, DateTime appointmentDate)
     {
-        var jobs = new List<NotificationJob>
+        var jobs = new List<Notification>
         {
         //     new() {
         //         Phone = phone,
@@ -34,32 +34,32 @@ public class AppointmentNotificationService(AppDbContext context) : IAppointment
         //     }
         };
 
-        // await context.NotificationJobs.DeleteManyAsync(
-        //     Builders<NotificationJob>.Filter.And(
-        //         Builders<NotificationJob>.Filter.Eq(j => j.Phone, phone),
-        //         Builders<NotificationJob>.Filter.Eq(j => j.AppointmentDate, appointmentDate),
-        //         Builders<NotificationJob>.Filter.Eq(j => j.Sent, false)
+        // await context.Notifications.DeleteManyAsync(
+        //     Builders<Notification>.Filter.And(
+        //         Builders<Notification>.Filter.Eq(j => j.Phone, phone),
+        //         Builders<Notification>.Filter.Eq(j => j.AppointmentDate, appointmentDate),
+        //         Builders<Notification>.Filter.Eq(j => j.Sent, false)
         //     ));
-        await context.NotificationJobs.InsertManyAsync(jobs);
+        await context.Notifications.InsertManyAsync(jobs);
     }
-    public async Task CreateNotificationsAsync(List<NotificationJob> jobs, string phone)
+    public async Task CreateNotificationsAsync(List<Notification> jobs, string phone)
     {
-        // await context.NotificationJobs.DeleteManyAsync(
-        //     Builders<NotificationJob>.Filter.And(
-        //         Builders<NotificationJob>.Filter.Eq(j => j.Phone, phone),
-        //         Builders<NotificationJob>.Filter.Eq(j => j.Sent, false)
+        // await context.Notifications.DeleteManyAsync(
+        //     Builders<Notification>.Filter.And(
+        //         Builders<Notification>.Filter.Eq(j => j.Phone, phone),
+        //         Builders<Notification>.Filter.Eq(j => j.Sent, false)
         //     ));
-        await context.NotificationJobs.InsertManyAsync(jobs);
+        await context.Notifications.InsertManyAsync(jobs);
     }
 
     public async Task CancelNotificationsAsync(string parentId, string parent)
     {
-        var filter = Builders<NotificationJob>.Filter.And(
-            Builders<NotificationJob>.Filter.Eq(j => j.ParentId, parentId),
-            Builders<NotificationJob>.Filter.Eq(j => j.Parent, parent),
-            Builders<NotificationJob>.Filter.Eq(j => j.Sent, false)
+        var filter = Builders<Notification>.Filter.And(
+            Builders<Notification>.Filter.Eq(j => j.ParentId, parentId),
+            Builders<Notification>.Filter.Eq(j => j.Parent, parent),
+            Builders<Notification>.Filter.Eq(j => j.Sent, false)
         );
 
-        await context.NotificationJobs.DeleteManyAsync(filter);
+        await context.Notifications.DeleteManyAsync(filter);
     }
 }

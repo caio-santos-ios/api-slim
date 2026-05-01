@@ -80,36 +80,68 @@ namespace api_slim.src.Services
                 }
 
                 TimeSpan time = TimeSpan.Parse(request.Hour);
-                DateTime? dateTime = request?.Date?.Add(time);
+                DateTime dateTime = request.Date + time;
+                System.Console.WriteLine(dateTime);
                 
-                List<NotificationJob> jobs = new()
+                List<Notification> jobs = new()
                 {
                     new() {
                         Parent = "InPerson",
                         ParentId = response.Data.Id!,
-                        Phone = recipientResponse.Data.Phone,
+                        Phone = recipientResponse.Data.Whatsapp,
                         BeneficiaryName = recipientResponse.Data.Name,
                         BeneficiaryCPF = recipientResponse.Data.Cpf,
                         BeneficiaryId = response.Data.Id,
-                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request!.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AccreditedDescription, request.AddressDescription),
-                        SendDate = DateTime.UtcNow.AddSeconds(30),
-                        Type = "WhatsApp",
+                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request!.ProcedureDescription, request.ProfessionalDescription, request.Date.ToString("dd/MM/yyyy"), request.Hour, request.AccreditedDescription, request.AddressDescription),
+                        SendPreviusDate = DateTime.UtcNow.AddSeconds(30),
+                        Type = "AppPush",
                         Title = "Confirmação da Consulta"
                     },
                     new() {
                         Parent = "InPerson",
                         ParentId = response.Data.Id!,
-                        Phone = recipientResponse.Data.Phone,
+                        Phone = recipientResponse.Data.Whatsapp,
                         BeneficiaryName = recipientResponse.Data.Name,
                         BeneficiaryCPF = recipientResponse.Data.Cpf,
                         BeneficiaryId = response.Data.Id,
-                        Message = WhatsAppTemplate.InPersonDayReminder(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date?.ToString("dd/MM/yyyy")!, request.Hour, request.AddressDescription),
-                        SendDate = dateTime?.AddDays(-1).AddHours(-1) ?? DateTime.UtcNow.AddSeconds(30),
-                        Type = "WhatsApp",
+                        Message = WhatsAppTemplate.InPersonDayReminder(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date.ToString("dd/MM/yyyy"), request.Hour, request.AddressDescription),
+                        SendPreviusDate = dateTime.AddDays(-1).AddHours(-1),
+                        Type = "AppPush",
                         Title = "Lembrete da Consulta"
                     },
-                    // Notificação de avaliação vou implementar depois.
                 };
+
+                if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
+                {
+                    jobs.Add(new ()
+                    {
+                        Parent = "InPerson",
+                        ParentId = response.Data.Id!,
+                        Phone = recipientResponse.Data.Whatsapp,
+                        BeneficiaryName = recipientResponse.Data.Name,
+                        BeneficiaryCPF = recipientResponse.Data.Cpf,
+                        BeneficiaryId = response.Data.Id,
+                        Message = WhatsAppTemplate.InPersonConfirmation(recipientResponse.Data.Name, recipientResponse.Data.Name, request!.ProcedureDescription, request.ProfessionalDescription, request.Date.ToString("dd/MM/yyyy")!, request.Hour, request.AccreditedDescription, request.AddressDescription),
+                        SendPreviusDate = DateTime.UtcNow.AddSeconds(30),
+                        Type = "WhatsApp",
+                        Title = "Confirmação da Consulta"
+                    });
+
+                    jobs.Add(new ()
+                    {
+                        Parent = "InPerson",
+                        ParentId = response.Data.Id!,
+                        Phone = recipientResponse.Data.Whatsapp,
+                        BeneficiaryName = recipientResponse.Data.Name,
+                        BeneficiaryCPF = recipientResponse.Data.Cpf,
+                        BeneficiaryId = response.Data.Id,
+                        Message = WhatsAppTemplate.InPersonDayReminder(recipientResponse.Data.Name, recipientResponse.Data.Name, request.ProcedureDescription, request.ProfessionalDescription, request.Date.ToString("dd/MM/yyyy")!, request.Hour, request.AddressDescription),
+                        SendPreviusDate = dateTime.AddDays(-1).AddHours(-1),
+                        Type = "WhatsApp",
+                        Title = "Lembrete da Consulta"
+                    });
+                };
+
                 await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
             }
 

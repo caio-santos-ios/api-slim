@@ -12,7 +12,7 @@ namespace api_slim.src.Repository
     public class NotificationRepository(AppDbContext context) : INotificationRepository
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<NotificationJob> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Notification> pagination)
         {
             try
             {
@@ -36,6 +36,7 @@ namespace api_slim.src.Repository
                         {"phone", 1},
                         {"message", 1},
                         {"sendDate", 1},
+                        {"sendPreviusDate", 1},
                         {"sent", 1},
                         {"type", 1},
                         {"title", 1},
@@ -52,7 +53,7 @@ namespace api_slim.src.Repository
                     new("$limit", pagination.Limit),
                 };
 
-                List<BsonDocument> results = await context.NotificationJobs.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.Notifications.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -61,7 +62,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificações");
             }
         }
-        public async Task<ResponseApi<List<dynamic>>> GetListAsync(PaginationUtil<NotificationJob> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetListAsync(PaginationUtil<Notification> pagination)
         {
             try
             {
@@ -89,7 +90,7 @@ namespace api_slim.src.Repository
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.NotificationJobs.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.Notifications.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -98,11 +99,11 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificações");
             }
         }
-        public async Task<ResponseApi<NotificationJob?>> GetByIdAsync(string id)
+        public async Task<ResponseApi<Notification?>> GetByIdAsync(string id)
         {
             try
             {
-                NotificationJob? notification = await context.NotificationJobs.Find(x => x.Id == id).FirstOrDefaultAsync();
+                Notification? notification = await context.Notifications.Find(x => x.Id == id).FirstOrDefaultAsync();
                 return new(notification);
             }
             catch
@@ -110,11 +111,11 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificação");
             }
         }
-        public async Task<ResponseApi<List<NotificationJob>>> GetByParentIdAsync(string parentId, string parent)
+        public async Task<ResponseApi<List<Notification>>> GetByParentIdAsync(string parentId, string parent)
         {
             try
             {
-                List<NotificationJob> notifications = await context.NotificationJobs.Find(x => x.ParentId == parentId && x.Parent == parent && !x.Deleted).ToListAsync();
+                List<Notification> notifications = await context.Notifications.Find(x => x.ParentId == parentId && x.Parent == parent && !x.Deleted).ToListAsync();
                 return new(notifications);
             }
             catch
@@ -122,11 +123,11 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificação");
             }
         }
-        public async Task<ResponseApi<NotificationJob?>> GetByTypeAsync(string cpf, string type)
+        public async Task<ResponseApi<Notification?>> GetByTypeAsync(string cpf, string type)
         {
             try
             {
-                NotificationJob? notification = await context.NotificationJobs.Find(x => x.BeneficiaryCPF == cpf && x.Type == type).FirstOrDefaultAsync();
+                Notification? notification = await context.Notifications.Find(x => x.BeneficiaryCPF == cpf && x.Type == type).FirstOrDefaultAsync();
                 return new(notification);
             }
             catch
@@ -134,7 +135,7 @@ namespace api_slim.src.Repository
                 return new(null, 500, "Falha ao buscar Notificação");
             }
         }
-        public async Task<int> GetCountDocumentsAsync(PaginationUtil<NotificationJob> pagination)
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Notification> pagination)
         {
             List<BsonDocument> pipeline = new()
             {
@@ -151,16 +152,16 @@ namespace api_slim.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.NotificationJobs.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<BsonDocument> results = await context.Notifications.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
         #region CREATE
-        public async Task<ResponseApi<NotificationJob?>> CreateAsync(NotificationJob notification)
+        public async Task<ResponseApi<Notification?>> CreateAsync(Notification notification)
         {
             try
             {
-                await context.NotificationJobs.InsertOneAsync(notification);
+                await context.Notifications.InsertOneAsync(notification);
 
                 return new(notification, 201, "Notificação criada com sucesso");
             }
@@ -171,11 +172,11 @@ namespace api_slim.src.Repository
         }
         #endregion
         #region UPDATE
-        public async Task<ResponseApi<NotificationJob?>> UpdateAsync(NotificationJob notification)
+        public async Task<ResponseApi<Notification?>> UpdateAsync(Notification notification)
         {
             try
             {
-                await context.NotificationJobs.ReplaceOneAsync(x => x.Id == notification.Id, notification);
+                await context.Notifications.ReplaceOneAsync(x => x.Id == notification.Id, notification);
 
                 return new(notification, 201, "Notificação atualizado com sucesso");
             }

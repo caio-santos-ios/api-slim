@@ -7,7 +7,7 @@ namespace api_slim.src.Shared.DTOs
         public string ServiceModuleId {get;set;} = string.Empty;
         public string ProfessionalId {get;set;} = string.Empty; 
         public List<string> ProcedureIds {get;set;} = [];
-        public DateTime? Date { get; set; }
+        public DateTime Date { get; set; }
         public string Hour { get; set; } = string.Empty;
         public string ResponsiblePayment { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;

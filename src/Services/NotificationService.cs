@@ -14,7 +14,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                PaginationUtil<NotificationJob> pagination = new(request.QueryParams);
+                PaginationUtil<Notification> pagination = new(request.QueryParams);
 
                 ResponseApi<List<dynamic>> notifications = await repository.GetAllAsync(pagination);
                 int count = await repository.GetCountDocumentsAsync(pagination);
@@ -29,7 +29,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                PaginationUtil<NotificationJob> pagination = new(request.QueryParams);
+                PaginationUtil<Notification> pagination = new(request.QueryParams);
                 ResponseApi<List<dynamic>> notifications = await repository.GetListAsync(pagination);
                 return new(notifications.Data);
             }
@@ -53,7 +53,7 @@ namespace api_slim.src.Services
                     {
                         // if(item.cpf != "086.306.285-70") continue;
 
-                        ResponseApi<NotificationJob> notificationWelcome = await repository.GetByTypeAsync(item.cpf, "Welcome");
+                        ResponseApi<Notification> notificationWelcome = await repository.GetByTypeAsync(item.cpf, "Welcome");
 
                         DateTime today = DateTime.Now.Date.AddHours(9);
 
@@ -76,7 +76,7 @@ namespace api_slim.src.Services
                             });
                         }
 
-                        ResponseApi<NotificationJob> notificationInstalation = await repository.GetByTypeAsync(item.cpf, "InstalationApp");
+                        ResponseApi<Notification> notificationInstalation = await repository.GetByTypeAsync(item.cpf, "InstalationApp");
                         if(notificationInstalation.Data is null)
                         {
                             await repository.CreateAsync(new ()
@@ -112,7 +112,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
+                ResponseApi<Notification?> notification = await repository.GetByIdAsync(id);
                 if(notification.Data is not null)
                 {
                     await smClickHandler.SendTextMessageAsync(notification.Data.Phone, notification.Data.Message);
@@ -134,7 +134,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
+                ResponseApi<Notification?> notification = await repository.GetByIdAsync(id);
 
                 if(notification.Data is not null)
                 {
@@ -155,7 +155,7 @@ namespace api_slim.src.Services
         {
             try
             {
-                ResponseApi<NotificationJob?> notification = await repository.GetByIdAsync(id);
+                ResponseApi<Notification?> notification = await repository.GetByIdAsync(id);
 
                 if(notification.Data is not null)
                 {

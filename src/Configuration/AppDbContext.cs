@@ -158,9 +158,9 @@ namespace api_slim.src.Configuration
         }
         #endregion
         #region NOTIFICATIONS
-        public IMongoCollection<NotificationJob> NotificationJobs
+        public IMongoCollection<Notification> Notifications
         {
-            get { return Database.GetCollection<NotificationJob>("notification_jobs"); }
+            get { return Database.GetCollection<Notification>("notifications"); }
         }
         #endregion
         #region B2B PANEL

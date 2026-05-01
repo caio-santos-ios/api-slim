@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace api_slim.src.Models;
 
-public class NotificationJob
+public class Notification
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -31,7 +31,10 @@ public class NotificationJob
     public string Message { get; set; } = string.Empty;
 
     [BsonElement("sendDate")]
-    public DateTime SendDate { get; set; }
+    public DateTime? SendDate { get; set; } = null;
+    
+    [BsonElement("sendPreviusDate")]
+    public DateTime SendPreviusDate { get; set; }
     
     [BsonElement("type")]
     public string Type { get; set; } = string.Empty;
