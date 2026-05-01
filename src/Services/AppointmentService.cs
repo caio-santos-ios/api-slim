@@ -16,8 +16,7 @@ namespace api_slim.src.Services
         ITelemedicineHistoricRepository telemedicineHistoricRepository, 
         ICustomerRecipientRepository customerRecipientRepository, 
         IAppointmentNotificationService appointmentNotificationService,
-        IAppointmentTelemedicineRepository appointmentTelemedicineRepository,
-        INotificationRepository notificationRepository
+        IAppointmentTelemedicineRepository appointmentTelemedicineRepository
     ) : IAppointmentService
     {
         private readonly HttpClient client = new();
@@ -337,10 +336,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
                             SendPreviusDate = DateTime.UtcNow.AddSeconds(30),
                             Type = "AppPush",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Confirmação do Agendamento"
                         },
                         new() {
@@ -349,10 +348,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddDays(-1),
                             Type = "AppPush",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 1 dia antes do Agendamento"
                         },
                         new() {
@@ -361,10 +360,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddHours(-1),
                             Type = "AppPush",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 1 hora antes do Agendamento"
                         },
                         new() {
@@ -373,10 +372,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddMinutes(-5),
                             Type = "AppPush",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 5 minutos antes do Agendamento"
                         },
                     };
@@ -390,10 +389,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
                             SendPreviusDate = DateTime.UtcNow.AddSeconds(30),
                             Type = "WhatsApp",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Confirmação do Agendamento"
                         });
 
@@ -403,10 +402,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddDays(-1),
                             Type = "WhatsApp",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 1 dia antes do Agendamento"
                         });
 
@@ -416,10 +415,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddHours(-1),
                             Type = "WhatsApp",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 1 hora antes do Agendamento"
                         });
                         
@@ -429,10 +428,10 @@ namespace api_slim.src.Services
                             Phone = recipientResponse.Data.Whatsapp,
                             BeneficiaryName = recipientResponse.Data.Name,
                             BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            BeneficiaryId = recipientResponse.Data.Id,
                             Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
                             SendPreviusDate = dateTime.AddMinutes(-5),
                             Type = "WhatsApp",
-                            BeneficiaryId = recipientResponse.Data.Id,
                             Title = "Lembrete 5 minutos antes do Agendamento"
                         });
                     }

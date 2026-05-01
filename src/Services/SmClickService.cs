@@ -68,7 +68,7 @@ namespace api_slim.src.Services
                 {
                     ResponseApi<CustomerRecipient?> recipient = await customerRecipientRepository.GetByIdAsync(requestDTO.BeneficiaryId);
 
-                    if(recipient is not null)
+                    if(recipient.Data is not null)
                     {
                         if(recipient.Data.SubNotification != null && recipient.Data.SubNotification.UserId != "") {
                             await pushHandler.SendPushAsync(
@@ -82,6 +82,10 @@ namespace api_slim.src.Services
                             notification.Data.SendDate = DateTime.UtcNow;
                             notification.Data.Sent = true;
                         }
+                        else
+                        {
+                            return new(null, 400, "Beneficiário precisa permitir receber notificação no dispositivo dele");
+                        }
                     }
                 }
 
@@ -93,8 +97,9 @@ namespace api_slim.src.Services
 
                 return new(notification.Data, 200, "Nofiticação enviada com sucesso");
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }   

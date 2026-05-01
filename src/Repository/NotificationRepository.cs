@@ -32,7 +32,7 @@ namespace api_slim.src.Repository
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
-                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"id", MongoUtil.ToString("$_id")},
                         {"phone", 1},
                         {"message", 1},
                         {"sendDate", 1},
@@ -47,6 +47,7 @@ namespace api_slim.src.Repository
                         {"parentId", 1},
                         {"beneficiaryName", 1},
                         {"beneficiaryCPF", 1},
+                        {"beneficiaryId", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),

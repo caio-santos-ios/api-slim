@@ -20,7 +20,7 @@ namespace api_slim.src.Controllers
 
             ResponseApi<dynamic?> response = await service.SendNotificationAsync(request);
 
-            return StatusCode(response.StatusCode, new { response.Message });
+            return StatusCode(response.StatusCode, new { response.Result });
         }
     }
 }
