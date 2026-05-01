@@ -9,7 +9,11 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class ForwardingService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository, ICustomerRecipientRepository customerRecipientRepository) : IForwardingService
+    public class ForwardingService(
+        ITelemedicineHistoricService telemedicineHistoricService, 
+        ITelemedicineHistoricRepository telemedicineHistoricRepository, 
+        ICustomerRecipientRepository customerRecipientRepository
+    ) : IForwardingService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -24,10 +28,8 @@ namespace api_slim.src.Services
                 string query = "";
                 
                 request.QueryParams.TryGetValue("status", out string? status);
-                // request.QueryParams.TryGetValue("beneficiaryUuid", out string? beneficiaryUuid);
                 
                 if(!string.IsNullOrEmpty(status)) query += $"?status={status}";
-                // if(!string.IsNullOrEmpty(beneficiaryUuid)) query += $"&beneficiaryUuid={beneficiaryUuid}";
                 var requestHeader = new HttpRequestMessage(HttpMethod.Get, $"{uri}/beneficiary-medical-referrals{query}");
                 requestHeader.Headers.Add("Authorization", $"Bearer {token}");
                 requestHeader.Headers.Add("clientId", clientId);
@@ -43,18 +45,21 @@ namespace api_slim.src.Services
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
                 {    
-                    Util.ConsoleLog(item);
                     BsonDocument bson = BsonDocument.Parse(item.ToString());
 
                     list.Add(new {
                         id = item.uuid.ToString(),                
                         recipientDescription = item.beneficiary.name.ToString(),
                         recipienId = item.beneficiary.uuid.ToString(),
+                        beneficiaryUuid = item.beneficiary.uuid.ToString(),
+                        beneficiaryName = item.beneficiary.name.ToString(),
                         cpf = item.beneficiary.cpf.ToString(),
                         status = item.status.ToString(),
                         createdAt = bson.Contains("createdAt") ? bson["createdAt"].ToString() : "",
                         urlPath = bson.Contains("urlPath") ? bson["urlPath"].ToString() : "",
                         specialtyId = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
+                        specialtyUuid = bson.Contains("specialty") ? bson["specialty"]["uuid"].ToString() : "",
+                        specialtyName = bson.Contains("specialty") ? bson["specialty"]["name"].ToString() : ""
                     });                 
                 }
                 return new(list);

@@ -142,7 +142,7 @@ namespace api_slim.src.Services
 
             return new(new (), 201, "Anexo criado com sucesso.");
         }
-        catch(Exception ex)
+        catch
         { 
             return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
         }

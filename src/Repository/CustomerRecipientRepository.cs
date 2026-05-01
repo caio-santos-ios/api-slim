@@ -32,12 +32,12 @@ namespace api_slim.src.Repository
 
                 new("$match", pagination.PipelineFilter),
 
-                MongoUtil.Lookup("generic_tables", ["$gender"], ["$code"], "_gender", [["deleted", false], ["table", "genero"]], 1),
+                // MongoUtil.Lookup("generic_tables", ["$gender"], ["$code"], "_gender", [["deleted", false], ["table", "genero"]], 1),
 
-                new("$addFields", new BsonDocument
-                {
-                    {"addressId", MongoUtil.First("_address._id")}
-                }),
+                // new("$addFields", new BsonDocument
+                // {
+                //     {"addressId", MongoUtil.First("_address._id")}
+                // }),
 
                 MongoUtil.Lookup("users", ["$updatedBy"], ["$_id"], "_user", [["deleted", false]], 1),
 
@@ -45,39 +45,52 @@ namespace api_slim.src.Repository
 
                 new("$addFields", new BsonDocument
                 {
-                    {"addressId", MongoUtil.ToString("$addressId")},
+                    // {"addressId", MongoUtil.ToString("$addressId")},
                     {"type", MongoUtil.First("_customer.type")},
-                    {"userName", MongoUtil.First("_user.name")},
+                    // {"userName", MongoUtil.First("_user.name")},
                     {"typePlan", MongoUtil.First("_customer.typePlan")},
-                    {"customerDocument", MongoUtil.First("_customer.document")},
-                    {"customerName", MongoUtil.First("_customer.corporateName")},
-                    {"genderDescription", MongoUtil.First("_gender.description")},
+                    // {"customerDocument", MongoUtil.First("_customer.document")},
+                    {"customerName", MongoUtil.First("_customer.tradeName")},
+                    // {"genderDescription", MongoUtil.First("_gender.description")},
                     {"planName", MongoUtil.First("_plan.name")},
                     {"bondName", MongoUtil.First("_bond.name")},
-                    {"bondCpf", MongoUtil.First("_bond.cpf")},
-                    {"address", new BsonDocument
-                        {
-                            {"id", MongoUtil.ToString("$addressId")},
-                            {"street",  MongoUtil.First("_address.street")},
-                            {"number", MongoUtil.First("_address.number") },
-                            {"complement", MongoUtil.First("_address.complement") },
-                            {"neighborhood", MongoUtil.First("_address.neighborhood") },
-                            {"city", MongoUtil.First("_address.city") },
-                            {"state", MongoUtil.First("_address.state") },
-                            {"zipCode", MongoUtil.First("_address.zipCode") },
-                            {"parent", MongoUtil.First("_address.parent") },
-                            {"parentId", MongoUtil.First("_address.parentId") },
-                        }
-                    }
+                    // {"bondCpf", MongoUtil.First("_bond.cpf")},
+                    // {"address", new BsonDocument
+                    //     {
+                    //         {"id", MongoUtil.ToString("$addressId")},
+                    //         {"street",  MongoUtil.First("_address.street")},
+                    //         {"number", MongoUtil.First("_address.number") },
+                    //         {"complement", MongoUtil.First("_address.complement") },
+                    //         {"neighborhood", MongoUtil.First("_address.neighborhood") },
+                    //         {"city", MongoUtil.First("_address.city") },
+                    //         {"state", MongoUtil.First("_address.state") },
+                    //         {"zipCode", MongoUtil.First("_address.zipCode") },
+                    //         {"parent", MongoUtil.First("_address.parent") },
+                    //         {"parentId", MongoUtil.First("_address.parentId") },
+                    //     }
+                    // }
                 }),
                 new("$project", new BsonDocument
                 {
                     {"_id", 0},
-                    {"_address", 0},
-                    {"_gender", 0},
-                    {"_plan", 0},
-                    {"_user", 0},
-                    {"_customer", 0}
+                    {"id", MongoUtil.ToString("$_id")},
+                    {"code", 1},
+                    {"customerName", 1},
+                    {"name", 1},
+                    {"email", 1},
+                    {"bond", 1},
+                    {"bondName", 1},
+                    {"typePlan", 1},
+                    {"planName", 1},
+                    {"active", 1},
+                    {"createdAt", 1},
+                    {"rapidocId", 1},
+                    // {"_address", 0},
+                    // {"_gender", 0},
+                    // {"_plan", 0},
+                    // {"_user", 0},
+                    // {"_bond", 0},
+                    // {"_customer", 0}
                 }),
                 new("$sort", pagination.PipelineSort)
             };

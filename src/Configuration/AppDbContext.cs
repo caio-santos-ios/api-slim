@@ -141,6 +141,10 @@ namespace api_slim.src.Configuration
         {
             get { return Database.GetCollection<Historic>("historics"); }
         }
+        public IMongoCollection<AppointmentTelemedicine> AppointmentTelemedicines
+        {
+            get { return Database.GetCollection<AppointmentTelemedicine>("appointment_telemedicines"); }
+        }
         #endregion
         
         #region CONFIGURATION

@@ -7,6 +7,7 @@ namespace api_slim.src.Interfaces
     public interface IPlanService
     {
         Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<Plan?>> CreateAsync(CreatePlanDTO request);
         Task<ResponseApi<Plan?>> UpdateAsync(UpdatePlanDTO request);

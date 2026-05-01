@@ -11,7 +11,13 @@ using Newtonsoft.Json;
 
 namespace api_slim.src.Services
 {
-    public class AppointmentService(ITelemedicineHistoricService telemedicineHistoricService, ITelemedicineHistoricRepository telemedicineHistoricRepository, ICustomerRecipientRepository customerRecipientRepository, IAppointmentNotificationService appointmentNotificationService) : IAppointmentService
+    public class AppointmentService(
+        ITelemedicineHistoricService telemedicineHistoricService, 
+        ITelemedicineHistoricRepository telemedicineHistoricRepository, 
+        ICustomerRecipientRepository customerRecipientRepository, 
+        IAppointmentNotificationService appointmentNotificationService,
+        IAppointmentTelemedicineRepository appointmentTelemedicineRepository
+    ) : IAppointmentService
     {
         private readonly HttpClient client = new();
         private readonly string uri = Environment.GetEnvironmentVariable("URI_RAPIDOC") ?? "";
@@ -41,7 +47,6 @@ namespace api_slim.src.Services
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 dynamic? result = JsonConvert.DeserializeObject(jsonResponse);
-
                 List<dynamic> list = [];
                 foreach (dynamic item in result!)
                 {
@@ -73,6 +78,20 @@ namespace api_slim.src.Services
                 }
                 list = list.OrderByDescending(x => x.data).ToList();
                 return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<PaginationApi<List<dynamic>>> GetAllV2Async(GetAllDTO request)
+        {
+            try
+            {
+                PaginationUtil<AppointmentTelemedicine> pagination = new(request.QueryParams);
+                ResponseApi<List<dynamic>> customers = await appointmentTelemedicineRepository.GetAllAsync(pagination);
+                int count = await appointmentTelemedicineRepository.GetCountDocumentsAsync(pagination);
+                return new(customers.Data, count, pagination.PageNumber, pagination.PageSize);
             }
             catch
             {
@@ -286,118 +305,136 @@ namespace api_slim.src.Services
 
                 if(recipientResponse.Data is not null && result is not null)
                 {
+                    Util.ConsoleLog(result);
                     string professionalName = result.professional.name;
                     DateTime date = DateTime.ParseExact(request.Date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
                     var timeString = request.Time.ToLower().Split("até")[0].Trim();
                     TimeSpan time = TimeSpan.Parse(timeString);
                     DateTime dateTime = date.Add(time);
 
+                    await appointmentTelemedicineRepository.CreateAsync(new ()
+                    {
+                        Active = true,
+                        AppointmentUuid = result!.uuid.ToString(),
+                        BeneficiaryCPF = recipientResponse.Data.Cpf,
+                        BeneficiaryId = recipientResponse.Data.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = request.CreatedBy,
+                        Date = dateTime,
+                        Hour = request.Time,
+                        SpecialtyUuid = result.specialty.uuid.ToString(),
+                        SpecialtyName = result.specialty.name,
+                        ProfessionalName = professionalName,
+                        BeneficiaryUrl = result.beneficiaryUrl.ToString(),
+                        Status = "Agendado"
+                    });
+
                     List<NotificationJob> jobs = new()
                     {
-                        // new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
-                        //     SendDate = DateTime.UtcNow.AddSeconds(30),
-                        //     Type = "AppPush",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Confirmação do Agendamento"
-                        // },
-                        // new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddDays(-1),
-                        //     Type = "AppPush",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 1 dia antes do Agendamento"
-                        // },
-                        // new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddHours(-1),
-                        //     Type = "AppPush",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 1 hora antes do Agendamento"
-                        // },
-                        // new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddMinutes(-5),
-                        //     Type = "AppPush",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 5 minutos antes do Agendamento"
-                        // },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
+                            SendDate = DateTime.UtcNow.AddSeconds(30),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Confirmação do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddDays(-1),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 dia antes do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddHours(-1),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 hora antes do Agendamento"
+                        },
+                        new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddMinutes(-5),
+                            Type = "AppPush",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 5 minutos antes do Agendamento"
+                        },
                     };
 
                     if(!string.IsNullOrEmpty(recipientResponse.Data.Whatsapp))
                     {
 
-                        // jobs.Add(new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
-                        //     SendDate = DateTime.UtcNow.AddSeconds(30),
-                        //     Type = "WhatsApp",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Confirmação do Agendamento"
-                        // });
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentConfirmation(recipientResponse.Data.Name, request.SpecialtyName, professionalName, request.Date, request.Time, result.beneficiaryUrl.ToString(), request.Module),
+                            SendDate = DateTime.UtcNow.AddSeconds(30),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Confirmação do Agendamento"
+                        });
 
-                        // jobs.Add(new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddDays(-1),
-                        //     Type = "WhatsApp",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 1 dia antes do Agendamento"
-                        // });
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentDayReminder(recipientResponse.Data.Name, request.SpecialtyName, request.Date, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddDays(-1),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 dia antes do Agendamento"
+                        });
 
-                        // jobs.Add(new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddHours(-1),
-                        //     Type = "WhatsApp",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 1 hora antes do Agendamento"
-                        // });
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentOneHourReminder(recipientResponse.Data.Name, professionalName, request.Time, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddHours(-1),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 1 hora antes do Agendamento"
+                        });
                         
-                        // jobs.Add(new() {
-                        //     Parent = "Appointment",
-                        //     ParentId = result!.uuid.ToString(),
-                        //     Phone = recipientResponse.Data.Phone,
-                        //     BeneficiaryName = recipientResponse.Data.Name,
-                        //     BeneficiaryCPF = recipientResponse.Data.Cpf,
-                        //     Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
-                        //     SendDate = dateTime.AddMinutes(-5),
-                        //     Type = "WhatsApp",
-                        //     BeneficiaryId = recipientResponse.Data.Id,
-                        //     Title = "Lembrete 5 minutos antes do Agendamento"
-                        // });
+                        jobs.Add(new() {
+                            Parent = "Appointment",
+                            ParentId = result!.uuid.ToString(),
+                            Phone = recipientResponse.Data.Phone,
+                            BeneficiaryName = recipientResponse.Data.Name,
+                            BeneficiaryCPF = recipientResponse.Data.Cpf,
+                            Message = WhatsAppTemplate.AppointmentFiveMinutesReminder(recipientResponse.Data.Name, result.beneficiaryUrl.ToString()),
+                            SendDate = dateTime.AddMinutes(-5),
+                            Type = "WhatsApp",
+                            BeneficiaryId = recipientResponse.Data.Id,
+                            Title = "Lembrete 5 minutos antes do Agendamento"
+                        });
                     }
                     
                     await appointmentNotificationService.CreateNotificationsAsync(jobs, Util.CleanPhone(recipientResponse.Data.Whatsapp));
@@ -405,8 +442,9 @@ namespace api_slim.src.Services
                 
                 return new(null, 201, "Agendamento feito com sucesso");
             }
-            catch
+            catch(Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
@@ -458,6 +496,13 @@ namespace api_slim.src.Services
                 });
 
                 await appointmentNotificationService.CancelNotificationsAsync(request.Id, "Appointment");
+
+                ResponseApi<AppointmentTelemedicine?> appoint = await appointmentTelemedicineRepository.GetByAppointmentUuidAsync(request.Id);
+                if(appoint.Data is not null)
+                {
+                    appoint.Data.Status = "Cancelado";
+                    await appointmentTelemedicineRepository.UpdateAsync(appoint.Data);
+                }
 
                 return new(null, 204, "Cancelado com sucesso");
             }

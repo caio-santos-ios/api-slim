@@ -71,7 +71,8 @@ namespace api_slim.src.Repository
                 {
                     {"_id", 0},                     
                     {"id", new BsonDocument("$toString", "$_id")},
-                    {"corporateName", 1}
+                    {"corporateName", 1},
+                    {"type", 1},
                 }),
                 new("$sort", pagination.PipelineSort),
             };

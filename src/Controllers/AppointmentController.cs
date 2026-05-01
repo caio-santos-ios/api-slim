@@ -20,6 +20,14 @@ namespace api_slim.src.Controllers
         }
 
         [Authorize]
+        [HttpGet("v2")]
+        public async Task<IActionResult> GetAllV2()
+        {
+            ResponseApi<List<dynamic>> response = await service.GetAllV2Async(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [Authorize]
         [HttpGet("user/{beneficiaryUuid}")]
         public async Task<IActionResult> GetByUser(string beneficiaryUuid)
         {

@@ -85,6 +85,33 @@ namespace api_slim.src.Repository
             return new(null, 500, "Falha ao buscar Plano");
         }
     }
+    public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Plan> pagination)
+    {
+        try
+        {
+            List<BsonDocument> pipeline = new()
+            {
+                new("$match", pagination.PipelineFilter),
+                new("$sort", pagination.PipelineSort),
+
+                new BsonDocument("$project", new BsonDocument
+                {
+                    {"_id", 0},
+                    {"id", new BsonDocument("$toString", "$_id")},
+                    {"name", 1},
+                }),
+                new("$sort", pagination.PipelineSort),
+            };
+
+            List<BsonDocument> results = await context.Plans.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+            return new(list);
+        }
+        catch
+        {
+            return new(null, 500, "Falha ao buscar Plano");
+        }
+    }
     
     public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
     {
@@ -95,12 +122,12 @@ namespace api_slim.src.Repository
                     {"_id", new ObjectId(id)},
                     {"deleted", false}
                 }),
+                new("$addFields", new BsonDocument {
+                    {"id", new BsonDocument("$toString", "$_id")},
+                }),
                 new("$project", new BsonDocument
                 {
-                    {"_id", 0},
-                    {"id", new BsonDocument("$toString", "$_id")},
-                    {"name", 1},
-                    {"description", 1}
+                    {"_id", 0}
                 }),
             ];
 

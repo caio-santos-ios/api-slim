@@ -11,6 +11,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using ImageMagick;
 using ClosedXML.Excel;
+using api_slim.src.Configuration;
+using MongoDB.Driver;
 
 namespace api_slim.src.Services
 {
@@ -25,7 +27,6 @@ namespace api_slim.src.Services
         ILogRepository logRepository,
         CloudinaryHandler cloudinaryHandler,
         MailHandler mailHandler,
-        IAppointmentNotificationService appointmentNotificationService,
         ITelemedicineHistoricRepository telemedicineHistoricRepository,
         IVitalRepository vitalRepository,
         IB2BInvoiceRepository b2BInvoiceRepository,
@@ -769,18 +770,18 @@ namespace api_slim.src.Services
 
                 var beneficiarios = new[]
                 {
-                new {
-                    name = request.Name,
-                    cpf = new string(request.Cpf.Where(char.IsDigit).ToArray()),
-                    birthday = request.DateOfBirth,
-                    email = request.Email,
-                    zipCode = new string(request.Address.ZipCode.Where(char.IsDigit).ToArray()),
-                    address = $"{request.Address.Street}, {request.Address.Number}",
-                    city = request.Address.City,
-                    state = "",
-                    serviceType = typePlan
-                }
-            };
+                    new {
+                        name = request.Name,
+                        cpf = new string(request.Cpf.Where(char.IsDigit).ToArray()),
+                        birthday = request.DateOfBirth,
+                        email = request.Email,
+                        zipCode = new string(request.Address.ZipCode.Where(char.IsDigit).ToArray()),
+                        address = $"{request.Address.Street}, {request.Address.Number}",
+                        city = request.Address.City,
+                        state = "",
+                        serviceType = typePlan
+                    }
+                };
 
                 string jsonPayload = JsonSerializer.Serialize(beneficiarios);
 
@@ -1324,6 +1325,115 @@ namespace api_slim.src.Services
                 });
 
                 return new(response.Data, 201, "Alterado com sucesso");
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<CustomerRecipient?>> UpdateSyncRapidocAsync(UpdateCustomerRecipientDTO request)
+        {
+            try
+            {
+                ResponseApi<CustomerRecipient?> customerResponse = await customerRepository.GetByIdAsync(request.Id);
+                if (customerResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+
+                if (string.IsNullOrEmpty(customerResponse.Data.Name)) return new(null, 400, "Nome deve ser preenchido");
+                if (string.IsNullOrEmpty(customerResponse.Data.Cpf)) return new(null, 400, "CPF deve ser preenchido");
+                if (customerResponse.Data.DateOfBirth is null) return new(null, 400, "Data de Nascimento deve ser preenchida");
+                if (string.IsNullOrEmpty(customerResponse.Data.Email)) return new(null, 400, "E-mail deve ser preenchido");
+                if (string.IsNullOrEmpty(customerResponse.Data.PlanId)) return new(null, 400, "Programa deve ser preenchido");
+
+                ResponseApi<Address?> address = await addressRepository.GetByParentIdAsync(request.Id, "customer-recipient");
+                if (address.Data is null) return new(null, 400, "Beneficiário precisar ter um endereço cadastrado");
+
+                var requestRapidoc = new HttpRequestMessage(HttpMethod.Post, $"{uri}/beneficiaries");
+
+                requestRapidoc.Headers.Add("Authorization", $"Bearer {token}");
+                requestRapidoc.Headers.Add("clientId", clientId);
+                requestRapidoc.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                string typePlan = "G";
+                bool psicologia = false;
+                bool especialista = false;
+
+                ResponseApi<Plan?> plan = await planRepository.GetByIdAsync(customerResponse.Data.PlanId);
+                if (plan.Data is not null)
+                {
+                    foreach (string moduleId in plan.Data.ServiceModuleIds)
+                    {
+                        ResponseApi<ServiceModule?> serviceModule = await serviceModuleRepository.GetByIdAsync(moduleId);
+                        if (serviceModule.Data is not null)
+                        {
+                            if (serviceModule.Data.Name.Equals("Bem + Cuidado"))
+                            {
+                                especialista = true;
+                            }
+
+                            if (serviceModule.Data.Name.Equals("Bem + Papo"))
+                            {
+                                psicologia = true;
+                            }
+                        }
+                    }
+                }
+
+                if (psicologia || especialista)
+                {
+                    if (psicologia && especialista)
+                    {
+                        typePlan = "GSP";
+                    }
+                    else
+                    {
+                        if (psicologia)
+                        {
+                            typePlan = "GP";
+                        }
+                        else
+                        {
+                            typePlan = "GS";
+                        }
+                    }
+                }
+                else
+                {
+                    typePlan = "G";
+                }
+                ;
+
+                var beneficiarios = new[]
+                {
+                    new {
+                        name = customerResponse.Data.Name,
+                        cpf = new string(customerResponse.Data.Cpf.Where(char.IsDigit).ToArray()),
+                        birthday = customerResponse.Data.DateOfBirth,
+                        email = customerResponse.Data.Email,
+                        zipCode = new string(address.Data.ZipCode.Where(char.IsDigit).ToArray()),
+                        address = $"{address.Data.Street}, {address.Data.Number}",
+                        city = address.Data.City,
+                        state = "",
+                        serviceType = typePlan
+                    }
+                };
+
+                string jsonPayload = JsonSerializer.Serialize(beneficiarios);
+
+                var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/vnd.rapidoc.tema-v2+json");
+
+                content.Headers.ContentType!.CharSet = null;
+
+                requestRapidoc.Content = content;
+
+                var responseRapidoc = await client.SendAsync(requestRapidoc);
+                responseRapidoc.EnsureSuccessStatusCode();
+                string jsonResponse = await responseRapidoc.Content.ReadAsStringAsync();
+                dynamic? result = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonResponse);
+
+                if(result is null) return new(null, 400, "Falha ao atualizar");
+                if(result.success.ToString() == "False") return new(null, 400, $"Falha ao atualizar - ERRO: {result.message.ToString()}");
+
+                return new(customerResponse.Data, 200, "Sincronizado com sucesso");
             }
             catch
             {

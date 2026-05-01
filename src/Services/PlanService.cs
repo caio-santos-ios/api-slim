@@ -25,7 +25,19 @@ namespace api_slim.src.Services
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
+        {
+            try
+            {
+                PaginationUtil<Plan> pagination = new(request.QueryParams);
+                ResponseApi<List<dynamic>> plans = await planRepository.GetAllAsync(pagination);
+                return new(plans.Data);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         public async Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id)
         {
             try
@@ -129,7 +141,7 @@ namespace api_slim.src.Services
 
                 return new(response.Data, 200, "Atualizado com sucesso");
             }
-            catch(Exception ex)
+            catch
             {
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }

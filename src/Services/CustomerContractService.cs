@@ -4,7 +4,6 @@ using api_slim.src.Models.Base;
 using api_slim.src.Shared.DTOs;
 using api_slim.src.Shared.Utils;
 using AutoMapper;
-using MongoDB.Driver.Linq;
 
 namespace api_slim.src.Services
 {

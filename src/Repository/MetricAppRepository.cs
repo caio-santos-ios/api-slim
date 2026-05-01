@@ -120,7 +120,7 @@ namespace api_slim.src.Repository
                 var list = results.Select(d => (dynamic)BsonSerializer.Deserialize<dynamic>(d)).ToList();
                 return new(list);
             }
-            catch(Exception ex)
+            catch
             {
                 return new(null, 500, "Falha ao buscar usuários mais ativos.");
             }

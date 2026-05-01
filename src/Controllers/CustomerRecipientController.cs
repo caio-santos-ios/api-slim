@@ -212,6 +212,19 @@ public class CustomerRecipientController(ICustomerRecipientService service, ICus
     }
     
     [Authorize]
+    [HttpPut("sync-rapidoc")]
+    public async Task<IActionResult> UpdateSyncRapidoc([FromBody] UpdateCustomerRecipientDTO customer)
+    {
+        if (customer == null) return BadRequest("Dados inválidos.");
+        
+        customer.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        
+        ResponseApi<CustomerRecipient?> response = await service.UpdateSyncRapidocAsync(customer);
+
+        return StatusCode(response.StatusCode, new { response.Result });
+    }
+    
+    [Authorize]
     [HttpPut("sub-notification")]
     public async Task<IActionResult> UpdateSubNotification([FromBody] PushSubscriptionRequest customer)
     {

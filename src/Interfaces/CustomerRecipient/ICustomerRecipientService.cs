@@ -25,6 +25,7 @@ namespace api_slim.src.Interfaces
         Task<ResponseApi<CustomerRecipient?>> UpdateStatusAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateWhatsAppAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateConvertOrContractorAsync(UpdateCustomerRecipientDTO request);
+        Task<ResponseApi<CustomerRecipient?>> UpdateSyncRapidocAsync(UpdateCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient?>> UpdateSubNotificationAsync(PushSubscriptionRequest request);
         Task<ResponseApi<CustomerRecipient?>> UpdateManagerPanelAsync(ImportCustomerRecipientDTO request);
         Task<ResponseApi<CustomerRecipient>> DeleteAsync(string id, string userId);

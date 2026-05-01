@@ -50,7 +50,7 @@ namespace api_slim.src.Services
                 if (response.Data is null) return new(null, 400, "Falha ao criar Perfil.");
                 return new(response.Data, 201, "Perfil criado com sucesso.");
             }
-            catch(Exception ex) 
+            catch 
             { 
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde."); 
             }
