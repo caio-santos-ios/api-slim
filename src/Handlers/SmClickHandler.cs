@@ -1,35 +1,35 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using api_slim.src.Shared.Utils;
 
 namespace api_slim.src.Handlers;
 
 public class SmClickHandler(ILogger<SmClickHandler> logger)
 {
-    private readonly string _baseUrl     = Environment.GetEnvironmentVariable("SMCLICK_BASE_URL")      ?? "";
-    private readonly string _apiToken    = Environment.GetEnvironmentVariable("SMCLICK_API_TOKEN")     ?? "";
-    private readonly string _instanceKey = Environment.GetEnvironmentVariable("SMCLICK_INSTANCE_KEY")  ?? "";
+    private readonly string baseUrl     = Environment.GetEnvironmentVariable("SMCLICK_BASE_URL")      ?? "";
+    private readonly string apiToken    = Environment.GetEnvironmentVariable("SMCLICK_API_TOKEN")     ?? "";
+    private readonly string instanceKey = Environment.GetEnvironmentVariable("SMCLICK_INSTANCE_KEY")  ?? "";
 
-    public async Task SendTextMessageAsync(string phoneNumber, string message, CancellationToken cancellationToken = default)
+    public async Task SendTextMessageAsync(string telephone, string message, CancellationToken cancellationToken = default)
     {
         using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _apiToken);
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", apiToken);
 
-        var payload = new
+        dynamic payload = new
         {
-            instance = _instanceKey,
+            instance = instanceKey,
             type = "text",
             content = new
             {
-                telephone = phoneNumber,
-                message = message
+                telephone,
+                message
             }
         };
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await httpClient.PostAsync($"{_baseUrl}/instances/messages", content, cancellationToken);
-
+        var response = await httpClient.PostAsync($"{baseUrl}/instances/messages", content, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -37,6 +37,6 @@ public class SmClickHandler(ILogger<SmClickHandler> logger)
             throw new HttpRequestException($"SMClick API returned {response.StatusCode}: {responseBody}");
         }
 
-        logger.LogInformation("SMClick message sent to {Phone}", phoneNumber);
+        logger.LogInformation("SMClick message sent to {Phone}", telephone);
     }
 }

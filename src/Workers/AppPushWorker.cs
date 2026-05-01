@@ -24,7 +24,7 @@ public class AppPushWorker(IServiceProvider serviceProvider, ILogger<AppPushWork
         var context     = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pushHandler = scope.ServiceProvider.GetRequiredService<WebPushHandler>();
 
-        List<NotificationJob> notifications = await context.NotificationJobs
+        List<Notification> notifications = await context.Notifications
             .Find(n => 
                 n.Type == "AppPush" && 
                 !n.Sent && 
@@ -32,7 +32,7 @@ public class AppPushWorker(IServiceProvider serviceProvider, ILogger<AppPushWork
             ).ToListAsync();
 
 
-        foreach (NotificationJob notification in notifications)
+        foreach (Notification notification in notifications)
         {
             try
             {
@@ -54,21 +54,13 @@ public class AppPushWorker(IServiceProvider serviceProvider, ILogger<AppPushWork
                         tag    : "important-notification"
                     );
 
-                    var update = Builders<NotificationJob>.Update.Set(j => j.Sent, true);
-                    await context.NotificationJobs.UpdateOneAsync(j => j.Id == notification.Id, update);
+                    var update = Builders<Notification>.Update.Set(j => j.Sent, true);
+                    await context.Notifications.UpdateOneAsync(j => j.Id == notification.Id, update);
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Erro ao processar Push para {Name}: {Message}", notification.BeneficiaryName, ex.Message);
-
-                // if (ex.Message.Contains("SubscriptionExpired"))
-                // {
-                //     var update = Builders<api_slim.src.Models.CustomerRecipient>.Update
-                //         .Set(c => c.SubNotification, null);
-                //     await context.CustomerRecipients.UpdateOneAsync(c => c.Id == recipient.Id, update);
-                //     logger.LogInformation("Subscription removida para {Name}", recipient.Name);
-                // }
             }
         }
     }

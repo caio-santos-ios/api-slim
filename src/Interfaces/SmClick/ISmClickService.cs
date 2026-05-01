@@ -6,5 +6,6 @@ namespace api_slim.src.Interfaces
     public interface ISmClickService
     {
         Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllDTO request);
+        Task<ResponseApi<dynamic?>> SendNotificationAsync(SendNotificationSmClickDTO request);
     }
 }

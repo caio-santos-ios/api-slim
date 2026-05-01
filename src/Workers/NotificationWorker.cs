@@ -21,25 +21,63 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
     private async Task ProcessPendingJobsAsync()
     {
         using var scope = serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var smClick = scope.ServiceProvider.GetRequiredService<SmClickHandler>();
+        AppDbContext context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        SmClickHandler smClick = scope.ServiceProvider.GetRequiredService<SmClickHandler>();
+        WebPushHandler pushHandler = scope.ServiceProvider.GetRequiredService<WebPushHandler>();
+        
+        DateTime now = DateTime.UtcNow;
+        DateTime startOfDay = now.Date;           
+        DateTime endOfDay = startOfDay.AddDays(1); 
 
-        var pending = await context.NotificationJobs
-            .Find(j => !j.Sent && j.SendDate <= DateTime.UtcNow)
+        List<Notification> notifications = await context.Notifications
+            .Find(j => !j.Sent 
+                    && j.SendPreviusDate >= startOfDay 
+                    && j.SendPreviusDate < endOfDay
+                    && j.SendPreviusDate <= now)        
             .ToListAsync();
 
-        foreach (var job in pending)
+        foreach (var job in notifications)
         {
             try
             {
-                var message = BuildMessage(job);
-                await smClick.SendTextMessageAsync(job.Phone, message);
+                bool send = false;
 
-                await context.NotificationJobs.UpdateOneAsync(
-                    j => j.Id == job.Id,
-                    Builders<NotificationJob>.Update.Set(j => j.Sent, true));
+                if(job.Type == "WhatsApp") 
+                {
+                    await smClick.SendTextMessageAsync(job.Phone, job.Message);
+                    send = true;
+                }
+                
+                if(job.Type == "AppPush") 
+                {
+                    CustomerRecipient? recipient = await context.CustomerRecipients.Find(x => !x.Deleted && x.Cpf == job.BeneficiaryCPF).FirstOrDefaultAsync();
+                    
+                    if(recipient is not null)
+                    {
+                        if(recipient.SubNotification != null && recipient.SubNotification.UserId != "")
+                        {
+                            await pushHandler.SendPushAsync(
+                                subDto : recipient.SubNotification!,
+                                title  : job.Title,
+                                message: $"Olá, {recipient.Name.Split(" ")[0]}! Você tem uma nova notificação importante.",
+                                url    : "/aplicativo/home/",
+                                tag    : "important-notification"
+                            );
+                            send = true;
+                        }
+                    }
+                }
 
-                logger.LogInformation("Notification {Type} sent to {Name}", job.Type, job.BeneficiaryName);
+                if(send)
+                {
+                    await context.Notifications.UpdateOneAsync(
+                        j => j.Id == job.Id,
+                        Builders<Notification>.Update
+                        .Set(j => j.Sent, true)
+                        .Set(j => j.SendDate, DateTime.UtcNow));
+
+                    logger.LogInformation("Notification {Type} sent to {Name}", job.Type, job.BeneficiaryName);
+                }
             }
             catch (Exception ex)
             {
@@ -50,7 +88,7 @@ public class NotificationWorker(IServiceProvider serviceProvider, ILogger<Notifi
         }
     }
 
-    private static string BuildMessage(NotificationJob job)
+    private static string BuildMessage(Notification job)
     {
         return job.Type switch
         {
