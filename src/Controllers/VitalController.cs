@@ -6,6 +6,7 @@ using api_slim.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+
 namespace api_slim.src.Controllers
 {
     [Route("api/vitals")]
